@@ -29,11 +29,11 @@ app.set('views', path.join(__dirname, 'app/views'));
 app.set('view engine', 'ejs');
 
 app.use(session({
-  secret: StringUtil.randomString(32), //secret的值建议使用随机字符串
+  secret: StringUtil.randomString(32),
   resave: true,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 }, // 过期时间（毫秒）
-  store: new MongoStore({     //持久化
+  cookie: { maxAge: 1000 * 60 * 60 },
+  store: new MongoStore({
     url: dbUrl,
     collec: 'dbsession'
   })
