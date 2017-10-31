@@ -1,0 +1,168 @@
+const mongoose = require('mongoose')
+let Schema = mongoose.Schema
+const jwt = require('jwt-simple')
+const SECRET = 'NODE_USER_SECRET'   // secret key
+let ObjectId = Schema.Types.ObjectId
+
+// validate username
+let validateUsername = username => {
+    return (username.length >= 2 && username.length <= 10);
+};
+
+// validate email format
+let validateEmail = email => {
+    var filter = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+    if (!email.match(filter)) {
+        return false;
+    } else {
+        return true;
+    };
+}
+
+// validate telephone
+let validateTel = telephone => {
+    return (telephone.length === 11)
+};
+
+// validate password
+let validatePassword = password => {
+    return (password.length >= 6 && password.length <= 16);
+};
+
+// validate nickname
+let validateNickname = nickname => {
+    return (nickname.length >= 1 && nickname.length <= 12);
+}
+
+let UserSchema = new mongoose.Schema({
+    // username
+    // username: {
+    //     type: String,
+    //     unique: 'Username already exists',
+    //     required: 'Please fill in a username',
+    //     lowercase: true,
+    //     validate: [validateUsername, "Username's length should be 2-10 bits"],
+    //     trim: true
+    // },
+
+    // telephone
+    telephone: {
+        type: String,
+        unique: 'Telephone already exists',
+        // required: 'Please fill in a telephone number.',
+        validate: [validateTel, "Telephone number's length should be 11 bits"],
+        trim: true
+    },
+
+    email: {
+        type: String,
+        validate: [validateEmail, "Email format is incorrect"],
+    },
+
+    // tel country code
+    countryCode: {
+        type: String,
+        default: "+86",
+        trim: true
+    },
+
+    // password
+    password: {
+        type: String,
+        required: 'Please fill in password',
+        validate: [validatePassword, "Password's length should be 6-16 bits"],
+        trim: true
+    },
+
+    nickname: {
+        type: String,
+        required: 'Please fill in a nickname',
+        validate: [validateNickname, "Nickname's length should be 1-12 bits"],
+        trim: false
+    },
+
+    male: {
+        type: Boolean,
+        default: false
+    },
+
+    signature: {
+        type: String,
+        default: "This guy is lazy. He doesn't fill in anything..."
+    },
+
+    token: {
+        type: String,
+        default: ''
+    },
+
+    expires: {
+        type: Date,
+        default: Date.now() + (1000 * 60 * 60 * 24)
+    },
+
+    // device id
+    deviceID: {
+        type: String,
+        required: 'Please fill in a device ID',
+    },
+
+    // 0: normal user
+    // 50: super admin
+    role: {
+        type: Number,
+        default: 0
+    },
+
+    // active ?
+    status: {
+        type: Boolean,
+        default: true
+    },
+
+    // date note
+    meta: {
+        createAt: {
+            type: Date,
+            default: Date.now()
+        },
+        updateAt: {
+            type: Date,
+            default: Date.now()
+        }
+    }
+})
+
+UserSchema.pre('save', function (next) {
+    let user = this
+    if (this.isNew) {
+        this.meta.createAt = this.meta.updateAt = Date.now()
+    } else {
+        this.meta.updateAt = Date.now()
+    }
+    //encode password
+    user.password = jwt.encode(user.password, SECRET)
+    next()
+})
+
+//decode password and checking
+UserSchema.methods = {
+    comparePassword: function (_password, cb) {
+        let dpassword = jwt.decode(this.password, SECRET)
+        cb(_password === dpassword)
+    },
+    resetExpires: function () {
+        let newExpires = Date.now() + (1000 * 60 * 60 * 24)
+        this.expires = newExpires;
+    }
+}
+
+UserSchema.statics = {
+    findById: function (id, cb) {
+        return this
+            .findOne({ _id: id })
+            .exec(cb)
+    },
+}
+
+module.exports = UserSchema
