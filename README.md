@@ -13,7 +13,7 @@
 ``` bash
 # node 
 dev-version(8.5.0)
-required-verison(8.5.+)
+required-verison(7.0.+)
 
 # mongodb
 dev-version(3.4.0)
@@ -28,7 +28,7 @@ version(3.0)
 ## Before Build Setup -- Config
 
 ``` bash
-# This application using the Node official Crypto.js module, after Node.Js 8.5.+, Crypto.js begin to provide RSA, AES encryption.
+# This application using the Node official Crypto.js module, Crypto.js provide RSA, AES encryption.
 RSA -- KEY save in configs/rsa_priv.pem, configs/rsa_pub.pem
 AES -- KEY save in app/utils/Constants.js. ASE_SCETKEY
 

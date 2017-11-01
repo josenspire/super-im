@@ -80,7 +80,7 @@ var register = (telephone, verifyCode, codeType, cb) => {
 }
 
 var login = (user, telephone, verifyCode, codeType, cb) => {
-    UserService.queryUser(user.telephone, user.password, user.deviceID, callback => {
+    UserService.queryUserByTelephoneAndPassword(user.telephone, user.password, user.deviceID, callback => {
         if (callback.status === CodeConstants.SUCCESS) {
             if (callback.data.verifyTelephone === true) {   // need to verify telephone
                 SMSService.sendSMS(telephone, verifyCode, codeType, sms => {

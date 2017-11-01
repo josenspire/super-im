@@ -1,13 +1,11 @@
+const SECRET = 'NODE_USER_SECRET'   // secret key
+
 const mongoose = require('mongoose')
 let Schema = mongoose.Schema
-const jwt = require('jwt-simple')
-const SECRET = 'NODE_USER_SECRET'   // secret key
 let ObjectId = Schema.Types.ObjectId
 
-// validate username
-let validateUsername = username => {
-    return (username.length >= 2 && username.length <= 10);
-};
+const jwt = require('jwt-simple')
+const uuidv4 = require('uuid/v4');
 
 // validate email format
 let validateEmail = email => {
@@ -35,15 +33,6 @@ let validateNickname = nickname => {
 }
 
 let UserSchema = new mongoose.Schema({
-    // username
-    // username: {
-    //     type: String,
-    //     unique: 'Username already exists',
-    //     required: 'Please fill in a username',
-    //     lowercase: true,
-    //     validate: [validateUsername, "Username's length should be 2-10 bits"],
-    //     trim: true
-    // },
 
     // telephone
     telephone: {
@@ -149,12 +138,14 @@ UserSchema.pre('save', function (next) {
 UserSchema.methods = {
     comparePassword: function (_password, cb) {
         let dpassword = jwt.decode(this.password, SECRET)
+        console.log('----[DECODE PASSWORD]----', dpassword)
         cb(_password === dpassword)
     },
-    resetExpires: function () {
-        let newExpires = Date.now() + (1000 * 60 * 60 * 24)
-        this.expires = newExpires;
-    }
+    // resetExpires: function () {
+    //     let newExpires = Date.now() + (1000 * 60 * 60 * 24);
+    //     this.token = uuidv4();
+    //     this.expires = newExpires;
+    // }
 }
 
 UserSchema.statics = {

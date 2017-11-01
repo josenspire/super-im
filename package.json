@@ -27,6 +27,7 @@
     "node-rsa": "^0.4.2",
     "save": "^2.3.1",
     "serve-favicon": "~2.4.2",
-    "superagent": "^3.6.0"
+    "superagent": "^3.6.0",
+    "uuid": "^3.1.0"
   }
 }

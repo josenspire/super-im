@@ -29,8 +29,8 @@ exports.createUser = (user, cb) => {
 }
 
 // user login
-exports.queryUser = (telephone, password, deviceID, cb) => {
-    UserDao.queryUser(telephone, password, _user => {
+exports.queryUserByTelephoneAndPassword = (telephone, password, deviceID, cb) => {
+    UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
         if (_user.status === CodeConstants.SUCCESS) {
             if (_user.data.user.deviceID != deviceID) {
                 _user.data.user = {};
@@ -45,7 +45,7 @@ exports.queryUser = (telephone, password, deviceID, cb) => {
 
 // user login
 exports.queryUserWithoutVerify = (telephone, password, cb) => {
-    UserDao.queryUser(telephone, password, _user => {
+    UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
         cb(_user)
     })
 }

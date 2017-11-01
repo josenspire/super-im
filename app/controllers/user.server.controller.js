@@ -5,7 +5,7 @@ const CodeConstants = require('../utils/CodeConstants');
 const Constants = require('../utils/Constants');
 const fs = require('fs')
 
-exports.login = (req, res) => {
+exports.login2 = (req, res) => {
     let params = req.body.param;
     RSAUtil.privateDecrypt(params, result => {
         let data = result.params;
@@ -26,9 +26,7 @@ exports.login = (req, res) => {
         } else {
             SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, validateCallback => {
                 if (validateCallback.status === CodeConstants.SUCCESS) {
-                    console.log('-----------------', validateCallback)
                     UserService.updateDeviceID(user.telephone, user.password, user.deviceID, callback => {
-                        console.log('-----------------')
                         RSAUtil.publicEncryptObj(callback, clientPublicKey, result => {
                             res.json(result)
                         })
@@ -40,6 +38,21 @@ exports.login = (req, res) => {
                 }
             })
         }
+    })
+}
+
+exports.login = (req, res) => {
+    let data = req.body;
+    let clientPublicKey = data.clientPublicKey;
+    let verifyCode = data.verifyCode;
+
+    let user = {};
+    user.telephone = data.telephone;
+    user.password = data.password;
+    user.deviceID = data.deviceID;
+    console.log('[--LOGIN--]: ', data)
+    UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
+        return res.json(callback)
     })
 }
 
