@@ -80,14 +80,19 @@ let UserSchema = new mongoose.Schema({
         default: "This guy is lazy. He doesn't fill in anything..."
     },
 
-    token: {
-        type: String,
-        default: ''
-    },
+    // token: {
+    //     type: String,
+    //     default: ''
+    // },
 
-    expires: {
-        type: Date,
-        default: Date.now() + (1000 * 60 * 60 * 24)
+    // expires: {
+    //     type: Date,
+    //     default: Date.now() + (1000 * 60 * 60 * 24)
+    // },
+
+    token: {
+        type: ObjectId,
+        ref: 'Token'
     },
 
     // device id
@@ -138,7 +143,7 @@ UserSchema.pre('save', function (next) {
 UserSchema.methods = {
     comparePassword: function (_password, cb) {
         let dpassword = jwt.decode(this.password, SECRET)
-        console.log('----[DECODE PASSWORD]----', dpassword)
+        console.log('----[TRUE PASSWORD]----', dpassword)
         cb(_password === dpassword)
     },
     // resetExpires: function () {

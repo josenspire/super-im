@@ -1,62 +1,60 @@
 const UserModel = require('../models/user.server.model')
+const TokenModel = require('../models/token.server.model')
 const CodeConstants = require('../utils/CodeConstants')
 const Constants = require('../utils/Constants')
 const DateUtils = require('../utils/DateUtils')
 
 const uuidv4 = require('uuid/v4');
 
-exports.createUser = (user, cb) => {
-    let result = { data: {} };
-    user.token = uuidv4();
-    let _user = new UserModel(user);
-    _user.save((err, _result) => {
-        if (err) {
-            console.log("[--CREATE USER--], ", err);
-            let errMsg = err.errors
-            result.status = CodeConstants.SERVER_UNKNOW_ERROR;
-            if (errMsg) {
-                if (errMsg.telephone || errMsg.password) {
-                    result.message = errMsg.telephone ? errMsg.telephone.message : errMsg.password.message;
-                } else if (errMsg.nickname) {
-                    result.message = errMsg.nickname.message;
-                }
-            } else {
-                result.message = 'Sorry, server unknow error';
-            }
-        } else {
-            result.status = CodeConstants.SUCCESS;
-            result.data.user = _result;
-            result.data.token = _result.token;
-            result.data.secretKey = Constants.AES_SECRET;
-            result.message = 'Registing user success'
-        }
-        cb(result)
-    });
+exports.createUser = async (user, cb) => {
+    let result = { data: {}, message: '' };
+
+    try {
+        let userModel = new UserModel(user);
+        let _user = await insertUser(userModel);
+
+        let tokenModel = new TokenModel({ token: uuidv4(), expires: Date.now(), user: _user._id });
+
+        let _token = await insertToken(tokenModel);
+        let _updateUser = await updateUserModelTokenByUserId(userModel, _user._id, token._id);
+
+        result.status = CodeConstants.SUCCESS;
+        result.data.user = _updateUser;
+        result.data.token = _token;
+        result.data.secretKey = Constants.AES_SECRET;
+    } catch (err) {
+        console.log(err)
+        cb(err)
+        // if(err.status === CodeConstants.SERVER_UNKNOW_ERROR) {}
+    }
 }
 
-exports.queryUserByTelephoneAndPassword = async (telephone, password, cb) => {
+exports.queryUserByTelephoneAndPassword = (telephone, password, cb) => {
     let result = { data: {}, message: '' };
-    UserModel.findOne({ telephone: telephone }, (err, user) => {
-        if (err) {
-            console.log(err)
-            result.status = CodeConstants.SERVER_UNKNOW_ERROR;
-            result.message = 'Sorry, server unknow error';
-        } else if (!user) {
-            result.status = CodeConstants.FAIL;
-            result.message = 'This telephone is no exist';
-        } else {
-            user.comparePassword(password, isMatch => {
-                if (isMatch) {
-                    result = await (updateToken(UserModel, telephone, uuidv4()));
-                    // .then(_result => cb(_result));
-                } else {
-                    result.status = CodeConstants.FAIL;
-                    result.message = 'Sorry, Your password is invalid';
-                }
-            })
-        }
-        cb(result)
-    })
+    UserModel.findOne({ telephone: telephone })
+        .populate('token')
+        .exec((err, user) => {
+            if (err) {
+                console.log(err)
+                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                result.message = 'Sorry, server unknow error';
+                cb(result)
+            } else if (!user) {
+                result.status = CodeConstants.FAIL;
+                result.message = 'This telephone is no exist';
+                cb(result)
+            } else {
+                user.comparePassword(password, async isMatch => {
+                    if (isMatch) {
+                        result = await (updateToken(user.token, uuidv4()));
+                    } else {
+                        result.status = CodeConstants.FAIL;
+                        result.message = 'Sorry, Your password is invalid';
+                    }
+                    cb(result)
+                })
+            }
+        })
 }
 
 // check token is expires?
@@ -146,10 +144,50 @@ var updateDeviceID = (model, telephone, deviceID) => {
     })
 }
 
-var updateToken = (model, telephone, uuid) => {
+var insertUser = userModel => {
+    let result = {
+        status: null,
+        message: ''
+    };
+    userModel.save((err, user) => {
+        if (err) {
+            console.log("[--CREATE USER FAIL--]", err);
+            let errMsg = err.errors;
+            if (errMsg) {
+                if (errMsg.telephone || errMsg.password) {
+                    result.message = errMsg.telephone ? errMsg.telephone.message : errMsg.password.message;
+                } else if (errMsg.nickname) {
+                    result.message = errMsg.nickname.message;
+                }
+                result.status = CodeConstants.FAIL;
+            } else {
+                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                result.message = 'Sorry, server unknow error';
+            }
+            reject(result);
+        } else {
+            resolve(user);
+        }
+    });
+}
+
+var insertToken = tokenModel => {
+    return new Promise((resolve, reject) => {
+        tokenModel.save((err, data) => {
+            if (err) {
+                console.log('--[CREATE TOKEN FAIL]--', err)
+                reject(err)
+            } else {
+                resolve(data);
+            }
+        })
+    })
+}
+
+var updateToken = (_id, uuid) => {
     return new Promise((resolve, reject) => {
         let result = { data: {}, message: '' };
-        UserModel.findOneAndUpdate({ telephone: telephone }, { token: uuid }, (err, user) => {
+        TokenModel.findOneAndUpdate({ _id: _id }, { $set: { token: uuid, expires: Date.now() } }, (err, user) => {
             if (err) {
                 console.log('--[UPDATE TOKEN ERROR]--', err.message);
                 result.status = CodeConstants.SERVER_UNKNOW_ERROR;
@@ -161,6 +199,20 @@ var updateToken = (model, telephone, uuid) => {
                 result.data.secretKey = Constants.AES_SECRET;
             }
             resolve(result)
+        })
+    })
+}
+
+var updateUserModelTokenByUserId = (userModel, userId, tokenId) => {
+    return new Promise((resolve, reject) => {
+        userModel.findByIdAndUpdate(userId, { $set: { token: tokenId } }, (err, _user) => {
+            if (err) {
+                console.log('--[UPDATE USER TOKEN FAIL]--', err);
+                reject(err);
+            } else {
+                console.log('---------------', _user)
+                resolve(_user);
+            }
         })
     })
 }
