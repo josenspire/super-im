@@ -1,5 +1,9 @@
 let moment = require('moment');
 
+exports.formatCommonUTCDate = date => {
+    return moment(date).format("YYYY-MM-DD HH:mm:ss");
+}
+
 exports.formatStrToUTCDate = (str, format) => {
     let date = moment(str, format, 'en').format('YYYYMMDDHHmmss.SSS');
     date = date + 'Z';

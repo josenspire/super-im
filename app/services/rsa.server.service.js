@@ -18,7 +18,7 @@ exports.getPublicKey = cb => {
 }
 
 exports.publicEncrypt = (jsonObj, cb) => {
-    RSAUtil.publicEncryptObj(jsonObj, _cb => {
+    RSAUtil.publicEncryptObj(jsonObj, clientPublicKey, _cb => {
         // RSAUtil.publicEncrypt(plainText, _cb => {
         cb(_cb)
     })

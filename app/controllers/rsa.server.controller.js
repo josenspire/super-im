@@ -36,8 +36,9 @@ exports.getPrivateKey = (req, res) => {
 
 //test
 exports.publicEncrypt = (req, res) => {
-    let data = req.body
-    RSAService.publicEncrypt(data, cb => {
+    let clientPublicKey = req.body.clientPublicKey;
+    let data = req.body.data
+    RSAService.publicEncrypt(data, clientPublicKey, cb => {
         return res.json(cb)
     })
 }

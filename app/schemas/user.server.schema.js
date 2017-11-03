@@ -6,6 +6,7 @@ let ObjectId = Schema.Types.ObjectId
 
 const jwt = require('jwt-simple')
 const uuidv4 = require('uuid/v4');
+const DateUtils = require('../utils/DateUtils')
 
 // validate email format
 let validateEmail = email => {
@@ -118,11 +119,11 @@ let UserSchema = new mongoose.Schema({
     meta: {
         createAt: {
             type: Date,
-            default: Date.now()
+            default: DateUtils.formatCommonUTCDate(Date.now())
         },
         updateAt: {
             type: Date,
-            default: Date.now()
+            default: DateUtils.formatCommonUTCDate(Date.now())
         }
     }
 })
@@ -130,27 +131,22 @@ let UserSchema = new mongoose.Schema({
 UserSchema.pre('save', function (next) {
     let user = this
     if (this.isNew) {
-        this.meta.createAt = this.meta.updateAt = Date.now()
+        this.meta.createAt = this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     } else {
-        this.meta.updateAt = Date.now()
+        this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     }
     //encode password
-    user.password = jwt.encode(user.password, SECRET)
+    user.password = jwt.encode(user.password, SECRET);
     next()
 })
 
 //decode password and checking
 UserSchema.methods = {
     comparePassword: function (_password, cb) {
-        let dpassword = jwt.decode(this.password, SECRET)
+        let dpassword = jwt.decode(this.password, SECRET);
         console.log('----[TRUE PASSWORD]----', dpassword)
         cb(_password === dpassword)
-    },
-    // resetExpires: function () {
-    //     let newExpires = Date.now() + (1000 * 60 * 60 * 24);
-    //     this.token = uuidv4();
-    //     this.expires = newExpires;
-    // }
+    }
 }
 
 UserSchema.statics = {

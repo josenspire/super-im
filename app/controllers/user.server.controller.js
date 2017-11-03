@@ -41,7 +41,7 @@ exports.login2 = (req, res) => {
     })
 }
 
-exports.login = (req, res) => {
+exports.login = (req, res, next) => {
     let data = req.body;
     let clientPublicKey = data.clientPublicKey;
     let verifyCode = data.verifyCode;
@@ -52,49 +52,53 @@ exports.login = (req, res) => {
     user.deviceID = data.deviceID;
     console.log('[--LOGIN--]: ', data)
     UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
-        return res.json(callback)
+        // return res.json(callback)
+        req.body = callback;
+        next()
     })
 }
 
 exports.register = (req, res) => {
-    let params = req.body.param;
-    RSAUtil.privateDecrypt(params, result => {
-        let data = result.params;
-        let user = {};
-        user.telephone = data.telephone;
-        user.password = data.password;
-        user.nickname = data.nickname;
-        user.deviceID = data.deviceID;
-        user.countryCode = data.countryCode | '';
-        user.signature = data.signature | '';
+    // let params = req.body.param;
+    // RSAUtil.privateDecrypt(params, result => {
+    // let data = result.params;
+    let data = req.body;
+    let user = {};
+    user.telephone = data.telephone;
+    user.password = data.password;
+    user.nickname = data.nickname;
+    user.deviceID = data.deviceID;
+    user.countryCode = data.countryCode || '';
+    user.signature = data.signature || '';
 
-        let verifyCode = data.verifyCode;
-        let clientPublicKey = data.clientPublicKey;
-        console.log('[--REGISTER--]: ', data)
-        UserService.queryByTelephone(user.telephone, '', queryCallback => {
-            if (queryCallback.status === CodeConstants.SUCCESS) {
-                SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
-                    if (_sms.status === CodeConstants.SUCCESS) {
-                        UserService.createUser(user, callback => {
-                            RSAUtil.publicEncryptObj(callback, clientPublicKey, result => {
-                                return res.json(result)
-                            })
-                        })
-                    } else {
-                        RSAUtil.publicEncryptObj(_sms, clientPublicKey, result => {
-                            return res.json(result)
-                        })
-                        // return res.json(_sms)
-                    }
-                })
-            } else {
-                // return res.json(queryCallback)
-                RSAUtil.publicEncryptObj(queryCallback, clientPublicKey, result => {
-                    return res.json(result)
-                })
-            }
-        })
+    let verifyCode = data.verifyCode || '';
+    let clientPublicKey = data.clientPublicKey;
+    console.log('[--REGISTER--]: ', data)
+    UserService.queryByTelephone(user.telephone, '', queryCallback => {
+        if (queryCallback.status === CodeConstants.SUCCESS) {
+            SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
+                if (_sms.status === CodeConstants.SUCCESS) {
+                    UserService.createUser(user, callback => {
+                        return res.json(callback)
+                        // RSAUtil.publicEncryptObj(callback, clientPublicKey, result => {
+                        //     return res.json(result)
+                        // })
+                    })
+                } else {
+                    // RSAUtil.publicEncryptObj(_sms, clientPublicKey, result => {
+                    //     return res.json(result)
+                    // })
+                    return res.json(_sms)
+                }
+            })
+        } else {
+            return res.json(queryCallback)
+            // RSAUtil.publicEncryptObj(queryCallback, clientPublicKey, result => {
+            //     return res.json(result)
+            // })
+        }
     })
+    // })
 }
 
 exports.tokenAuth = (req, res) => {

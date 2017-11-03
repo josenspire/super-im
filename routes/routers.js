@@ -3,6 +3,8 @@ const RsaKey = require('../app/controllers/rsa.server.controller')
 const User = require('../app/controllers/user.server.controller')
 const SMS = require('../app/controllers/sms.server.controller')
 
+const RSAAspectUtils = require('../app/utils/AspectUtils').RSAOperate;
+
 let routers = app => {
     app.get('/', Index.index);
 
@@ -17,7 +19,7 @@ let routers = app => {
     // user auth api
     app.get('/v1/api/auth/getSecretKey', RsaKey.getPublicKey);
     app.post('/v1/api/auth/register', User.register);
-    app.post('/v1/api/auth/login', User.login);
+    app.post('/v1/api/auth/login', RSAAspectUtils.decryptParam, User.login, RSAAspectUtils.encryptParam);
     app.post('/v1/api/auth/logout', User.logout)
 
     app.post('/v1/api/auth/obtainSMSCode', SMS.sendSMS)

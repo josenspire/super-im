@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const uuidv4 = require('uuid/v4');
+const DateUtils = require('../utils/DateUtils')
 
 let Schema = mongoose.Schema
 let ObjectId = Schema.Types.ObjectId
@@ -13,7 +14,12 @@ let TokenSchema = new mongoose.Schema({
 
     expires: {
         type: Date,
-        default: Date.now() + (1000 * 60 * 60 * 24)
+        default: DateUtils.formatCommonUTCDate(Date.now() + (1000 * 60 * 60 * 24))
+    },
+
+    loginTime: {
+        type: Date,
+        default: DateUtils.formatCommonUTCDate(Date.now())
     },
 
     // belong to this user. ( one to one)
@@ -26,11 +32,11 @@ let TokenSchema = new mongoose.Schema({
     meta: {
         createAt: {
             type: Date,
-            default: Date.now()
+            default: DateUtils.formatCommonUTCDate(Date.now())
         },
         updateAt: {
             type: Date,
-            default: Date.now()
+            default: DateUtils.formatCommonUTCDate(Date.now())
         }
     }
 })
@@ -38,9 +44,11 @@ let TokenSchema = new mongoose.Schema({
 TokenSchema.pre('save', function (next) {
     let token = this
     if (this.isNew) {
-        this.meta.createAt = this.meta.updateAt = Date.now()
+        this.loginTime = DateUtils.formatCommonUTCDate(Date.now());
+        this.expires = DateUtils.formatCommonUTCDate(Date.now() + (1000 * 60 * 60 * 24));
+        this.meta.createAt = this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     } else {
-        this.meta.updateAt = Date.now()
+        this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     }
     next();
 })
@@ -53,4 +61,4 @@ TokenSchema.statics = {
     },
 }
 
-module.exports = TokenSchema
+module.exports = TokenSchema;
