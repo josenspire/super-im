@@ -50,40 +50,33 @@ exports.queryUserWithoutVerify = (telephone, password, cb) => {
     })
 }
 
-// auth token
-exports.tokenAuth = (token, cb) => {
-    UserDao.checkTokenExpires(token, callback => {
+// auto login by auth token
+exports.autoLoginByTokenAuth = (token, cb) => {
+    UserDao.autoLoginByTokenAuth(token, callback => {
         cb(callback)
     })
 }
 
-exports.logout = (telephone, cb) => {
-    delete req.session.user
-    cb({
-        status: CodeConstants.SUCCESS,
-        data: {},
-        message: 'User singout success.'
+exports.resetTokenByToken = (token, cb) => {
+    UserDao.resetTokenByToken(token, callback => {
+        cb(callback);
     })
 }
 
 exports.queryByTelephone = (telephone, codeType, cb) => {
+    let result = { data: {}, message: '' };
     UserDao.queryByTelephone(telephone, codeType, result => {
         if (result.status === CodeConstants.SUCCESS) {
             IMProxie.getUser(telephone, _result => {
                 let data = JSON.parse(_result)
                 if (!data.error) {
-                    cb({
-                        status: CodeConstants.FAIL,
-                        data: {},
-                        message: 'This telephone is already exist.'
-                    })
+                    status: CodeConstants.FAIL;
+                    result.message == 'This telephone is already exist';
                 } else {
-                    cb({
-                        status: CodeConstants.SUCCESS,
-                        data: {},
-                        message: 'This telephone is valid.'
-                    })
+                    result.status = CodeConstants.SUCCESS;
+                    result.message = ''
                 }
+                cb(result)
             })
         } else {
             cb(result)
@@ -92,18 +85,16 @@ exports.queryByTelephone = (telephone, codeType, cb) => {
 }
 
 // reset user's password
-exports.resetPassword = (telephone, oldpwd, newpwd, cb) => {
+exports.resetPassword = (telephone, cb) => {
     IMProxie.resetPassword(telephone, oldpwd, newpwd, result => {
         if (!callback.error) {
-            UserDao.resetPassword(telephone, oldpwd, newpwd, _result => {
-                if (_result.status === CodeConstants.SUCCESS) {
-                    cb(_result)
-                } else {
+            UserDao.resetPassword(telephone, newpwd, _result => {
+                if (_result.status != CodeConstants.SUCCESS) {
                     IMProxie.resetPassword(telephone, newpwd, oldpwd, rollback => {
                         console.log('--[RESET ROLLBACK]--', rollback)
-                        cb(_result)
                     })
                 }
+                cb(_result)
             })
         } else {
             cb({

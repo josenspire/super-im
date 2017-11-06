@@ -1,4 +1,4 @@
-const SECRET = 'NODE_USER_SECRET'   // secret key
+const SECRET = require('../utils/Constants').JWT_SECRET   // secret key
 
 const mongoose = require('mongoose')
 let Schema = mongoose.Schema
@@ -81,16 +81,6 @@ let UserSchema = new mongoose.Schema({
         default: "This guy is lazy. He doesn't fill in anything..."
     },
 
-    // token: {
-    //     type: String,
-    //     default: ''
-    // },
-
-    // expires: {
-    //     type: Date,
-    //     default: Date.now() + (1000 * 60 * 60 * 24)
-    // },
-
     token: {
         type: ObjectId,
         ref: 'Token'
@@ -154,7 +144,7 @@ UserSchema.statics = {
         return this
             .findOne({ _id: id })
             .exec(cb)
-    },
+    }
 }
 
 module.exports = UserSchema

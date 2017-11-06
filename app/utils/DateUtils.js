@@ -1,3 +1,4 @@
+let d3 = require('d3');
 let moment = require('moment');
 
 exports.formatCommonUTCDate = date => {
@@ -34,9 +35,21 @@ exports.compareDate = (preDateStr, nextDateStr) => {
 }
 
 exports.compareISODate = (preDateStr, nextDateStr) => {
-    var preDate = this.formatDateString(preDateStr, '%Y-%m-%d %H:%M');
-    var nextDate = this.formatDateString(nextDateStr, '%Y-%m-%d %H:%M');
+    var preDate = formatDateString(preDateStr, '%Y-%m-%d %H:%M');
+    var nextDate = formatDateString(nextDateStr, '%Y-%m-%d %H:%M');
 
     var isBefore = moment(preDate).isBefore(nextDate);
     return isBefore;
+}
+
+var formatDateString = (dateStr, toFormat, fromFormat) => {
+    if (!dateStr) return;
+
+    let fromFormatStr = fromFormat || 'YYYYMMDDHHmmss.SSS';
+    let toFormatStr = toFormat || '%d %b (%a) %H:%M'
+
+    let date = dateStr;
+    date = moment(date, fromFormatStr).toDate();
+    let formater = d3.timeFormat(toFormatStr);
+    return formater(date);
 }

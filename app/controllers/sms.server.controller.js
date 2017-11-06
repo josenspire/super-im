@@ -6,35 +6,32 @@ const CodeConstants = require('../utils/CodeConstants');
 const Constants = require('../utils/Constants');
 
 exports.sendSMS = (req, res) => {
-    // let params = req.body.param;
-    // RSAUtil.privateDecrypt(params, result => {
-    // console.log('--[SMS PARAMS]--', result)
-    // let data = result.params;
     let data = req.body;
     let clientPublicKey = data.clientPublicKey;
     let codeType = (data.codeType).toUpperCase();
     let telephone = data.telephone;
-    let _data = data.data;
+    let userInformation = data.data;
 
     let verifyCode = StringUtil.randomCodeString(5);
 
+    req.body.publicKey = data.clientPublicKey;
     try {
         switch (codeType) {
             case Constants.SMS_TYPE_REGISTER:
-                register(telephone, verifyCode, Constants.SMS_TYPE_REGISTER, callback => {
-                    // RSAUtil.publicEncryptObj(callback, clientPublicKey, _result => {
-                    //     return res.json(_result)
-                    // })
-                    res.json(callback)
-                });
+                register(telephone, verifyCode, Constants.SMS_TYPE_REGISTER)
+                    .then(result => {
+                        return res.json(result);
+                        // req.body.data = result;
+                        // next();
+                    })
                 break;
             case Constants.SMS_TYPE_LOGIN:
-                login(_data, telephone, verifyCode, Constants.SMS_TYPE_LOGIN, callback => {
-                    // RSAUtil.publicEncryptObj(callback, clientPublicKey, _result => {
-                    //     return res.json(_result)
-                    // })
-                    res.json(callback)
-                });
+                login(userInformation, telephone, verifyCode, Constants.SMS_TYPE_LOGIN)
+                    .then(result => {
+                        return res.json(result);
+                        // req.body.data = result;
+                        // next();
+                    })
                 break;
             case Constants.SMS_TYPE_OTHERS:
                 res.json('Others Type SMS')
@@ -43,11 +40,7 @@ exports.sendSMS = (req, res) => {
     } catch (err) {
         console.log(err)
         return res.json(err)
-        // RSAUtil.publicEncryptObj('SERVER_ERROR', clientPublicKey, _result => {
-        //     return res.json(_result)
-        // })
     }
-    // })
 }
 
 exports.verifyCode = (req, res) => {
@@ -66,16 +59,19 @@ exports.verifyCode = (req, res) => {
     })
 }
 
-var register = (telephone, verifyCode, codeType, cb) => {
-    UserService.queryByTelephone(telephone, codeType, queryCallback => {
-        if (queryCallback.status === CodeConstants.SUCCESS) {
-            SMSService.sendSMS(telephone, verifyCode, codeType, sms => {
-                sms.data.skipVerify = false;
-                cb(sms);
-            })
-        } else {
-            cb(queryCallback)
-        }
+var register = (telephone, verifyCode, codeType) => {
+    return new Promise((resolve, reject) => {
+        UserService.queryByTelephone(telephone, codeType, queryCallback => {
+            if (queryCallback.status === CodeConstants.SUCCESS) {
+                SMSService.sendSMS(telephone, verifyCode, codeType, sms => {
+                    sms.data.skipVerify = false;
+                    // cb(sms);
+                    resolve(sms);
+                })
+            } else {
+                resolve(queryCallback);
+            }
+        })
     })
 }
 

@@ -9,6 +9,7 @@ let TokenSchema = new mongoose.Schema({
 
     token: {
         type: String,
+        unique: true,
         default: ''
     },
 

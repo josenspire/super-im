@@ -5,64 +5,41 @@ const CodeConstants = require('../utils/CodeConstants');
 const Constants = require('../utils/Constants');
 const fs = require('fs')
 
-exports.login2 = (req, res) => {
-    let params = req.body.param;
-    RSAUtil.privateDecrypt(params, result => {
-        let data = result.params;
-        let clientPublicKey = data.clientPublicKey;
-        let verifyCode = data.verifyCode;
-
-        let user = {};
-        user.telephone = data.telephone;
-        user.password = data.password;
-        user.deviceID = data.deviceID;
-        console.log('[--LOGIN--]: ', data)
-        if (verifyCode === '') {
-            UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
-                RSAUtil.publicEncryptObj(callback, clientPublicKey, result => {
-                    return res.json(result)
-                })
-            })
-        } else {
-            SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, validateCallback => {
-                if (validateCallback.status === CodeConstants.SUCCESS) {
-                    UserService.updateDeviceID(user.telephone, user.password, user.deviceID, callback => {
-                        RSAUtil.publicEncryptObj(callback, clientPublicKey, result => {
-                            res.json(result)
-                        })
-                    })
-                } else {
-                    RSAUtil.publicEncryptObj(validateCallback, clientPublicKey, result => {
-                        res.json(result)
-                    })
-                }
-            })
-        }
-    })
-}
-
 exports.login = (req, res, next) => {
     let data = req.body;
-    let clientPublicKey = data.clientPublicKey;
-    let verifyCode = data.verifyCode;
 
+    let verifyCode = data.verifyCode;
     let user = {};
     user.telephone = data.telephone;
     user.password = data.password;
     user.deviceID = data.deviceID;
+
+    req.body.publicKey = data.clientPublicKey;
+
     console.log('[--LOGIN--]: ', data)
-    UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
-        // return res.json(callback)
-        req.body = callback;
-        next()
-    })
+    if (verifyCode === '') {
+        UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
+            req.body.data = callback;
+            // res.json(callback)
+        })
+    } else {
+        SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, validateCallback => {
+            if (validateCallback.status === CodeConstants.SUCCESS) {
+                UserService.updateDeviceID(user.telephone, user.password, user.deviceID, callback => {
+                    req.body.data = callback;
+                    // res.json(callback)
+                })
+            } else {
+                // res.json(result)
+                req.body.data = validateCallback;
+            }
+        })
+    }
 }
 
-exports.register = (req, res) => {
-    // let params = req.body.param;
-    // RSAUtil.privateDecrypt(params, result => {
-    // let data = result.params;
+exports.register = (req, res, next) => {
     let data = req.body;
+
     let user = {};
     user.telephone = data.telephone;
     user.password = data.password;
@@ -72,7 +49,8 @@ exports.register = (req, res) => {
     user.signature = data.signature || '';
 
     let verifyCode = data.verifyCode || '';
-    let clientPublicKey = data.clientPublicKey;
+
+    req.body.publicKey = data.clientPublicKey;
     console.log('[--REGISTER--]: ', data)
     UserService.queryByTelephone(user.telephone, '', queryCallback => {
         if (queryCallback.status === CodeConstants.SUCCESS) {
@@ -80,58 +58,61 @@ exports.register = (req, res) => {
                 if (_sms.status === CodeConstants.SUCCESS) {
                     UserService.createUser(user, callback => {
                         return res.json(callback)
-                        // RSAUtil.publicEncryptObj(callback, clientPublicKey, result => {
-                        //     return res.json(result)
-                        // })
+                        // req.body.data = callback;
                     })
                 } else {
-                    // RSAUtil.publicEncryptObj(_sms, clientPublicKey, result => {
-                    //     return res.json(result)
-                    // })
                     return res.json(_sms)
+                    // req.body.data = _sms;
                 }
             })
         } else {
+            // req.body.data = queryCallback;
             return res.json(queryCallback)
-            // RSAUtil.publicEncryptObj(queryCallback, clientPublicKey, result => {
-            //     return res.json(result)
-            // })
         }
     })
-    // })
 }
 
-exports.tokenAuth = (req, res) => {
-    let token = req.params.token;
-    // RSAUtil.privateDecrypt(data, callback => {
-    //     user = callback;
-    // })
-    console.log('[--TOKEN AUTH--]', token)
-    UserService.tokenAuth(token, callback => {
-        // RSAUtil.privateEncryptObj(callback, result => {
-        //     return res.json(result)
-        // })
-        return res.json(callback)
-    })
-}
-
-exports.logout = (req, res) => {
-    let user = req.body.param
-    console.log('[--LOGOUT]--', user)
-    UserService.logout(user.telephone, callback => {
+exports.autoLoginByTokenAuth = (req, res, next) => {
+    let data = req.body;
+    let token = data.token;
+    req.body.publicKey = data.clientPublicKey;
+    console.log('[--TOKEN AUTH--]', data);
+    UserService.autoLoginByTokenAuth(token, callback => {
+        // req.body.data = callback;
+        // next();
         return res.json(callback);
     })
 }
 
-exports.queryByTelephone = (req, res) => {
+exports.logout = (req, res, next) => {
+    let data = req.body;
+    let token = data.token;
+
+    console.log('[--LOGOUT]--', data)
+    UserService.resetTokenByToken(token, callback => {
+        // req.body.data = callback;
+        // next();
+        return res.json(callback);
+    })
+}
+
+// test methods, need to delete it 
+exports.queryByTelephone = (req, res, next) => {
     let telephone = req.params.telephone || '';
     UserService.queryByTelephone(telephone, callback => {
         return res.json(callback)
     })
 }
 
-exports.resetPassword = (req, res) => {
-    let telephone = req.params.telephone || '';
+/**
+ * User profile update
+ */
+exports.resetPassword = (req, res, next) => {
+    let data = req.body;
+
+    let telephone = data.telephone;
+    let verifyCode = data.verifyCode;
+    
     UserService.resetPassword(telephone, callback => {
         return res.json(callback);
     })
