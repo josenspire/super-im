@@ -1,44 +1,60 @@
 const UserDao = require('../../app/dao/user.server.dao');
-
+const UserModel = require('../../app/models/user.server.model')
 const Constants = require('../../app/utils/Constants');
 const CodeConstants = require('../../app/utils/CodeConstants');
+
+const mongoose = require('mongoose')
+let MongoStore = require('connect-mongo')
+const dbUrl = 'mongodb://127.0.0.1:27017/super-im'
 
 let chai = require('chai');
 let should = chai.should();
 let expect = chai.expect;
 let assert = chai.assert;
 
-describe('User', () => {
-    it('[User - queryByTelephone Testing]', function (done) {
+describe('User Dao', () => {
 
-        (async function () {
-            let telephone = "13631270436";
+    var user = {};
 
-            // let result = await queryByTelephone(telephone);
-            // console.log(result)
-            // expect(result.status).to.be.equal(CodeConstants.SUCCESS);
-            // done()
-        })();
+    before(() => {
+        mongoose.connect(dbUrl)
+        console.log('-------------[DB connect success]-------------')
+
+        user = {
+            telephone: "13600088866",
+            password: "123456",
+            nickname: "德玛西亚",
+            deviceID: "xiaomi-5s"
+        };
+    })
+
+    it('[User - createUser]', done => {
+        UserDao.createUser(user, callback => {
+            expect(callback.status).to.be.equal(CodeConstants.SUCCESS);
+            expect(callback.data.user.telephone).to.be.equal(telephone);
+            expect(callback.data.token).to.be.exist(Constants.AES_SECRET);
+            expect(callback.data.secretKey).to.be.equal(Constants.AES_SECRET);
+            done();
+        });
     });
 
-    // it('[User - queryUserByTelephoneAndPassword]', (done) => {
-    //     let telephone = "13631270436";
-    //     let password = "123456";
+    it('[User - queryUserByTelephoneAndPassword]', done => {
+        let telephone = "13600088866";
+        let password = "123456";
+        UserDao.queryUserByTelephoneAndPassword(telephone, password, callback => {
+            expect(callback.status).to.be.equal(CodeConstants.SUCCESS);
+            expect(callback.data.user.telephone).to.be.equal(telephone);
+            expect(callback.data.secretKey).to.be.equal(Constants.AES_SECRET);
+            done();
+        });
+    });
 
-    //     UserDao.queryUserByTelephoneAndPassword(telephone, password, callback => {
-    //         console.log(result)
-    //         expect(callback.status).to.be.equal(CodeConstants.SUCCESS);
-    //         done();
-    //     });
-    // })
+    it('[User - queryByTelephone Testing]', done => {
+        let telephone = "13600088866";
+        UserDao.queryByTelephone(telephone, '', callback => {
+            expect(callback.status).to.be.equal(CodeConstants.SUCCESS);
+            done();
+        })
+    });
 });
 
-
-var queryByTelephone = (telephone) => {
-    return new Promise((resolve, reject) => {
-        UserDao.queryByTelephone(telephone, Constants.SMS_TYPE_LOGIN, callback => {
-            console.log('sssssssssss', callback)
-            resolve(callback)
-        })
-    })
-}
