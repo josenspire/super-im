@@ -6,7 +6,7 @@ const Constants = require('../utils/Constants');
 const fs = require('fs')
 
 exports.login = (req, res, next) => {
-    let data = req.body;
+    let data = req.body.params;
 
     let verifyCode = data.verifyCode;
     let user = {};
@@ -20,6 +20,7 @@ exports.login = (req, res, next) => {
     if (verifyCode === '') {
         UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
             req.body.data = callback;
+            next();
             // res.json(callback)
         })
     } else {
@@ -27,18 +28,20 @@ exports.login = (req, res, next) => {
             if (validateCallback.status === CodeConstants.SUCCESS) {
                 UserService.updateDeviceID(user.telephone, user.password, user.deviceID, callback => {
                     req.body.data = callback;
+                    next();
                     // res.json(callback)
                 })
             } else {
                 // res.json(result)
                 req.body.data = validateCallback;
+                next();
             }
         })
     }
 }
 
 exports.register = (req, res, next) => {
-    let data = req.body;
+    let data = req.body.params;
 
     let user = {};
     user.telephone = data.telephone;
@@ -57,42 +60,45 @@ exports.register = (req, res, next) => {
             SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
                 if (_sms.status === CodeConstants.SUCCESS) {
                     UserService.createUser(user, callback => {
-                        return res.json(callback)
-                        // req.body.data = callback;
+                        // return res.json(callback)
+                        req.body.data = callback;
+                        next();
                     })
                 } else {
-                    return res.json(_sms)
-                    // req.body.data = _sms;
+                    // return res.json(_sms)
+                    req.body.data = _sms;
+                    next();
                 }
             })
         } else {
-            // req.body.data = queryCallback;
-            return res.json(queryCallback)
+            // return res.json(queryCallback)
+            req.body.data = queryCallback;
+            next();
         }
     })
 }
 
 exports.autoLoginByTokenAuth = (req, res, next) => {
-    let data = req.body;
+    let data = req.body.params;
     let token = data.token;
     req.body.publicKey = data.clientPublicKey;
     console.log('[--TOKEN AUTH--]', data);
     UserService.autoLoginByTokenAuth(token, callback => {
-        // req.body.data = callback;
-        // next();
-        return res.json(callback);
+        req.body.data = callback;
+        next();
+        // return res.json(callback);
     })
 }
 
 exports.logout = (req, res, next) => {
-    let data = req.body;
+    let data = req.body.params;
     let token = data.token;
 
     console.log('[--LOGOUT]--', data)
     UserService.resetTokenByToken(token, callback => {
-        // req.body.data = callback;
-        // next();
-        return res.json(callback);
+        req.body.data = callback;
+        next();
+        // return res.json(callback);
     })
 }
 
@@ -108,11 +114,11 @@ exports.queryByTelephone = (req, res, next) => {
  * User profile update
  */
 exports.resetPassword = (req, res, next) => {
-    let data = req.body;
+    let data = req.body.params;
 
     let telephone = data.telephone;
     let verifyCode = data.verifyCode;
-    
+
     UserService.resetPassword(telephone, callback => {
         return res.json(callback);
     })

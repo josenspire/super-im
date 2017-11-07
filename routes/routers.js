@@ -3,10 +3,10 @@ const RsaKey = require('../app/controllers/rsa.server.controller')
 const User = require('../app/controllers/user.server.controller')
 const SMS = require('../app/controllers/sms.server.controller')
 
-const AsceptController = require('../app/controllers/aspect.server.controller');
+let AsceptController = require('../app/controllers/aspect.server.controller');
 
-const RSAAscept = AsceptController.RSA;
-const AESAscept = AsceptController.AES;
+let RSAAscept = AsceptController.RSA;
+let AESAscept = AsceptController.AES;
 
 let routers = app => {
     app.get('/', Index.index);
@@ -21,22 +21,22 @@ let routers = app => {
 
     // user auth api
     app.get('/v1/api/auth/getSecretKey', RsaKey.getPublicKey);
-    // app.post('/v1/api/auth/register', RSAAscept.decryptParam, User.register, RSAAscept.encryptParam);
-    // app.post('/v1/api/auth/login', RSAAscept.decryptParam, User.login, RSAAscept.encryptParam);
-    // app.post('/v1/api/auth/logout', RSAAscept.decryptParam, User.logout, RSAAscept.encryptParam)
+    app.post('/v1/api/auth/register', RSAAscept.decryptParam, User.register, RSAAscept.encryptParam);
+    app.post('/v1/api/auth/login', RSAAscept.decryptParam, User.login, RSAAscept.encryptParam);
+    app.post('/v1/api/auth/logout', RSAAscept.decryptParam, User.logout, RSAAscept.encryptParam)
 
-    // app.post('/v1/api/auth/obtainSMSCode', RSAAscept.decryptParam, SMS.sendSMS, RSAAscept.encryptParam)
-    // app.post('/v1/api/auth/verifySMSCode', RSAAscept.decryptParam, SMS.verifyCode, RSAAscept.encryptParam)
+    app.post('/v1/api/auth/obtainSMSCode', RSAAscept.decryptParam, SMS.sendSMS, RSAAscept.encryptParam)
+    app.post('/v1/api/auth/verifySMSCode', RSAAscept.decryptParam, SMS.verifyCode, RSAAscept.encryptParam)
+    app.post('/v1/api/auth/autoLogin', RSAAscept.decryptParam, User.autoLoginByTokenAuth, RSAAscept.encryptParam)
 
-    app.post('/v1/api/auth/register', User.register);
-    app.post('/v1/api/auth/login', User.login);
-    app.post('/v1/api/auth/logout', User.logout)
-    app.post('/v1/api/auth/obtainSMSCode', SMS.sendSMS)
-    app.post('/v1/api/auth/verifySMSCode', SMS.verifyCode)
-    app.post('/v1/api/auth/autoLogin', User.autoLoginByTokenAuth)
+    // app.post('/v1/api/auth/register', User.register);
+    // app.post('/v1/api/auth/login', User.login);
+    // app.post('/v1/api/auth/logout', User.logout)
+    // app.post('/v1/api/auth/obtainSMSCode', SMS.sendSMS)
+    // app.post('/v1/api/auth/verifySMSCode', SMS.verifyCode)
     // app.get('/v1/api/auth/:telephone', User.queryByTelephone);
-    
-    app.put('/v1/api/user/resetPassword', User.resetPassword);
+
+    // app.put('/v1/api/user/resetPassword', User.resetPassword);
 }
 
 module.exports = routers;

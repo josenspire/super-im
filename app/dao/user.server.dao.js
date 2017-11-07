@@ -76,14 +76,23 @@ exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
     try {
         let data = await queryUserByTelephoneAndPassword(telephone, password);
         if (data.isMatch) {
-            result = await updateDeviceID(telephone, deviceID);
+            let token = data.user.token.token;
+            let _user = await updateDeviceID(telephone, deviceID);
+            _user = JSON.parse(JSON.stringify(_user));
+            delete _user.token;
+            delete _user.meta;
+            result.data.user = _user;
+            result.data.secretKey = Constants.AES_SECRET;
+            result.data.token = token;
+            result.status = CodeConstants.SUCCESS;
         } else {
             result.status = CodeConstants.FAIL;
             result.message = 'Telephone or password is incorrect';
         }
     } catch (err) {
-        console.log(err)
-        cb(err)
+        console.log('--[UPDATE DEVICEID FAIL]--', err)
+        status = CodeConstants.FAIL;
+        message = err;
     }
     cb(result)
 }
@@ -106,7 +115,7 @@ exports.autoLoginByTokenAuth = (token, cb) => {
                     result.status = CodeConstants.SUCCESS;
                     result.data.user = _user;
                     result.data.token = token.token;
-                    result.data.AES_SECRET = Constants.AES_SECRET;
+                    result.data.secretKey = Constants.AES_SECRET;
                 } else {
                     result.status = CodeConstants.FAIL;
                     result.message = 'This token is expired, please login again';
@@ -181,17 +190,14 @@ var updateToken = (_id, uuid) => {
 
 var updateDeviceID = (telephone, deviceID) => {
     return new Promise((resolve, reject) => {
-        let result = { data: {}, message: '' };
-        UserModel.findOneAndUpdate({ telephone: telephone }, { deviceID: deviceID }, (user, err) => {
+        UserModel.findOneAndUpdate({ telephone: telephone }, { $set: { deviceID: deviceID } }, (err, user) => {
             if (err) {
                 console.log(err)
                 reject(err)
             } else {
-                result.status = CodeConstants.SUCCESS;
                 user.deviceID = deviceID;
-                result.data.user = user;
             }
-            resolve(result);
+            resolve(user);
         })
     })
 }

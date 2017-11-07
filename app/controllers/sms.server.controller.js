@@ -5,8 +5,8 @@ const RSAUtil = require('../utils/RSAUtil')
 const CodeConstants = require('../utils/CodeConstants');
 const Constants = require('../utils/Constants');
 
-exports.sendSMS = (req, res) => {
-    let data = req.body;
+exports.sendSMS = (req, res, next) => {
+    let data = req.body.params;
     let clientPublicKey = data.clientPublicKey;
     let codeType = (data.codeType).toUpperCase();
     let telephone = data.telephone;
@@ -15,22 +15,23 @@ exports.sendSMS = (req, res) => {
     let verifyCode = StringUtil.randomCodeString(5);
 
     req.body.publicKey = data.clientPublicKey;
+
     try {
         switch (codeType) {
             case Constants.SMS_TYPE_REGISTER:
                 register(telephone, verifyCode, Constants.SMS_TYPE_REGISTER)
                     .then(result => {
-                        return res.json(result);
-                        // req.body.data = result;
-                        // next();
+                        // return res.json(result);
+                        req.body.data = result;
+                        next();
                     })
                 break;
             case Constants.SMS_TYPE_LOGIN:
                 login(userInformation, telephone, verifyCode, Constants.SMS_TYPE_LOGIN)
                     .then(result => {
-                        return res.json(result);
-                        // req.body.data = result;
-                        // next();
+                        // return res.json(result);
+                        req.body.data = result;
+                        next();
                     })
                 break;
             case Constants.SMS_TYPE_OTHERS:
@@ -43,7 +44,7 @@ exports.sendSMS = (req, res) => {
     }
 }
 
-exports.verifyCode = (req, res) => {
+exports.verifyCode = (req, res, next) => {
     let params = req.body.param;
     RSAUtil.privateDecrypt(params, data => {
         let clientPublicKey = data.clientPublicKey;
@@ -75,25 +76,27 @@ var register = (telephone, verifyCode, codeType) => {
     })
 }
 
-var login = (user, telephone, verifyCode, codeType, cb) => {
-    UserService.queryUserByTelephoneAndPassword(user.telephone, user.password, user.deviceID, callback => {
-        if (callback.status === CodeConstants.SUCCESS) {
-            if (callback.data.verifyTelephone === true) {   // need to verify telephone
-                SMSService.sendSMS(telephone, verifyCode, codeType, sms => {
-                    cb(sms);
-                })
+var login = (user, telephone, verifyCode, codeType) => {
+    return new Promise((resolve, reject) => {
+        UserService.queryUserByTelephoneAndPassword(user.telephone, user.password, user.deviceID, callback => {
+            if (callback.status === CodeConstants.SUCCESS) {
+                if (callback.data.verifyTelephone === true) {   // need to verify telephone
+                    SMSService.sendSMS(telephone, verifyCode, codeType, sms => {
+                        resolve(sms);
+                    })
+                } else {
+                    resolve({
+                        status: CodeConstants.SUCCESS,
+                        data: {
+                            verifyCode: "",
+                            skipVerify: true
+                        },
+                        message: ''
+                    })
+                }
             } else {
-                cb({
-                    status: CodeConstants.SUCCESS,
-                    data: {
-                        verifyCode: "",
-                        skipVerify: true
-                    },
-                    message: ''
-                })
+                resolve(callback)
             }
-        } else {
-            cb(callback)
-        }
+        })
     })
 }
