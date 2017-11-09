@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "supervisor ./bin/www",
-    "mocha-test": "mocha --recursive --timeout 500000 test --bail --grow"
+    "mocha-test": "mocha --recursive --timeout 10000 test --bail --grow"
   },
   "dependencies": {
     "@alicloud/sms-sdk": "^1.0.2",

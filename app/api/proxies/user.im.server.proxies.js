@@ -268,3 +268,10 @@ exports.disconnectUser = (username, callback) => {
         }
     });
 };
+
+// Get common user token
+exports.accessCommonToken = (username, password, callback) => {
+    client.accessCommonToken(username, password, token => {
+        callback(token)
+    })
+}

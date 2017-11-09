@@ -6,7 +6,7 @@ let token = new Token();
 
 function client(json, callback) {
     if (!Initialized || token.isExpire()) {
-        token.accessToken(function () {
+        token.accessAdminToken(function () {
             Initialized = true;
             if (typeof callback == 'function') {
                 callback(json);
@@ -14,7 +14,6 @@ function client(json, callback) {
                 httpRequestWithToken(json);
             }
         });
-
     } else {
         if (typeof callback == 'function') {
             callback(json);
@@ -45,9 +44,21 @@ function uploadFileWithToken(json) {
         request.uploadFile(json);
     }
 }
+
+function accessCommonToken(username, password, callback) {
+    if (token == null) {
+        console.log('err: failed to access token!')
+    } else {
+        token.accessCommonToken(username, password, _token => {
+            callback(_token)
+        })
+    }
+}
+
 module.exports = {
     client: client,
     httpRequestWithToken: httpRequestWithToken,
-    uploadFileWithToken: uploadFileWithToken
+    uploadFileWithToken: uploadFileWithToken,
+    accessCommonToken: accessCommonToken
 
 }

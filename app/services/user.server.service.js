@@ -112,3 +112,9 @@ exports.updateDeviceID = (telephone, password, deviceID, cb) => {
         cb(callback)
     })
 }
+
+exports.accessCommonToken = (username, password, cb) => {
+    IMProxie.accessCommonToken(username, password, token => {
+        cb(token)
+    })
+}

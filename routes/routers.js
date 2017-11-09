@@ -37,6 +37,8 @@ let routers = app => {
     // app.get('/v1/api/auth/:telephone', User.queryByTelephone);
 
     // app.put('/v1/api/user/resetPassword', User.resetPassword);
+
+    app.post('/v1/api/auth/accessCommonToken', User.accessCommonToken);
 }
 
 module.exports = routers;

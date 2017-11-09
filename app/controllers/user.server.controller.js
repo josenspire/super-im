@@ -123,3 +123,10 @@ exports.resetPassword = (req, res, next) => {
         return res.json(callback);
     })
 }
+
+exports.accessCommonToken = (req, res, next) => {
+    let data = req.body;
+    UserService.accessCommonToken(data.username, data.password, cb => {
+        return res.json(cb)
+    })
+}
