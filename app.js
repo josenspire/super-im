@@ -8,6 +8,7 @@ const StringUtil = require('./app/utils/StringUtil')
 const routers = require('./routes/routers');
 // connect mongodb
 const mongoose = require('mongoose')
+mongoose.promise = global.promise;
 let session = require('express-session')
 let MongoStore = require('connect-mongo')(session)
 

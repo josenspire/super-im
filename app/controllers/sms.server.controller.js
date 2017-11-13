@@ -5,39 +5,31 @@ const RSAUtil = require('../utils/RSAUtil')
 const CodeConstants = require('../utils/CodeConstants');
 const Constants = require('../utils/Constants');
 
-exports.sendSMS = (req, res, next) => {
-    let data = req.body.params;
+exports.sendSMS = async (req, res, next) => {
+    let data = req.body.input.params || {};
     let clientPublicKey = data.clientPublicKey;
     let codeType = (data.codeType).toUpperCase();
     let telephone = data.telephone;
     let userInformation = data.data;
 
     let verifyCode = StringUtil.randomCodeString(5);
-
-    req.body.publicKey = data.clientPublicKey;
-
+    let result = {};
     try {
         switch (codeType) {
             case Constants.SMS_TYPE_REGISTER:
-                register(telephone, verifyCode, Constants.SMS_TYPE_REGISTER)
-                    .then(result => {
-                        // return res.json(result);
-                        req.body.data = result;
-                        next();
-                    })
+                result = await register(telephone, verifyCode);
+                // return res.json(result);
+                req.body.output = result;
                 break;
             case Constants.SMS_TYPE_LOGIN:
-                login(userInformation, telephone, verifyCode, Constants.SMS_TYPE_LOGIN)
-                    .then(result => {
-                        // return res.json(result);
-                        req.body.data = result;
-                        next();
-                    })
+                result = await login(userInformation, telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
+                req.body.output = result;
+                // return res.json(result);
                 break;
             case Constants.SMS_TYPE_OTHERS:
-                res.json('Others Type SMS')
-                break;
+                return res.json('Others Type SMS')
         }
+        next();
     } catch (err) {
         console.log(err)
         return res.json(err)
@@ -45,7 +37,7 @@ exports.sendSMS = (req, res, next) => {
 }
 
 exports.verifyCode = (req, res, next) => {
-    let params = req.body.param;
+    let params = req.body.input.params || {};
     RSAUtil.privateDecrypt(params, data => {
         let clientPublicKey = data.clientPublicKey;
         let telephone = data.telephone;
@@ -60,17 +52,21 @@ exports.verifyCode = (req, res, next) => {
     })
 }
 
-var register = (telephone, verifyCode, codeType) => {
+var register = (telephone, verifyCode) => {
     return new Promise((resolve, reject) => {
-        UserService.queryByTelephone(telephone, codeType, queryCallback => {
-            if (queryCallback.status === CodeConstants.SUCCESS) {
+        UserService.isTelephoneExist(telephone, isExist => {
+            if (isExist.status === false) {
                 SMSService.sendSMS(telephone, verifyCode, codeType, sms => {
                     sms.data.skipVerify = false;
                     // cb(sms);
                     resolve(sms);
                 })
             } else {
-                resolve(queryCallback);
+                resolve({
+                    status: CodeConstants.FAIL,
+                    data: {},
+                    message: isExist.message
+                });
             }
         })
     })

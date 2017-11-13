@@ -63,24 +63,9 @@ exports.resetTokenByToken = (token, cb) => {
     })
 }
 
-exports.queryByTelephone = (telephone, codeType, cb) => {
-    let result = { data: {}, message: '' };
-    UserDao.queryByTelephone(telephone, codeType, result => {
-        if (result.status === CodeConstants.SUCCESS) {
-            IMProxie.getUser(telephone, _result => {
-                let data = JSON.parse(_result)
-                if (!data.error) {
-                    status: CodeConstants.FAIL;
-                    result.message == 'This telephone is already exist';
-                } else {
-                    result.status = CodeConstants.SUCCESS;
-                    result.message = ''
-                }
-                cb(result)
-            })
-        } else {
-            cb(result)
-        }
+exports.isTelephoneExist = (telephone, cb) => {
+    UserDao.isTelephoneExist(telephone, isExist => {
+        cb(isExist)
     })
 }
 
@@ -110,6 +95,26 @@ exports.resetPassword = (telephone, cb) => {
 exports.updateDeviceID = (telephone, password, deviceID, cb) => {
     UserDao.updateDeviceID(telephone, password, deviceID, callback => {
         cb(callback)
+    })
+}
+
+exports.getUserProfile = (telephone, cb) => {
+    let result = { data: {}, message: '' };
+    UserDao.queryByTelephone(telephone, callback => {
+        if (callback.status === CodeConstants.SUCCESS) {
+            IMProxie.getUser(telephone, _result => {
+                let data = JSON.parse(_result)
+                if (!data.error) {
+                    result.status = CodeConstants.SUCCESS;
+                } else {
+                    status: CodeConstants.FAIL;
+                    result.message = data.error;
+                }
+                cb(result)
+            })
+        } else {
+            cb(callback)
+        }
     })
 }
 

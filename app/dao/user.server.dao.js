@@ -34,8 +34,7 @@ exports.queryUserByTelephoneAndPassword = async (telephone, password, cb) => {
     try {
         let data = await queryUserByTelephoneAndPassword(telephone, password);
         if (data.isMatch) {
-            let _user = JSON.parse(JSON.stringify(data.user));
-            delete _user.token;
+            let _user = convertUser(data.user);
             result.status = CodeConstants.SUCCESS;
             result.data.user = _user;
             result.data.token = await updateToken(data.user.token, uuidv4());
@@ -52,22 +51,43 @@ exports.queryUserByTelephoneAndPassword = async (telephone, password, cb) => {
 }
 
 // check telephone is exist?
-exports.queryByTelephone = (telephone, codeType, cb) => {
-    let result = { data: {} };
-    UserModel.findOne({ telephone: telephone, codeType: codeType || '' }, (err, user) => {
+exports.isTelephoneExist = (telephone, cb) => {
+    let result = { status: false, message: '' };
+    UserModel.findOne({ telephone: telephone }, (err, user) => {
         if (err) {
-            result.status = CodeConstants.SERVER_UNKNOW_ERROR;
             result.message = 'Sorry, server unknow error';
         } else if (user) {
-            result.status = CodeConstants.FAIL;
-            result.data = user;
+            result.status = true;
             result.message = 'The telephone is already exist';
         } else {
-            result.status = CodeConstants.SUCCESS;
-            result.message = 'The telephone is valid'
+            result.status = false;
+            result.message = 'The telephone is not exist'
         }
         cb(result)
     })
+}
+
+exports.queryByTelephone = (telephone, cb) => {
+    let result = { data: {}, message: '' };
+    UserModel.findOne({ telephone: telephone })
+        .populate("token")
+        .exec((err, user) => {
+            if (err) {
+                console.log(err)
+                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                result.message = 'Sorry, server unknow error';
+                result.status = CodeConstants.FAIL;
+            } else if (user) {
+                let _user = convertUser(user);
+                result.data.token = user.token.token;
+                result.data.secretKey = Constants.AES_SECRET;
+                result.status = CodeConstants.SUCCESS;
+            } else {
+                result.status = CodeConstants.FAIL;
+                result.message = 'The telephone is not exist'
+            }
+            cb(result)
+        })
 }
 
 // update deviceID 
@@ -238,7 +258,7 @@ var queryUserByTelephoneAndPassword = (telephone, password) => {
                 } else if (!user) {
                     resolve('Sorry, Your telephone or password is invalid');
                 } else {
-                    user.comparePassword(password, async isMatch => {
+                    user.comparePassword(password, isMatch => {
                         resolve(isMatch ? { user: user, isMatch: true } : { isMatch: false })
                     })
                 }
@@ -258,4 +278,10 @@ var updateUserTokenByUserId = (userId, tokenId) => {
                 }
             })
     })
+}
+
+var convertUser = user => {
+    let _user = JSON.parse(JSON.stringify(user));
+    delete _user.token;
+    return _user;
 }

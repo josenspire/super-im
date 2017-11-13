@@ -3,41 +3,45 @@ const AESUtil = require('../utils/AESUtil');
 
 exports.RSA = {
     decryptParam: (req, res, next) => {
-        let param = req.body.param;
-        RSAUtil.privateDecrypt(param, data => {
-            console.log('--[', req.path, ']--')
-            console.log('--[REQUEST DATA]--', data)
-            req.body = data;
-        })
+        let params = JSON.parse(req.body.params);
+        console.log('---[INPUT DATA]---', params, typeof params)
+        // RSAUtil.privateDecrypt(params, data => {
+        //     console.log('--[', req.path, ']--')
+        //     console.log('--[REQUEST DATA]--', data)
+        //     req.body.input = data;
+        // })
+        req.body.input = params;
         next();
     },
 
     encryptParam: (req, res) => {
-        let data = req.body.data;
-        let publicKey = req.body.publicKey;
-        RSAUtil.publicEncryptObj(data, publicKey, param => {
-            console.log('--[RESPONSE DATA]--', data)
-            return res.json(param);
-        })
+        let input = req.body.input;
+        let publicKey = input ? input.clientPublicKey : "";
+        let output = req.body.output;
+        console.log('--[RESPONSE DATA]--', output)
+        // RSAUtil.publicEncryptObj(output, publicKey, params => {
+        //     return res.json(params);
+        // })
+        return res.json(output);
     }
 }
 
 exports.AES = {
     decryptParam: (req, res, next) => {
-        let param = req.body.param;
-        AESUtil.decipher(param, data => {
+        let params = JSON.parse(req.body.params);
+        AESUtil.decipher(params, data => {
             console.log('--[', req.path, ']--')
             console.log('--[REQUEST DATA]--', data)
-            req.body = data;
+            req.body.input = data;
         })
         next();
     },
 
     encryptParam: (req, res) => {
-        let data = req.body;
-        AESUtil.cipher(data, param => {
-            console.log('--[RESPONSE DATA]--', data)
-            return res.json(param);
+        let output = req.body.output;
+        console.log('--[RESPONSE DATA]--', output)
+        AESUtil.cipher(output, params => {
+            return res.json(params);
         })
     }
 }

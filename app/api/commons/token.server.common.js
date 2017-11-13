@@ -36,10 +36,10 @@ function Token() {
             method: 'POST',
             header: { 'Content-Type': 'application/json' },
             callback: function (data) {
+                console.log('Token result is: ' + data);
                 var d = JSON.parse(data);
                 token = d.access_token;
                 commonExpiredAt = d.expires_in * 1000 + new Date().getMilliseconds();
-                console.log('token is: ' + token);
                 if (typeof callback == 'function')
                     callback(token);
             }
