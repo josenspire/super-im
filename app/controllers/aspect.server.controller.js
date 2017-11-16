@@ -1,6 +1,8 @@
 const RSAUtil = require('../utils/RSAUtil');
 const AESUtil = require('../utils/AESUtil');
 
+const UserService = require('../services/user.server.service');
+
 exports.RSA = {
     decryptParam: (req, res, next) => {
         let params = JSON.parse(req.body.params);
@@ -33,8 +35,15 @@ exports.AES = {
             console.log('--[', req.path, ']--')
             console.log('--[REQUEST DATA]--', data)
             req.body.input = data;
+            UserService.isTokenValid(data.token, isValid => {
+                if (isValid.status != 200) {
+                    return res.json(isValid)
+                } else {
+                    req.body.input.telephone = isValid.data.telephone;
+                    next();
+                }
+            })
         })
-        next();
     },
 
     encryptParam: (req, res) => {

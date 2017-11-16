@@ -23,8 +23,8 @@ let routers = app => {
 
     // user profile
     app.post('/v1/api/user/getUserProfile', User.getUserProfile);
+    app.post('/v1/api/user/getUserFriends', User.getUserFriends);
     
-
     // app.post('/v1/api/auth/register', User.register);
     // app.post('/v1/api/auth/login', User.login);
     // app.post('/v1/api/auth/logout', User.logout)

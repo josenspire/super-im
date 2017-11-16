@@ -128,6 +128,20 @@ exports.getUserProfile = (req, res, next) => {
     })
 }
 
+exports.getUserFriends = (req, res, next) => {
+    let telephone = req.body.input.telephone;
+    UserService.getUserFriends(telephone, userList => {
+        return res.json(userList);
+    })
+}
+
+exports.getBlackList = (req, res, next) => {
+    let telephone = req.body.input.telephone;
+    UserService.getBlackList(telephone, userList => {
+        return res.json(userList);
+    })
+}
+
 exports.accessCommonToken = (req, res, next) => {
     let data = req.body;
     UserService.accessCommonToken(data.telephone, data.password, cb => {

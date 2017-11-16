@@ -63,6 +63,12 @@ exports.resetTokenByToken = (token, cb) => {
     })
 }
 
+exports.isTokenValid = (token, cb) => {
+    UserDao.isTokenValid(token, callback => {
+        cb(callback);
+    })
+}
+
 exports.isTelephoneExist = (telephone, cb) => {
     UserDao.isTelephoneExist(telephone, isExist => {
         cb(isExist)
@@ -101,19 +107,56 @@ exports.updateDeviceID = (telephone, password, deviceID, cb) => {
 exports.getUserProfile = (telephone, cb) => {
     let result = { data: {}, message: '' };
     UserDao.queryByTelephone(telephone, callback => {
-        if (callback.status === CodeConstants.SUCCESS) {
-            IMProxie.getUser(telephone, _result => {
-                let data = JSON.parse(_result)
-                if (!data.error) {
-                    result.status = CodeConstants.SUCCESS;
-                } else {
-                    status: CodeConstants.FAIL;
-                    result.message = data.error;
-                }
-                cb(result)
+        // if (callback.status === CodeConstants.SUCCESS) {
+        //     IMProxie.getUser(telephone, _result => {
+        //         let data = JSON.parse(_result)
+        //         if (!data.error) {
+        //             result.status = CodeConstants.SUCCESS;
+        //         } else {
+        //             status: CodeConstants.FAIL;
+        //             result.message = data.error;
+        //         }
+        //         cb(data)
+        //     })
+        // } else {
+        //     cb(callback)
+        // }
+        cb(callback)
+    })
+}
+
+exports.getUserFriends = (telephone, cb) => {
+    IMProxie.showFriends(telephone, _result => {
+        let data = JSON.parse(_result)
+        if (!data.error) {
+            let telephoneList = data.data || [];
+            UserDao.queryUserListByTelephone(telephoneList, userList => {
+                cb(userList)
             })
         } else {
-            cb(callback)
+            cb({
+                status: CodeConstants.FAIL,
+                data: {},
+                message: data.error
+            })
+        }
+    })
+}
+
+exports.getBlackList = (telephone, cb) => {
+    IMProxie.getBlacklist(telephone, _result => {
+        let data = JSON.parse(_result);
+        if (!data.error) {
+            let telephoneList = data.data || [];
+            UserDao.queryUserListByTelephone(telephoneList, userList => {
+                cb(userList)
+            })
+        } else {
+            cb({
+                status: CodeConstants.FAIL,
+                data: {},
+                message: data.error
+            })
         }
     })
 }

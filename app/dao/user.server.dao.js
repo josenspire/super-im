@@ -67,27 +67,36 @@ exports.isTelephoneExist = (telephone, cb) => {
     })
 }
 
-exports.queryByTelephone = (telephone, cb) => {
+exports.queryByTelephone = async (telephone, cb) => {
+    try {
+        let user = await queryByTelephone(telephone);
+        cb(user)
+    } catch (err) {
+        console.log('--[QUERY BY TELEPHONE FAIL]--', err)
+        cb(err)
+    }
+}
+
+exports.queryUserListByTelephone = async (telephoneList, cb) => {
     let result = { data: {}, message: '' };
-    UserModel.findOne({ telephone: telephone })
-        .populate("token")
-        .exec((err, user) => {
-            if (err) {
-                console.log(err)
-                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
-                result.message = 'Sorry, server unknow error';
-                result.status = CodeConstants.FAIL;
-            } else if (user) {
-                let _user = convertUser(user);
-                result.data.token = user.token.token;
-                result.data.secretKey = Constants.AES_SECRET;
-                result.status = CodeConstants.SUCCESS;
-            } else {
-                result.status = CodeConstants.FAIL;
-                result.message = 'The telephone is not exist'
+    let promiseList = telephoneList.map(telephone => {
+        return queryByTelephone(telephone);
+    })
+    try {
+        let userList = await Promise.all(promiseList);
+        let newUserList = [];
+        userList.forEach(user => {
+            if (user.status === CodeConstants.SUCCESS) {
+                newUserList.push(user.data.user)
             }
-            cb(result)
         })
+        result.status = CodeConstants.SUCCESS;
+        result.data = newUserList;
+        cb(result)
+    } catch (err) {
+        console.log('--[QUERY USERLIST FAIL]--', err)
+        cb(err)
+    }
 }
 
 // update deviceID 
@@ -98,10 +107,7 @@ exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
         if (data.isMatch) {
             let token = data.user.token.token;
             let _user = await updateDeviceID(telephone, deviceID);
-            _user = JSON.parse(JSON.stringify(_user));
-            delete _user.token;
-            delete _user.meta;
-            result.data.user = _user;
+            result.data.user = convertUser(_user);
             result.data.secretKey = Constants.AES_SECRET;
             result.data.token = token;
             result.status = CodeConstants.SUCCESS;
@@ -130,12 +136,35 @@ exports.autoLoginByTokenAuth = (token, cb) => {
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
                 if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now()))) {
-                    let _user = JSON.parse(JSON.stringify(token.user));
-                    delete _user.token;
+                    let _user = convertUser(token.user);
                     result.status = CodeConstants.SUCCESS;
                     result.data.user = _user;
                     result.data.token = token.token;
                     result.data.secretKey = Constants.AES_SECRET;
+                } else {
+                    result.status = CodeConstants.FAIL;
+                    result.message = 'This token is expired, please login again';
+                }
+            }
+            cb(result)
+        })
+}
+
+exports.isTokenValid = (token, cb) => {
+    let result = { data: {}, message: '' };
+    TokenModel.findOne({ token: token })
+        .populate("user", "telephone")
+        .exec((err, token) => {
+            if (err) {
+                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                result.message = 'Sorry, server unknow error';
+            } else if (!token) {
+                result.status = CodeConstants.FAIL;
+                result.message = 'This token is invalid, please login again';
+            } else if (token) {
+                if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now()))) {
+                    result.status = CodeConstants.SUCCESS;
+                    result.data.telephone = token.user.telephone;
                 } else {
                     result.status = CodeConstants.FAIL;
                     result.message = 'This token is expired, please login again';
@@ -247,6 +276,32 @@ var insertUser = userModel => {
     })
 }
 
+var queryByTelephone = telephone => {
+    let result = { data: {}, message: '' };
+    return new Promise((resolve, reject) => {
+        UserModel.findOne({ telephone: telephone })
+            // .populate("token")
+            .exec((err, user) => {
+                if (err) {
+                    console.log(err)
+                    result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                    result.message = 'Sorry, server unknow error';
+                    result.status = CodeConstants.FAIL;
+                    reject(err)
+                } else if (user) {
+                    result.status = CodeConstants.SUCCESS;
+                    let _user = convertUser(user);
+                    result.data.user = _user;
+                    // result.data.token = user.token.token;
+                } else {
+                    result.status = CodeConstants.FAIL;
+                    result.message = 'The telephone is not exist'
+                }
+                resolve(result)
+            })
+    })
+}
+
 var queryUserByTelephoneAndPassword = (telephone, password) => {
     return new Promise((resolve, reject) => {
         UserModel.findOne({ telephone: telephone })
@@ -283,5 +338,9 @@ var updateUserTokenByUserId = (userId, tokenId) => {
 var convertUser = user => {
     let _user = JSON.parse(JSON.stringify(user));
     delete _user.token;
+    delete _user.meta;
+    delete _user.password;
+    delete _user.deviceID;
+    delete _user._v;
     return _user;
 }
