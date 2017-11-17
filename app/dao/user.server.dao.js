@@ -91,7 +91,7 @@ exports.queryUserListByTelephone = async (telephoneList, cb) => {
             }
         })
         result.status = CodeConstants.SUCCESS;
-        result.data = newUserList;
+        result.data.userList = newUserList;
         cb(result)
     } catch (err) {
         console.log('--[QUERY USERLIST FAIL]--', err)

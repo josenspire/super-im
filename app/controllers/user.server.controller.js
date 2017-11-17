@@ -5,6 +5,8 @@ const CodeConstants = require('../utils/CodeConstants');
 const Constants = require('../utils/Constants');
 const fs = require('fs')
 
+const upload = require('../api/commons/upload.server.common')
+
 exports.getPublicKey = (req, res, next) => {
     return res.json(RSAUtil.getPublicKey());
 }
@@ -139,6 +141,20 @@ exports.getBlackList = (req, res, next) => {
     let telephone = req.body.input.telephone;
     UserService.getBlackList(telephone, userList => {
         return res.json(userList);
+    })
+}
+
+exports.uploadAvatar = (req, res, next) => {
+    let telephone = req.body.input.telephone;
+
+    // var file = req.file;
+    // console.log('文件类型：%s', file.mimetype);
+    // console.log('原始文件名：%s', file.originalname);
+    // console.log('文件大小：%s', file.size);
+    // console.log('文件保存路径：%s', file.path);
+
+    UserService.uploadAvatar(telephone, avatarLink => {
+        return res.json(avatarLink)
     })
 }
 

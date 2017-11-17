@@ -1,7 +1,13 @@
 const UserDao = require('../dao/user.server.dao')
-const CodeConstants = require('../utils/CodeConstants')
 const SMSService = require('./sms.server.service')
-let IMProxie = require('../api/proxies/user.im.server.proxies')
+const CodeConstants = require('../utils/CodeConstants')
+
+let IMProxie = require('../api/proxies/user.server.proxies')
+let QiniuProxie = require('../api/proxies/qiniu.server.proxies')
+
+const uuidv4 = require('uuid/v4');
+
+const fs = require('fs')
 
 // create user
 exports.createUser = (user, cb) => {
@@ -159,6 +165,17 @@ exports.getBlackList = (telephone, cb) => {
             })
         }
     })
+}
+
+exports.uploadAvatar = (telephone, cb) => {
+    let fileName = telephone + '-' + uuidv4() + '.jpg';
+    QiniuProxie.uploadAvatar(fileName, '/avatar/avatar.jpg')
+        .then(result => {
+            cb(result);
+        })
+        .catch(err => {
+            cb(err);
+        })
 }
 
 exports.accessCommonToken = (username, password, cb) => {
