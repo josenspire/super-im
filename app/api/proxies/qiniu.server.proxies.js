@@ -6,6 +6,10 @@ const Promise = require("bluebird");
 qiniu.conf.ACCESS_KEY = QiniuConfig.AccessKey;
 qiniu.conf.SECRET_KEY = QiniuConfig.SecretKey;
 
+
+let config = new qiniu.conf.Config();
+let formUploader = new qiniu.form_up.FormUploader(config);
+
 let upToken = (bucket, key) => {
     let options = {
         scope: bucket + ":" + key    // 覆盖上传凭证
@@ -17,10 +21,10 @@ let upToken = (bucket, key) => {
 let uploadAvatar = (upToken, key, localFile) => {
     return new Promise((resolve, reject) => {
         let extra = new qiniu.form_up.PutExtra();
-        qiniu.io.putFile(upToken, key, localFile, extra, function (err, ret) {
+        formUploader.putFile(upToken, key, localFile, extra, function (err, ret) {
             if (!err) {
-                console.log('---[UPLOAD AVATAR SUCCESS]---')
-                console.log(ret.hash, ret.key, ret.persistentId);
+                console.log('---[UPLOAD AVATAR SUCCESS]---', ret, '=========================')
+                // console.log(ret.hash, ret.key, ret.persistentId);
                 resolve(ret)
             } else {
                 console.log('---[UPLOAD AVATAR FAIL]---', err)

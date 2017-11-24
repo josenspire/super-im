@@ -1,5 +1,5 @@
-let Token = require('./commons/token.server.common');
-let request = require('./request');
+let Token = require('../commons/token.server.common');
+let request = require('../request');
 
 let Initialized = false;
 let token = new Token();

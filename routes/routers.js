@@ -25,16 +25,7 @@ let routers = app => {
     app.post('/v1/api/user/getUserProfile', User.getUserProfile);
     app.post('/v1/api/user/getUserFriends', User.getUserFriends);
     app.post('/v1/api/user/getBlackList', User.getBlackList);
-
     app.put('/v1/api/user/uploadAvatar', User.uploadAvatar);
-
-    // app.post('/v1/api/auth/register', User.register);
-    // app.post('/v1/api/auth/login', User.login);
-    // app.post('/v1/api/auth/logout', User.logout)
-    // app.post('/v1/api/auth/obtainSMSCode', SMS.sendSMS)
-    // app.post('/v1/api/auth/verifySMSCode', SMS.verifyCode)
-
-    // app.put('/v1/api/user/resetPassword', User.resetPassword);
 
     app.post('/v1/api/auth/accessCommonToken', User.accessCommonToken);
 }

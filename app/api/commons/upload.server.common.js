@@ -5,7 +5,7 @@ const uuidv4 = require('uuid/v4');
 
 let storage = multer.diskStorage({
     //设置上传文件路径,以后可以扩展成上传至七牛,文件服务器等等
-    destination: "ozjhae6uc.bkt.clouddn.com/avatar/",
+    destination: "public/qiniu/avatar/",
     //给上传文件重命名
     filename: function (req, file, cb) {
         let fileFormat = (file.originalname).split(".");

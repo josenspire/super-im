@@ -1,4 +1,4 @@
-let client = require('./../client');
+let client = require('../client/client');
 
 //Create a user
 exports.createUser = (username, password, callback) => {
