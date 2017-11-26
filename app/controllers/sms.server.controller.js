@@ -7,7 +7,6 @@ const Constants = require('../utils/Constants');
 
 exports.sendSMS = async (req, res, next) => {
     let data = req.body.input.params || {};
-    let clientPublicKey = data.clientPublicKey;
     let codeType = (data.codeType).toUpperCase();
     let telephone = data.telephone;
     let userInformation = data.data;
@@ -22,7 +21,7 @@ exports.sendSMS = async (req, res, next) => {
                 req.body.output = result;
                 break;
             case Constants.SMS_TYPE_LOGIN:
-                result = await login(userInformation, telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
+                result = await login(userInformation, telephone, verifyCode);
                 req.body.output = result;
                 // return res.json(result);
                 break;
@@ -52,11 +51,11 @@ exports.verifyCode = (req, res, next) => {
     })
 }
 
-var register = (telephone, verifyCode) => {
+var register = (telephone, verifyCode,) => {
     return new Promise((resolve, reject) => {
         UserService.isTelephoneExist(telephone, isExist => {
             if (isExist.status === false) {
-                SMSService.sendSMS(telephone, verifyCode, codeType, sms => {
+                SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_REGISTER, sms => {
                     sms.data.skipVerify = false;
                     // cb(sms);
                     resolve(sms);
@@ -72,12 +71,12 @@ var register = (telephone, verifyCode) => {
     })
 }
 
-var login = (user, telephone, verifyCode, codeType) => {
+var login = (user, telephone, verifyCode) => {
     return new Promise((resolve, reject) => {
         UserService.queryUserByTelephoneAndPassword(user.telephone, user.password, user.deviceID, callback => {
             if (callback.status === CodeConstants.SUCCESS) {
                 if (callback.data.verifyTelephone === true) {   // need to verify telephone
-                    SMSService.sendSMS(telephone, verifyCode, codeType, sms => {
+                    SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_LOGIN, sms => {
                         resolve(sms);
                     })
                 } else {

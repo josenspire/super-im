@@ -4,13 +4,18 @@ const TokenModel = require('../models/token.server.model')
 const CodeConstants = require('../utils/CodeConstants')
 const Constants = require('../utils/Constants')
 const DateUtils = require('../utils/DateUtils')
-const SECRET = require('../utils/Constants').JWT_SECRET   // secret key
+const JWT_SECRET = require('../utils/Constants')   // secret key
 
 const jwt = require('jwt-simple')
 const uuidv4 = require('uuid/v4');
 
+const StringUtil = require('../utils/StringUtil')
+
 exports.createUser = async (user, cb) => {
     let result = { data: {}, message: '' };
+
+    user.userID = StringUtil.randomString(64);
+    console.log('========================', user);
     try {
         let userModel = new UserModel(user);
         let _user = await insertUser(userModel);
@@ -193,7 +198,7 @@ exports.resetTokenByToken = (token, cb) => {
 
 exports.resetPassword = (telephone, newPassword, cb) => {
     let result = { data: {}, message: '' };
-    let password = jwt.encode(newPassword, SECRET);
+    let password = jwt.encode(newPassword, JWT_SECRET.JWT_PASSWORD_SECRET);
     UserModel.findOneAndUpdate({ telephone: telephone }, { $set: { password: password } })
         .exec((err, user) => {
             if (err) {
@@ -340,7 +345,6 @@ var convertUser = user => {
     delete _user.token;
     delete _user.meta;
     delete _user.password;
-    delete _user.deviceID;
     delete _user._v;
     return _user;
 }

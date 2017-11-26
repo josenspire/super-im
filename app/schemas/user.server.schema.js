@@ -1,10 +1,10 @@
-const SECRET = require('../utils/Constants').JWT_SECRET   // secret key
+const SECRET = require('../utils/Constants').JWT_PASSWORD_SECRET;   // secret key
 
-const mongoose = require('mongoose')
-let Schema = mongoose.Schema
-let ObjectId = Schema.Types.ObjectId
+const mongoose = require('mongoose');
+let Schema = mongoose.Schema;
+let ObjectId = Schema.Types.ObjectId;
 
-const jwt = require('jwt-simple')
+const jwt = require('jwt-simple');
 const uuidv4 = require('uuid/v4');
 const DateUtils = require('../utils/DateUtils')
 
@@ -34,6 +34,12 @@ let validateNickname = nickname => {
 }
 
 let UserSchema = new mongoose.Schema({
+
+    userID: {
+        type: String,
+        unique: 'UserID already exists',
+        trim: true
+    },
 
     // telephone
     telephone: {
@@ -69,6 +75,11 @@ let UserSchema = new mongoose.Schema({
         required: 'Please fill in a nickname',
         validate: [validateNickname, "Nickname's length should be 1-12 bits"],
         trim: false
+    },
+
+    remarkName: {
+        type: String,
+        default: ''
     },
 
     avatar: {

@@ -9,11 +9,13 @@ const routers = require('./routes/routers');
 // connect mongodb
 const mongoose = require('mongoose')
 mongoose.promise = global.promise;
+
 let session = require('express-session')
 let MongoStore = require('connect-mongo')(session)
 
 const dbUrl = 'mongodb://127.0.0.1:27017/super-im'
-mongoose.connect(dbUrl)
+const options = { replset: { strategy: 'ping' }};
+mongoose.connect(dbUrl, options)
 
 const app = express();
 

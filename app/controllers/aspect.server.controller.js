@@ -5,32 +5,38 @@ const UserService = require('../services/user.server.service');
 
 exports.RSA = {
     decryptParam: (req, res, next) => {
-        let params = JSON.parse(req.body.params);
+        // let params = JSON.parse(req.body.params);
+        let params = req.body.params;
         console.log('---[INPUT DATA]---', params, typeof params)
-        // RSAUtil.privateDecrypt(params, data => {
-        //     console.log('--[', req.path, ']--')
-        //     console.log('--[REQUEST DATA]--', data)
-        //     req.body.input = data;
-        // })
-        req.body.input = params;
+        RSAUtil.privateDecrypt(params, data => {
+            console.log('--[', req.path, ']--')
+            console.log('--[REQUEST DATA]--', data)
+            req.body.input = data;
+            req.body.clientPublicKey
+        })
+        // req.body.input = params;
         next();
     },
 
     encryptParam: (req, res) => {
         let input = req.body.input;
-        let publicKey = input ? input.clientPublicKey : "";
+        let publicKey = input ? input.params.clientPublicKey : "";
         let output = req.body.output;
+        
         console.log('--[RESPONSE DATA]--', output)
-        // RSAUtil.publicEncryptObj(output, publicKey, params => {
-        //     return res.json(params);
-        // })
-        return res.json(output);
+        RSAUtil.publicEncryptObj(output, publicKey, params => {
+            return res.json(params);
+        })
+        // return res.json(output);
     }
 }
 
 exports.AES = {
     decryptParam: (req, res, next) => {
-        let params = JSON.parse(req.body.params);
+        // let params = JSON.parse(req.body.params);
+        console.log(req.body)
+        let params = req.body.params;
+        console.log('---[INPUT DATA]---', params, typeof params)
         AESUtil.decipher(params, data => {
             console.log('--[', req.path, ']--')
             console.log('--[REQUEST DATA]--', data)

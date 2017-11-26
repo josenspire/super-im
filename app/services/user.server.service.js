@@ -13,11 +13,13 @@ const fs = require('fs')
 exports.createUser = (user, cb) => {
     UserDao.createUser(user, createCallback => {
         if (createCallback.status === CodeConstants.SUCCESS) {
-            IMProxie.createUser(user.telephone, user.password, _cb => {
+            console.log('=-=-=-=-=-=', createCallback)
+            IMProxie.createUser(createCallback.data.user.userID, user.password, _cb => {
                 let _result = JSON.parse(_cb)
                 if (!_result.error) {
                     cb(createCallback);
                 } else {
+                    console.log('---[IM CRETEUSER FAIL]---', _result.error)
                     IMProxie.deleteUser(user.telephone, rollback => {
                         console.log('--[CREATE USER ROLLBACK]--', rollback)
                     })
@@ -182,4 +184,8 @@ exports.accessCommonToken = (username, password, cb) => {
     IMProxie.accessCommonToken(username, password, token => {
         cb(token)
     })
+}
+
+exports.addFriend = (userID, friendID, cb) => {
+    UserDao.addFriend();
 }

@@ -10,7 +10,13 @@ const atavarUpload = require('../api/commons/upload.server.common')
 const QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 
 exports.getPublicKey = (req, res, next) => {
-    return res.json(RSAUtil.getPublicKey());
+    return res.json({
+        status: CodeConstants.SUCCESS,
+        data: {
+            secretKey: RSAUtil.getPublicKey()
+        },
+        message: ''
+    })
 }
 
 exports.login = (req, res, next) => {
@@ -177,5 +183,14 @@ exports.accessCommonToken = (req, res, next) => {
     let data = req.body;
     UserService.accessCommonToken(data.telephone, data.password, cb => {
         return res.json(cb)
+    })
+}
+
+exports.addFriend = (req, res, next) => {
+    let userID = req.body.input.userID;
+    let friendID = req.body.input.firendID;
+
+    UserService.addFriend(userID, friendID, result => {
+        
     })
 }
