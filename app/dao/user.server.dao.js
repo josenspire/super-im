@@ -1,5 +1,6 @@
 const UserModel = require('../models/user.server.model')
 const TokenModel = require('../models/token.server.model')
+const FriendModel = require('../models/friend.server.model')
 
 const CodeConstants = require('../utils/CodeConstants')
 const Constants = require('../utils/Constants')
@@ -15,7 +16,6 @@ exports.createUser = async (user, cb) => {
     let result = { data: {}, message: '' };
 
     user.userID = StringUtil.randomString(64);
-    console.log('========================', user);
     try {
         let userModel = new UserModel(user);
         let _user = await insertUser(userModel);
@@ -158,7 +158,7 @@ exports.autoLoginByTokenAuth = (token, cb) => {
 exports.isTokenValid = (token, cb) => {
     let result = { data: {}, message: '' };
     TokenModel.findOne({ token: token })
-        .populate("user", "telephone")
+        .populate("user", "userID, telephone")
         .exec((err, token) => {
             if (err) {
                 result.status = CodeConstants.SERVER_UNKNOW_ERROR;
@@ -169,7 +169,7 @@ exports.isTokenValid = (token, cb) => {
             } else if (token) {
                 if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now()))) {
                     result.status = CodeConstants.SUCCESS;
-                    result.data.telephone = token.user.telephone;
+                    result.data.userID = token.user.userID;
                 } else {
                     result.status = CodeConstants.FAIL;
                     result.message = 'This token is expired, please login again';
@@ -213,6 +213,24 @@ exports.resetPassword = (telephone, newPassword, cb) => {
             cb(result)
         })
 }
+
+
+/** User Friend Part */
+exports.addFriend = async (userID, friendID, remarkName, cb) => {
+    let result = { data: {}, message: '' };
+    try {
+        result.data = await addFriend(userID, friendID, remarkName);
+        result.status = CodeConstants.SUCCESS;
+    } catch (err) {
+        console.log('---[ADD FRIEND FAIL]---', err)
+        result.status = CodeConstants.FAIL;
+        result.message = err;
+    }
+    cb(result)
+}
+
+
+/** User & Token Part */
 
 var insertToken = tokenModel => {
     return new Promise((resolve, reject) => {
@@ -340,11 +358,50 @@ var updateUserTokenByUserId = (userId, tokenId) => {
     })
 }
 
+/** User Friend Part */
+var addFriend = (userID, friendID, remarkName) => {
+    return new Promise((resolve, reject) => {
+        FriendModel.update({ userID: userID }, { $pull: { friends: { userID: friendID }, remarkName: remarkName } })
+            .exec(async (err, result) => {
+                if (err) {
+                    reject(err);
+                } else if (!result) {
+                    try {
+                        let friendList = await saveFriend(userID, friendID, remarkName);
+                        resolve(friendList);
+                    } catch (err) {
+                        reject(err);
+                    }
+                } else {
+                    resolve(result);
+                }
+            })
+    })
+}
+
+/** init friend list */
+var saveFriend = (userID, friendID, remarkName) => {
+    return new Promise((resolve, reject) => {
+        let friends = [];
+        friends.push({ userID: friendID, remarkName: remarkName });
+        let friendModel = new FriendModel({ userID: userID, friends: friends });
+        friendModel.save((err, friendList) => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(friendList);
+            }
+        })
+    })
+}
+
+
 var convertUser = user => {
     let _user = JSON.parse(JSON.stringify(user));
+    delete _id;
     delete _user.token;
     delete _user.meta;
     delete _user.password;
-    delete _user._v;
+    delete _user.__v;
     return _user;
 }

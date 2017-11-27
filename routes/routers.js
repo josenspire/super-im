@@ -32,8 +32,6 @@ let routers = app => {
     app.put('/v1/api/user/addFriend', User.addFriend)
 
 
-    app.post('/v1/api/auth/accessCommonToken', User.accessCommonToken);
-
     app.get('/encrypt', (req, res, next) => {
         let data = req.query.data;
         AESUtil.cipher(data, cb => {

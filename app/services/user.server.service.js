@@ -13,7 +13,6 @@ const fs = require('fs')
 exports.createUser = (user, cb) => {
     UserDao.createUser(user, createCallback => {
         if (createCallback.status === CodeConstants.SUCCESS) {
-            console.log('=-=-=-=-=-=', createCallback)
             IMProxie.createUser(createCallback.data.user.userID, user.password, _cb => {
                 let _result = JSON.parse(_cb)
                 if (!_result.error) {
@@ -105,7 +104,6 @@ exports.resetPassword = (telephone, cb) => {
     })
 }
 
-// 更新设备ID
 exports.updateDeviceID = (telephone, password, deviceID, cb) => {
     UserDao.updateDeviceID(telephone, password, deviceID, callback => {
         cb(callback)
@@ -131,6 +129,26 @@ exports.getUserProfile = (telephone, cb) => {
         // }
         cb(callback)
     })
+}
+
+exports.uploadAvatar = (telephone, cb) => {
+    let fileName = telephone + '-' + uuidv4() + '.jpg';
+    QiniuProxie.uploadAvatar(fileName, '/avatar/avatar.jpg')
+        .then(result => {
+            cb(result);
+        })
+        .catch(err => {
+            cb(err);
+        })
+}
+
+
+/** User Friends Part */
+
+exports.addFriend = (userID, friendID, remarkName, cb) => {
+    UserDao.addFriend(userID, friendID, remarkName, friendList => {
+        cb(friendList)
+    });
 }
 
 exports.getUserFriends = (telephone, cb) => {
@@ -167,25 +185,4 @@ exports.getBlackList = (telephone, cb) => {
             })
         }
     })
-}
-
-exports.uploadAvatar = (telephone, cb) => {
-    let fileName = telephone + '-' + uuidv4() + '.jpg';
-    QiniuProxie.uploadAvatar(fileName, '/avatar/avatar.jpg')
-        .then(result => {
-            cb(result);
-        })
-        .catch(err => {
-            cb(err);
-        })
-}
-
-exports.accessCommonToken = (username, password, cb) => {
-    IMProxie.accessCommonToken(username, password, token => {
-        cb(token)
-    })
-}
-
-exports.addFriend = (userID, friendID, cb) => {
-    UserDao.addFriend();
 }

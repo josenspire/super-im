@@ -6,7 +6,6 @@ let ivText = "1234567812345678";
 // iv.write(ivText, 'utf8');
 
 let iv = Buffer.alloc(16, '1');
-console.log(iv)
 
 exports.cipher = (data, cb) => {
     // const cipher = crypto.createCipher('aes-192-cbc', Constants.AES_SECRET);

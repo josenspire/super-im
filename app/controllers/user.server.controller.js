@@ -116,9 +116,7 @@ exports.logout = (req, res, next) => {
     })
 }
 
-/**
- * User profile update
- */
+/** User profile */
 exports.resetPassword = (req, res, next) => {
     let data = req.body.input.params || {};
 
@@ -138,25 +136,10 @@ exports.getUserProfile = (req, res, next) => {
     })
 }
 
-exports.getUserFriends = (req, res, next) => {
-    let telephone = req.body.input.telephone;
-    UserService.getUserFriends(telephone, userList => {
-        return res.json(userList);
-    })
-}
-
-exports.getBlackList = (req, res, next) => {
-    let telephone = req.body.input.telephone;
-    UserService.getBlackList(telephone, userList => {
-        return res.json(userList);
-    })
-}
-
+/** User avatar upload */
 exports.uploadAvatar = (req, res, next) => {
     // let telephone = req.body.input.telephone;
-
     let telephone = "13631270436";
-
     atavarUpload.single('uploadAvatar')(req, res, async err => {
         if (err) {
             console.error(err)
@@ -179,18 +162,31 @@ exports.uploadAvatar = (req, res, next) => {
     })
 }
 
-exports.accessCommonToken = (req, res, next) => {
+
+/** User Friend Part */
+exports.addFriend = (req, res, next) => {
     let data = req.body;
-    UserService.accessCommonToken(data.telephone, data.password, cb => {
-        return res.json(cb)
+    let userID = data.userID;
+    let friendID = data.friendID;
+    let remarkName = data.remarkName;
+    console.log(data)
+    UserService.addFriend(userID, friendID, remarkName, friendList => {
+        // return res.json(friendList);
+        req.body.output = friendList;
+        next();
     })
 }
 
-exports.addFriend = (req, res, next) => {
-    let userID = req.body.input.userID;
-    let friendID = req.body.input.firendID;
+exports.getUserFriends = (req, res, next) => {
+    let telephone = req.body.input.telephone;
+    UserService.getUserFriends(telephone, userList => {
+        return res.json(userList);
+    })
+}
 
-    UserService.addFriend(userID, friendID, result => {
-        
+exports.getBlackList = (req, res, next) => {
+    let telephone = req.body.input.telephone;
+    UserService.getBlackList(telephone, userList => {
+        return res.json(userList);
     })
 }

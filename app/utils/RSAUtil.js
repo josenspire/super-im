@@ -124,10 +124,6 @@ exports.publicEncryptObj = (data, publicKey, cb) => {
 
 // decrypt by private key
 exports.privateDecrypt = (encryptText, cb) => {
-    // let encryptBuff = Buffer.alloc(Constants.MAX_DECRYPT_BLOCK);
-    // encryptBuff.write(encryptText, 'base64');
-    // let decryptBuff = crypto.privateDecrypt({ key: this.getPrivateKey(), padding: crypto.constants.RSA_PKCS1_PADDING }, encryptBuff)
-    // cb(JSON.parse(decryptBuff.toString()))
     try {
         let encryptBuff = Buffer.from(encryptText, "base64")
         let encryptLength = encryptBuff.length;
@@ -158,6 +154,7 @@ exports.privateDecrypt = (encryptText, cb) => {
         cb(JSON.parse(decryptBuff.toString()))
     } catch (err) {
         console.log(err)
+        cb(err)
     }
 }
 

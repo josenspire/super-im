@@ -77,11 +77,6 @@ let UserSchema = new mongoose.Schema({
         trim: false
     },
 
-    remarkName: {
-        type: String,
-        default: ''
-    },
-
     avatar: {
         type: String,
         default: 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1510891315645&di=f76a68b61274801839d1235806e9e18d&imgtype=0&src=http%3A%2F%2Fwww.qqzhuangban.com%2Fuploadfile%2F2014%2F06%2F1%2F20140619090721688.jpg',

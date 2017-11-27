@@ -13,10 +13,16 @@ let FriendSchema = new mongoose.Schema({
     },
 
     friends: [{
-        type: ObjectId,
-        ref: 'User'
+        userID: {
+            type: ObjectId,
+            ref: 'User'
+        },
+        remarkName: {
+            type: String,
+            default: ''
+        }
     }],
-    
+
     // date note
     meta: {
         createAt: {
