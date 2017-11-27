@@ -24,12 +24,12 @@ let routers = app => {
     app.post('/v1/api/auth/autoLogin', RSAAscept.decryptParam, User.autoLoginByTokenAuth, RSAAscept.encryptParam)
 
     // user profile
-    app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, User.getUserProfile, AESAscept.decryptParam);
-    app.post('/v1/api/user/getUserFriends', AESAscept.decryptParam, User.getUserFriends, AESAscept.decryptParam);
-    app.post('/v1/api/user/getBlackList', AESAscept.decryptParam, User.getBlackList, AESAscept.decryptParam);
-    app.put('/v1/api/user/uploadAvatar', AESAscept.decryptParam, User.uploadAvatar, AESAscept.decryptParam);
+    app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, User.getUserProfile, AESAscept.encryptParam);
+    app.post('/v1/api/user/getUserFriends', AESAscept.decryptParam, User.getUserFriends, AESAscept.encryptParam);
+    app.post('/v1/api/user/getBlackList', AESAscept.decryptParam, User.getBlackList, AESAscept.encryptParam);
+    app.put('/v1/api/user/uploadAvatar', AESAscept.decryptParam, User.uploadAvatar, AESAscept.encryptParam);
 
-    app.put('/v1/api/user/addFriend', User.addFriend)
+    app.put('/v1/api/user/addFriend', User.addFriend, AESAscept.encryptParam)
 
 
     app.get('/encrypt', (req, res, next) => {

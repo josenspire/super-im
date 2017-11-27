@@ -219,7 +219,8 @@ exports.resetPassword = (telephone, newPassword, cb) => {
 exports.addFriend = async (userID, friendID, remarkName, cb) => {
     let result = { data: {}, message: '' };
     try {
-        result.data = await addFriend(userID, friendID, remarkName);
+        let friendList = await addFriend(userID, friendID, remarkName);
+        result.data = covertFriends(friendList);
         result.status = CodeConstants.SUCCESS;
     } catch (err) {
         console.log('---[ADD FRIEND FAIL]---', err)
@@ -361,21 +362,26 @@ var updateUserTokenByUserId = (userId, tokenId) => {
 /** User Friend Part */
 var addFriend = (userID, friendID, remarkName) => {
     return new Promise((resolve, reject) => {
-        FriendModel.update({ userID: userID }, { $pull: { friends: { userID: friendID }, remarkName: remarkName } })
-            .exec(async (err, result) => {
-                if (err) {
-                    reject(err);
-                } else if (!result) {
-                    try {
-                        let friendList = await saveFriend(userID, friendID, remarkName);
-                        resolve(friendList);
-                    } catch (err) {
-                        reject(err);
-                    }
-                } else {
-                    resolve(result);
+        FriendModel.findOneAndUpdate({ userID: userID }, {
+            $push: {
+                friends: {
+                    userID: friendID,
+                    remarkName: remarkName
                 }
-            })
+            }
+        }, (err, result) => {
+            if (err) {
+                reject(err);
+            } else if (!result) {
+                saveFriend(userID, friendID, remarkName).then(friendList => {
+                    resolve(friendList);
+                }).catch(err => {
+                    reject(err)
+                });
+            } else {
+                resolve(result);
+            }
+        })
     })
 }
 
@@ -388,6 +394,7 @@ var saveFriend = (userID, friendID, remarkName) => {
         friendModel.save((err, friendList) => {
             if (err) {
                 reject(err)
+                console.log('SAVE FRIEND FAIL', err)
             } else {
                 resolve(friendList);
             }
@@ -398,10 +405,18 @@ var saveFriend = (userID, friendID, remarkName) => {
 
 var convertUser = user => {
     let _user = JSON.parse(JSON.stringify(user));
-    delete _id;
+    delete _user._id;
     delete _user.token;
     delete _user.meta;
     delete _user.password;
     delete _user.__v;
     return _user;
+}
+
+var covertFriends = friends => {
+    let _friends = JSON.parse(JSON.stringify(friends));
+    delete _friends._id;
+    delete _friends.__v;
+    delete _friends.meta;
+    return _friends;
 }

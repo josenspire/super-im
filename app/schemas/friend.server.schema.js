@@ -8,13 +8,13 @@ let ObjectId = Schema.Types.ObjectId;
 let FriendSchema = new mongoose.Schema({
 
     userID: {
-        type: ObjectId,
+        type: String,
         ref: 'User'
     },
 
     friends: [{
         userID: {
-            type: ObjectId,
+            type: String,
             ref: 'User'
         },
         remarkName: {
