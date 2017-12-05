@@ -25,26 +25,13 @@ let routers = app => {
 
     // user profile
     app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, User.getUserProfile, AESAscept.encryptParam);
-    app.post('/v1/api/user/getUserFriends', AESAscept.decryptParam, User.getUserFriends, AESAscept.encryptParam);
     app.post('/v1/api/user/getBlackList', AESAscept.decryptParam, User.getBlackList, AESAscept.encryptParam);
     app.put('/v1/api/user/uploadAvatar', AESAscept.decryptParam, User.uploadAvatar, AESAscept.encryptParam);
-
-    app.put('/v1/api/user/addFriend', User.addFriend, AESAscept.encryptParam)
-
-
-    app.get('/encrypt', (req, res, next) => {
-        let data = req.query.data;
-        AESUtil.cipher(data, cb => {
-            return res.json(cb)
-        })
-    })
-
-    app.get('/dencrypt', (req, res, next) => {
-        let data = req.query.data;
-        AESUtil.decipher(data, cb => {
-            return res.json(cb)
-        })
-    })
+    
+    app.put('/v1/api/user/addFriend', AESAscept.decryptParam, User.addFriend, AESAscept.encryptParam);
+    app.put('/v1/api/user/updateRemarkName', AESAscept.decryptParam, User.updateRemarkName, AESAscept.encryptParam);
+    app.post('/v1/api/user/getUserFriends', AESAscept.decryptParam, User.getUserFriends, AESAscept.encryptParam);
+    app.post('/v1/api/user/searchFriend', AESAscept.decryptParam, User.searchFriend, AESAscept.encryptParam)
 
 }
 

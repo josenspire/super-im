@@ -1,3 +1,5 @@
+import { lab } from './C:/Users/yangja2/AppData/Local/Microsoft/TypeScript/2.6/node_modules/@types/d3';
+
 const UserService = require('../services/user.server.service')
 const SMSService = require('../services/sms.server.service')
 const RSAUtil = require('../utils/RSAUtil')
@@ -165,28 +167,57 @@ exports.uploadAvatar = (req, res, next) => {
 
 /** User Friend Part */
 exports.addFriend = (req, res, next) => {
-    let data = req.body;
-    let userID = data.userID;
-    let friendID = data.friendID;
-    let remarkName = data.remarkName;
-    console.log(data)
+    let input = req.body.input;
+
+    let userID = input.userID;
+    let friendID = input.friendID;
+    let remarkName = input.remarkName;
+    console.log(input)
+
     UserService.addFriend(userID, friendID, remarkName, friendList => {
-        // return res.json(friendList);
         req.body.output = friendList;
         next();
     })
 }
 
-exports.getUserFriends = (req, res, next) => {
-    let telephone = req.body.input.telephone;
-    UserService.getUserFriends(telephone, userList => {
-        return res.json(userList);
+exports.updateRemarkName = (req, res, next) => {
+    let input = req.body.input;
+
+    let userID = input.userID;
+    let friendID = input.friendID;
+    let remarkName = input.remarkName;
+
+    UserService.updateRemarkName(userID, friendID, remarkName, updateResult => {
+        req.body.output = updateResult;
+        next();
     })
 }
 
+exports.getUserFriends = (req, res, next) => {
+    let input = req.body.input;
+
+    let userID = input.userID;
+    UserService.getUserFriends(userID, userList => {
+        req.body.output = userList;
+        next();
+    })
+}
+
+exports.searchFriend = (req, res, next) => {
+    let input = req.body.input;
+
+    let userID = input.userID;
+    let queryCondition = input.queryCondition;
+    UserService.searchFriend(userID, queryCondition, cb => {
+        
+    })
+
+}
+
 exports.getBlackList = (req, res, next) => {
-    let telephone = req.body.input.telephone;
-    UserService.getBlackList(telephone, userList => {
+    let input = req.body.input;
+    let userID = input.userID;
+    UserService.getBlackList(userID, userList => {
         return res.json(userList);
     })
 }

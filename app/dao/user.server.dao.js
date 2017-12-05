@@ -1,3 +1,7 @@
+import { Promise } from 'mongoose';
+import { resolve } from 'url';
+import { reject } from './C:/Users/yangja2/AppData/Local/Microsoft/TypeScript/2.6/node_modules/@types/bluebird';
+
 const UserModel = require('../models/user.server.model')
 const TokenModel = require('../models/token.server.model')
 const FriendModel = require('../models/friend.server.model')
@@ -220,7 +224,7 @@ exports.addFriend = async (userID, friendID, remarkName, cb) => {
     let result = { data: {}, message: '' };
     try {
         let friendList = await addFriend(userID, friendID, remarkName);
-        result.data = covertFriends(friendList);
+        result.data = convertFriends(friendList);
         result.status = CodeConstants.SUCCESS;
     } catch (err) {
         console.log('---[ADD FRIEND FAIL]---', err)
@@ -230,6 +234,33 @@ exports.addFriend = async (userID, friendID, remarkName, cb) => {
     cb(result)
 }
 
+exports.updateRemarkName = async (userID, friendID, remarkName, cb) => {
+    let result = { data: {}, message: '' };
+    try {
+        let updateResult = await updateRemarkName(userID, friendID, remarkName);
+        result.data = updateResult;
+        result.status = CodeConstants.SUCCESS;
+    } catch (err) {
+        console.log('---[UPDATE FRIEND REMARK FAIL]---', err)
+        result.status = CodeConstants.FAIL;
+        result.messages = err;
+    }
+    cb(result);
+}
+
+exports.queryUserFriendsByUserID = async (userID, cb) => {
+    let result = { data: {}, message: '' };
+    try {
+        let friends = await queryUserFriendsByUserID(userID);
+        result.data = convertFriends(friends);
+        result.status = CodeConstants.SUCCESS;
+    } catch (err) {
+        console.log('---[QUERY FRIENDS FAIL]---', err)
+        result.status = CodeConstants.FAIL;
+        result.messages = err;
+    }
+    cb(result)
+}
 
 /** User & Token Part */
 
@@ -402,6 +433,45 @@ var saveFriend = (userID, friendID, remarkName) => {
     })
 }
 
+var updateRemarkName = (userID, friendID, remarkName) => {
+    return new Promise((resolve, reject) => {
+        FriendModel.findOne({ userID: userID }, (err, friendList) => {
+            if (err) {
+                reject(err)
+            } else if (friendList) {
+                let friends = friendList.friends;
+                for (let i = 0; i < friends.length; i++) {
+                    if (friends[i].userID == friendID) {
+                        friends[i].remarkName = remarkName;
+                        friendList.markModified('remarkName');
+                        friendList.save((err, newFriendProfile) => {
+                            if (err) reject(err);
+                            else resolve(newFriendProfile);
+                        });
+                    }
+                }
+            }
+        })
+    })
+}
+
+var queryUserFriendsByUserID = userID => {
+    return new Promise((resolve, reject) => {
+        FriendModel.findOne({ userID: userID })
+            .populate("User")
+            .exec((err, friends) => {
+                if(err) {
+                    reject(err);
+                    console.log(err);
+                } else if(!friends){
+                    reject("UserID is not exist");
+                } else {
+                    resolve(friends);
+                }
+            })
+    })
+}
+
 
 var convertUser = user => {
     let _user = JSON.parse(JSON.stringify(user));
@@ -413,7 +483,7 @@ var convertUser = user => {
     return _user;
 }
 
-var covertFriends = friends => {
+var convertFriends = friends => {
     let _friends = JSON.parse(JSON.stringify(friends));
     delete _friends._id;
     delete _friends.__v;

@@ -1,3 +1,5 @@
+import { userInfo } from 'os';
+
 const UserDao = require('../dao/user.server.dao')
 const SMSService = require('./sms.server.service')
 const CodeConstants = require('../utils/CodeConstants')
@@ -146,26 +148,35 @@ exports.uploadAvatar = (telephone, cb) => {
 /** User Friends Part */
 
 exports.addFriend = (userID, friendID, remarkName, cb) => {
-    UserDao.addFriend(userID, friendID, remarkName, friendList => {
-        cb(friendList)
+    UserDao.addFriend(userID, friendID, remarkName, result => {
+        if (result.status === CodeConstants.SUCCESS) {
+            IMProxie.addFriend(userID, friendID, result => {
+                let data = JSON.parse(_result);
+                if (!data.error) {
+                    cb(result)
+                } else {
+                    cb({
+                        status: CodeConstants.FAIL,
+                        data: {},
+                        message: data.error
+                    })
+                }
+            })
+        } else {
+            cb(result)
+        }
     });
 }
 
-exports.getUserFriends = (telephone, cb) => {
-    IMProxie.showFriends(telephone, _result => {
-        let data = JSON.parse(_result)
-        if (!data.error) {
-            let telephoneList = data.data || [];
-            UserDao.queryUserListByTelephone(telephoneList, userList => {
-                cb(userList)
-            })
-        } else {
-            cb({
-                status: CodeConstants.FAIL,
-                data: {},
-                message: data.error
-            })
-        }
+exports.updateRemarkName = (userID, friendID, remarkName, cb) => {
+    UserDao.updateRemarkName(userID, friendID, remarkName, updateResult => {
+        cb(updateResult)
+    })
+}
+
+exports.getUserFriends = (userID, cb) => {
+    UserDao.queryUserFriendsByUserID(userID, userList => {
+        cb(userList)
     })
 }
 
