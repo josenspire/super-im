@@ -1,5 +1,3 @@
-import { userInfo } from 'os';
-
 const UserDao = require('../dao/user.server.dao')
 const SMSService = require('./sms.server.service')
 const CodeConstants = require('../utils/CodeConstants')
@@ -112,23 +110,8 @@ exports.updateDeviceID = (telephone, password, deviceID, cb) => {
     })
 }
 
-exports.getUserProfile = (telephone, cb) => {
-    let result = { data: {}, message: '' };
-    UserDao.queryByTelephone(telephone, callback => {
-        // if (callback.status === CodeConstants.SUCCESS) {
-        //     IMProxie.getUser(telephone, _result => {
-        //         let data = JSON.parse(_result)
-        //         if (!data.error) {
-        //             result.status = CodeConstants.SUCCESS;
-        //         } else {
-        //             status: CodeConstants.FAIL;
-        //             result.message = data.error;
-        //         }
-        //         cb(data)
-        //     })
-        // } else {
-        //     cb(callback)
-        // }
+exports.getUserProfile = (userID, cb) => {
+    UserDao.queryByUserID(userID, callback => {
         cb(callback)
     })
 }
@@ -144,13 +127,33 @@ exports.uploadAvatar = (telephone, cb) => {
         })
 }
 
-
 /** User Friends Part */
 
 exports.addFriend = (userID, friendID, remarkName, cb) => {
-    UserDao.addFriend(userID, friendID, remarkName, result => {
+    UserDao.addFriend(userID, friendID, remarkName || '', result => {
         if (result.status === CodeConstants.SUCCESS) {
-            IMProxie.addFriend(userID, friendID, result => {
+            IMProxie.addFriend(userID, friendID, _result => {
+                let data = JSON.parse(_result);
+                if (!data.error) {
+                    cb(result)
+                } else {
+                    cb({
+                        status: CodeConstants.FAIL,
+                        data: {},
+                        message: data.error
+                    })
+                }
+            })
+        } else {
+            cb(result)
+        }
+    });
+}
+
+exports.deleteFriend = (userID, friendID, cb) => {
+    UserDao.deleteFriend(userID, friendID, result => {
+        if (result.status === CodeConstants.SUCCESS) {
+            IMProxie.deleteFriend(userID, friendID, _result => {
                 let data = JSON.parse(_result);
                 if (!data.error) {
                     cb(result)
@@ -170,13 +173,19 @@ exports.addFriend = (userID, friendID, remarkName, cb) => {
 
 exports.updateRemarkName = (userID, friendID, remarkName, cb) => {
     UserDao.updateRemarkName(userID, friendID, remarkName, updateResult => {
-        cb(updateResult)
+        cb(updateResult);
     })
 }
 
 exports.getUserFriends = (userID, cb) => {
     UserDao.queryUserFriendsByUserID(userID, userList => {
-        cb(userList)
+        cb(userList);
+    })
+}
+
+exports.searchUserByTelephoneOrNickname = (queryCondition, cb) => {
+    UserDao.searchUserByTelephoneOrNickname(queryCondition, searchResult => {
+        cb(searchResult);
     })
 }
 
@@ -186,7 +195,7 @@ exports.getBlackList = (telephone, cb) => {
         if (!data.error) {
             let telephoneList = data.data || [];
             UserDao.queryUserListByTelephone(telephoneList, userList => {
-                cb(userList)
+                cb(userList);
             })
         } else {
             cb({

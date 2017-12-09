@@ -1,5 +1,3 @@
-import { lab } from './C:/Users/yangja2/AppData/Local/Microsoft/TypeScript/2.6/node_modules/@types/d3';
-
 const UserService = require('../services/user.server.service')
 const SMSService = require('../services/sms.server.service')
 const RSAUtil = require('../utils/RSAUtil')
@@ -131,17 +129,20 @@ exports.resetPassword = (req, res, next) => {
 }
 
 exports.getUserProfile = (req, res, next) => {
-    let telephone = req.body.input.telephone;
-    UserService.getUserProfile(telephone, userProfile => {
-        // req.body.output = userProfile;
-        return res.json(userProfile);
+    let input = req.body.input;
+
+    let userID = input.targetUserID;
+    UserService.getUserProfile(userID, userProfile => {
+        req.body.output = userProfile;
+        // return res.json(userProfile);
+        next();
     })
 }
 
 /** User avatar upload */
 exports.uploadAvatar = (req, res, next) => {
-    // let telephone = req.body.input.telephone;
-    let telephone = "13631270436";
+    let userID = req.body.input.userID;
+
     atavarUpload.single('uploadAvatar')(req, res, async err => {
         if (err) {
             console.error(err)
@@ -149,7 +150,7 @@ exports.uploadAvatar = (req, res, next) => {
         }
         if (req.file) {
             let file = req.file;
-            let fileName = telephone + '-' + uuidv4() + '-' + file.filename;
+            let fileName = userID + '-' + uuidv4() + '-' + file.filename;
 
             try {
                 let result = await QiniuProxie.uploadAvatar(fileName, file.path);
@@ -180,6 +181,17 @@ exports.addFriend = (req, res, next) => {
     })
 }
 
+exports.deleteFriend = (req, res, next) => {
+    let input = req.body.input;
+
+    let userID = input.userID;
+    let friendID = input.friendID;
+    UserService.deleteFriend(userID, friendID, deleteResult => {
+        req.body.output = deleteResult;
+        next();
+    })
+}
+
 exports.updateRemarkName = (req, res, next) => {
     let input = req.body.input;
 
@@ -194,30 +206,28 @@ exports.updateRemarkName = (req, res, next) => {
 }
 
 exports.getUserFriends = (req, res, next) => {
-    let input = req.body.input;
-
-    let userID = input.userID;
+    let userID = req.body.input.userID;
     UserService.getUserFriends(userID, userList => {
         req.body.output = userList;
         next();
     })
 }
 
-exports.searchFriend = (req, res, next) => {
-    let input = req.body.input;
-
-    let userID = input.userID;
-    let queryCondition = input.queryCondition;
-    UserService.searchFriend(userID, queryCondition, cb => {
-        
-    })
-
-}
-
 exports.getBlackList = (req, res, next) => {
     let input = req.body.input;
     let userID = input.userID;
     UserService.getBlackList(userID, userList => {
-        return res.json(userList);
+        req.body.output = userList;
+        next();
     })
 }
+
+exports.searchUserByTelephoneOrNickname = (req, res, next) => {
+    let input = req.body.input;
+    let queryCondition = input.queryCondition;
+    UserService.searchUserByTelephoneOrNickname(queryCondition, searchResult => {
+        req.body.output = searchResult;
+        next();
+    })
+}
+

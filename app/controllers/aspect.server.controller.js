@@ -4,7 +4,7 @@ const AESUtil = require('../utils/AESUtil');
 const UserService = require('../services/user.server.service');
 
 exports.RSA = {
-    decryptParam2: (req, res, next) => {
+    decryptParam: (req, res, next) => {
         let params = req.body.params;
         console.log('---[INPUT DATA]---', params, typeof params)
         RSAUtil.privateDecrypt(params, data => {
@@ -16,7 +16,7 @@ exports.RSA = {
         next();
     },
 
-    encryptParam2: (req, res) => {
+    encryptParam: (req, res) => {
         let input = req.body.input;
         let publicKey = input ? input.params.clientPublicKey : "";
         let output = req.body.output;
@@ -28,17 +28,17 @@ exports.RSA = {
     },
 
 
-    decryptParam: (req, res, next) => {
-        let params = req.body;
-        console.log('---[INPUT DATA]---', params, typeof params)
-        req.body.input = params;
-        next();
-    },
-    encryptParam: (req, res) => {
-        let output = req.body.output;
-        console.log('--[RESPONSE DATA]--', output)
-        return res.json(output);
-    }
+    // decryptParam: (req, res, next) => {
+    //     let params = req.body;
+    //     console.log('---[INPUT DATA]---', params, typeof params)
+    //     req.body.input = params;
+    //     next();
+    // },
+    // encryptParam: (req, res) => {
+    //     let output = req.body.output;
+    //     console.log('--[RESPONSE DATA]--', output)
+    //     return res.json(output);
+    // }
 }
 
 exports.AES = {
@@ -69,20 +69,23 @@ exports.AES = {
     },
 
     decryptParam: (req, res, next) => {
-        let data = req.body;
+        let data = JSON.parse(req.body.params);
+        // let data = req.body.params;
+        
+        console.log('---[REQUEST DATA]---', data, typeof data)
         UserService.isTokenValid(data.token, isValid => {
             if (isValid.status != 200) {
                 return res.json(isValid);
             } else {
-                data.userID = isValid.data.userID;
-                req.body.input = data;
-                console.log('---[REQUEST DATA]---', data)
+                data.params.userID = isValid.data.userID;
+                req.body.input = data.params;
                 next();
             }
         })
     },
     encryptParam: (req, res) => {
         let output = req.body.output;
+        console.log('---[RESPONSE DATA]---', output)
         return res.json(output);
     }
 }

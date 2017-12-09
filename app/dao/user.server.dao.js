@@ -1,7 +1,3 @@
-import { Promise } from 'mongoose';
-import { resolve } from 'url';
-import { reject } from './C:/Users/yangja2/AppData/Local/Microsoft/TypeScript/2.6/node_modules/@types/bluebird';
-
 const UserModel = require('../models/user.server.model')
 const TokenModel = require('../models/token.server.model')
 const FriendModel = require('../models/friend.server.model')
@@ -79,11 +75,25 @@ exports.isTelephoneExist = (telephone, cb) => {
 exports.queryByTelephone = async (telephone, cb) => {
     try {
         let user = await queryByTelephone(telephone);
-        cb(user)
+        cb(convertUser(user))
     } catch (err) {
         console.log('--[QUERY BY TELEPHONE FAIL]--', err)
         cb(err)
     }
+}
+
+exports.queryByUserID = async (userID, cb) => {
+    let result = { data: {}, message: '' };
+    try {
+        let user = await queryByUserID(userID);
+        result.data.userProfile = convertUser(user);
+        result.status = CodeConstants.SUCCESS;
+    } catch (err) {
+        console.log('--[QUERY BY TELEPHONE FAIL]--', err)
+        result.status = CodeConstants.FAIL;
+        result.message = err;
+    }
+    cb(result)
 }
 
 exports.queryUserListByTelephone = async (telephoneList, cb) => {
@@ -162,7 +172,7 @@ exports.autoLoginByTokenAuth = (token, cb) => {
 exports.isTokenValid = (token, cb) => {
     let result = { data: {}, message: '' };
     TokenModel.findOne({ token: token })
-        .populate("user", "userID, telephone")
+        .populate("user", "userID")
         .exec((err, token) => {
             if (err) {
                 result.status = CodeConstants.SERVER_UNKNOW_ERROR;
@@ -224,10 +234,22 @@ exports.addFriend = async (userID, friendID, remarkName, cb) => {
     let result = { data: {}, message: '' };
     try {
         let friendList = await addFriend(userID, friendID, remarkName);
-        result.data = convertFriends(friendList);
         result.status = CodeConstants.SUCCESS;
     } catch (err) {
         console.log('---[ADD FRIEND FAIL]---', err)
+        result.status = CodeConstants.FAIL;
+        result.message = err;
+    }
+    cb(result)
+}
+
+exports.deleteFriend = async (userID, friendID, cb) => {
+    let result = { data: {}, message: '' };
+    try {
+        let deleteResult = await deleteFriend(userID, friendID);
+        result.status = CodeConstants.SUCCESS;
+    } catch (err) {
+        console.log('---[DELETE FRIEND FAIL]---', err)
         result.status = CodeConstants.FAIL;
         result.message = err;
     }
@@ -260,6 +282,20 @@ exports.queryUserFriendsByUserID = async (userID, cb) => {
         result.messages = err;
     }
     cb(result)
+}
+
+exports.searchUserByTelephoneOrNickname = async (queryCondition, cb) => {
+    let result = { data: {}, message: '' };
+    try {
+        let userList = await searchUserByTelephoneOrNickname(queryCondition);
+        result.data.userList = userList;
+        result.status = CodeConstants.SUCCESS;
+    } catch (err) {
+        console.log('---[QUERY FRIENDS FAIL]---', err)
+        result.status = CodeConstants.FAIL;
+        result.messages = err;
+    }
+    cb(result);
 }
 
 /** User & Token Part */
@@ -357,6 +393,23 @@ var queryByTelephone = telephone => {
     })
 }
 
+var queryByUserID = userID => {
+    let result = { data: {}, message: '' };
+    return new Promise((resolve, reject) => {
+        UserModel.findOne({ userID: userID })
+            .exec((err, user) => {
+                if (err) {
+                    console.log(err)
+                    reject(err)
+                } else if (!user) {
+                    reject('The user is not exist');
+                } else {
+                    resolve(user)
+                }
+            })
+    })
+}
+
 var queryUserByTelephoneAndPassword = (telephone, password) => {
     return new Promise((resolve, reject) => {
         UserModel.findOne({ telephone: telephone })
@@ -416,6 +469,23 @@ var addFriend = (userID, friendID, remarkName) => {
     })
 }
 
+var deleteFriend = (userID, friendID) => {
+    return new Promise((resolve, reject) => {
+        FriendModel.update({ userID: userID }, {
+            $pull: { friends: { userID: friendID } }
+        }, (err, result) => {
+            if (err) {
+                console.log(err)
+                reject(err);
+            } else if (!result) {
+                reject('Friend is not exist')
+            } else {
+                resolve(result);
+            }
+        })
+    })
+}
+
 /** init friend list */
 var saveFriend = (userID, friendID, remarkName) => {
     return new Promise((resolve, reject) => {
@@ -458,20 +528,34 @@ var updateRemarkName = (userID, friendID, remarkName) => {
 var queryUserFriendsByUserID = userID => {
     return new Promise((resolve, reject) => {
         FriendModel.findOne({ userID: userID })
-            .populate("User")
+            .populate("user", "userID")
             .exec((err, friends) => {
-                if(err) {
+                if (err) {
                     reject(err);
                     console.log(err);
-                } else if(!friends){
-                    reject("UserID is not exist");
                 } else {
-                    resolve(friends);
+                    resolve(friends || []);
                 }
             })
     })
 }
 
+var searchUserByTelephoneOrNickname = queryCondition => {
+    return new Promise((resolve, reject) => {
+        UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: queryCondition }] })
+            .populate("user")
+            .exec((err, userList) => {
+                if (err) {
+                    console.log('---[SEARCH USER FAIL]---', err)
+                    reject(err)
+                } else if (!userList) {
+                    reject('User is not exist')
+                } else {
+                    resolve(userList)
+                }
+            })
+    })
+}
 
 var convertUser = user => {
     let _user = JSON.parse(JSON.stringify(user));
