@@ -92,15 +92,13 @@ exports.register = (req, res, next) => {
     })
 }
 
-exports.autoLoginByTokenAuth = (req, res, next) => {
-    let data = req.body.input.params || {};
-    let token = data.token;
+exports.isTokenValid = (req, res, next) => {
+    let params = JSON.parse(req.body.params);
+    let token = params.token;
+    console.log('[--TOKEN AUTH--]', params);
 
-    console.log('[--TOKEN AUTH--]', data);
-    UserService.autoLoginByTokenAuth(token, callback => {
-        req.body.output = callback;
-        next();
-        // return res.json(callback);
+    UserService.isTokenValid(token, callback => {
+        return res.json(callback);
     })
 }
 
@@ -134,7 +132,6 @@ exports.getUserProfile = (req, res, next) => {
     let userID = input.targetUserID;
     UserService.getUserProfile(userID, userProfile => {
         req.body.output = userProfile;
-        // return res.json(userProfile);
         next();
     })
 }
