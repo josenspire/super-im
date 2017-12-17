@@ -12,19 +12,23 @@ const uuidv4 = require('uuid/v4');
 
 const StringUtil = require('../utils/StringUtil')
 
+const _ = require('lodash')
+
+let mongoose = require('mongoose')
+
 exports.createUser = async (user, cb) => {
     let result = { data: {}, message: '' };
 
-    user.userID = StringUtil.randomString(64);
+    // user.userID = StringUtil.randomString(64);
     try {
         let userModel = new UserModel(user);
         let _user = await insertUser(userModel);
         let tokenModel = new TokenModel({ token: uuidv4(), user: _user._id });
         let _token = await insertToken(tokenModel);
-        let _updateUser = await updateUserTokenByUserId(_user._id, _token._id);
-
+        let _updateUser = await updateUserTokenByUserID(_user._id, _token._id);
+        let initFriends = await initFriendList(_user._id);
         result.status = CodeConstants.SUCCESS;
-        result.data.user = _updateUser;
+        result.data.user = convertUser(_updateUser);
         result.data.token = _token.token;
         result.data.secretKey = Constants.AES_SECRET;
         cb(result)
@@ -72,25 +76,18 @@ exports.isTelephoneExist = (telephone, cb) => {
     })
 }
 
-exports.queryByTelephone = async (telephone, cb) => {
-    try {
-        let user = await queryByTelephone(telephone);
-        cb(convertUser(user))
-    } catch (err) {
-        console.log('--[QUERY BY TELEPHONE FAIL]--', err)
-        cb(err)
-    }
-}
-
 exports.queryByUserID = async (userID, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { data: {}, message: '', status: CodeConstants.FAIL };
     try {
         let user = await queryByUserID(userID);
-        result.data.userProfile = convertUser(user);
-        result.status = CodeConstants.SUCCESS;
+        if (!user) {
+            result.message = 'This user is not exist'
+        } else {
+            result.data.userProfile = convertUser(user);
+            result.status = CodeConstants.SUCCESS;
+        }
     } catch (err) {
         console.log('--[QUERY BY TELEPHONE FAIL]--', err)
-        result.status = CodeConstants.FAIL;
         result.message = err;
     }
     cb(result)
@@ -154,7 +151,7 @@ exports.autoLoginByTokenAuth = (token, cb) => {
                 result.status = CodeConstants.FAIL;
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
-                if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now()))) {
+                if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now() - (1000 * 60 * 60 * 24)))) {
                     let _user = convertUser(token.user);
                     result.status = CodeConstants.SUCCESS;
                     result.data.user = _user;
@@ -172,7 +169,6 @@ exports.autoLoginByTokenAuth = (token, cb) => {
 exports.isTokenValid = (token, cb) => {
     let result = { data: {}, message: '' };
     TokenModel.findOne({ token: token })
-        .populate("user", "userID")
         .exec((err, token) => {
             if (err) {
                 result.status = CodeConstants.SERVER_UNKNOW_ERROR;
@@ -181,9 +177,9 @@ exports.isTokenValid = (token, cb) => {
                 result.status = CodeConstants.FAIL;
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
-                if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now()))) {
+                if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now() - (1000 * 60 * 60 * 24)))) {
                     result.status = CodeConstants.SUCCESS;
-                    result.data.userID = token.user.userID;
+                    result.data.userID = token.user;
                 } else {
                     result.status = CodeConstants.FAIL;
                     result.message = 'This token is expired, please login again';
@@ -231,41 +227,77 @@ exports.resetPassword = (telephone, newPassword, cb) => {
 
 /** User Friend Part */
 exports.addFriend = async (userID, friendID, remarkName, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { data: {}, message: '', status: CodeConstants.FAIL };
     try {
-        let friendList = await addFriend(userID, friendID, remarkName);
-        result.status = CodeConstants.SUCCESS;
+        let isCurrentUser = checkFriendIDIsCurrentUserID(userID, friendID);
+        if (isCurrentUser) {
+            result.message = 'You can\'t add yourself to a friend';
+        } else {
+            let isUserExist = await queryByUserID(friendID);
+            if (!isUserExist) {
+                result.message = 'This user is not exist';
+            } else {
+                let isExist = await checkFriendIsExistByUserIDAndFriendID(userID, friendID);
+                if (isExist) {
+                    result.message = 'This user is already your friend';
+                } else {
+                    let friendList = await addFriend(userID, friendID, remarkName);
+                    result.status = CodeConstants.SUCCESS;
+                }
+            }
+        }
     } catch (err) {
         console.log('---[ADD FRIEND FAIL]---', err)
-        result.status = CodeConstants.FAIL;
         result.message = err;
     }
     cb(result)
 }
 
 exports.deleteFriend = async (userID, friendID, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { data: {}, message: '', status: CodeConstants.FAIL };
     try {
-        let deleteResult = await deleteFriend(userID, friendID);
-        result.status = CodeConstants.SUCCESS;
+        let isCurrentUser = checkFriendIDIsCurrentUserID(userID, friendID);
+        if (isCurrentUser) {
+            result.message = 'You can\'t delete yourself as a friend';
+        } else {
+            let isUserExist = await queryByUserID(friendID);
+            if (!isUserExist) {
+                result.message = 'This user is not exist';
+            } else {
+                let isFriendExist = await checkFriendIsExistByUserIDAndFriendID(userID, friendID);
+                if (!isFriendExist) {
+                    result.message = 'This user is not your friend';
+                } else {
+                    let deleteResult = await deleteFriend(userID, friendID);
+                    result.status = CodeConstants.SUCCESS;
+                }
+            }
+        }
     } catch (err) {
         console.log('---[DELETE FRIEND FAIL]---', err)
-        result.status = CodeConstants.FAIL;
         result.message = err;
     }
     cb(result)
 }
 
 exports.updateRemarkName = async (userID, friendID, remarkName, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { data: {}, message: '', status: CodeConstants.FAIL };
     try {
-        let updateResult = await updateRemarkName(userID, friendID, remarkName);
-        result.data = updateResult;
-        result.status = CodeConstants.SUCCESS;
+        let isCurrentUser = checkFriendIDIsCurrentUserID(userID, friendID);
+        if (isCurrentUser) {
+            result.message = 'You can\'t set yourself a remark name'
+        } else {
+            let isExist = await checkFriendIsExistByUserIDAndFriendID(userID, friendID);
+            if (!isExist) {
+                result.message = 'This user is not your friend';
+            } else {
+                let updateResult = await updateRemarkName(userID, friendID, remarkName);
+                result.status = CodeConstants.SUCCESS;
+            }
+        }
     } catch (err) {
         console.log('---[UPDATE FRIEND REMARK FAIL]---', err)
-        result.status = CodeConstants.FAIL;
-        result.messages = err;
+        result.message = err;
     }
     cb(result);
 }
@@ -274,12 +306,12 @@ exports.queryUserFriendsByUserID = async (userID, cb) => {
     let result = { data: {}, message: '' };
     try {
         let friends = await queryUserFriendsByUserID(userID);
-        result.data = convertFriends(friends);
+        result.data.friends = convertFriends(friends);
         result.status = CodeConstants.SUCCESS;
     } catch (err) {
         console.log('---[QUERY FRIENDS FAIL]---', err)
         result.status = CodeConstants.FAIL;
-        result.messages = err;
+        result.message = err;
     }
     cb(result)
 }
@@ -293,7 +325,7 @@ exports.searchUserByTelephoneOrNickname = async (queryCondition, cb) => {
     } catch (err) {
         console.log('---[QUERY FRIENDS FAIL]---', err)
         result.status = CodeConstants.FAIL;
-        result.messages = err;
+        result.message = err;
     }
     cb(result);
 }
@@ -305,7 +337,7 @@ var insertToken = tokenModel => {
         tokenModel.save((err, data) => {
             if (err) {
                 console.log('--[CREATE TOKEN FAIL]--', err)
-                reject(err)
+                reject('Server unknow error,login fail')
             } else {
                 resolve(data);
             }
@@ -320,7 +352,7 @@ var updateToken = (_id, uuid) => {
             .exec(err => {
                 if (err) {
                     console.log('--[UPDATE TOKEN ERROR]--', err.message);
-                    reject(err)
+                    reject('Server unknow error, login fail')
                 } else {
                     resolve(uuid)
                 }
@@ -333,7 +365,7 @@ var updateDeviceID = (telephone, deviceID) => {
         UserModel.findOneAndUpdate({ telephone: telephone }, { $set: { deviceID: deviceID } }, (err, user) => {
             if (err) {
                 console.log(err)
-                reject(err)
+                reject('Server unknow error, login fail')
             } else {
                 user.deviceID = deviceID;
             }
@@ -368,41 +400,26 @@ var insertUser = userModel => {
 }
 
 var queryByTelephone = telephone => {
-    let result = { data: {}, message: '' };
     return new Promise((resolve, reject) => {
         UserModel.findOne({ telephone: telephone })
-            // .populate("token")
             .exec((err, user) => {
                 if (err) {
                     console.log(err)
-                    result.status = CodeConstants.SERVER_UNKNOW_ERROR;
-                    result.message = 'Sorry, server unknow error';
-                    result.status = CodeConstants.FAIL;
-                    reject(err)
+                    reject('Sorry, server unknow error')
                 } else if (user) {
-                    result.status = CodeConstants.SUCCESS;
-                    let _user = convertUser(user);
-                    result.data.user = _user;
-                    // result.data.token = user.token.token;
-                } else {
-                    result.status = CodeConstants.FAIL;
-                    result.message = 'The telephone is not exist'
+                    resolve(convertUser(user));
                 }
-                resolve(result)
             })
     })
 }
 
 var queryByUserID = userID => {
-    let result = { data: {}, message: '' };
     return new Promise((resolve, reject) => {
-        UserModel.findOne({ userID: userID })
+        UserModel.findOne({ _id: userID })
             .exec((err, user) => {
                 if (err) {
-                    console.log(err)
-                    reject(err)
-                } else if (!user) {
-                    reject('The user is not exist');
+                    console.log('---[QUERY BY USERID]---')
+                    reject('This user is not exist')
                 } else {
                     resolve(user)
                 }
@@ -417,7 +434,7 @@ var queryUserByTelephoneAndPassword = (telephone, password) => {
             .exec((err, user) => {
                 if (err) {
                     console.log(err)
-                    reject(err)
+                    reject('The telephone or password is invalid')
                 } else if (!user) {
                     resolve('Sorry, Your telephone or password is invalid');
                 } else {
@@ -429,13 +446,13 @@ var queryUserByTelephoneAndPassword = (telephone, password) => {
     })
 }
 
-var updateUserTokenByUserId = (userId, tokenId) => {
+var updateUserTokenByUserID = (userID, tokenID) => {
     return new Promise((resolve, reject) => {
-        UserModel.findByIdAndUpdate(userId, { $set: { token: tokenId } })
+        UserModel.findByIdAndUpdate(userID, { $set: { token: tokenID } })
             .exec((err, _user) => {
                 if (err) {
                     console.log('--[UPDATE USER TOKEN FAIL]--', err);
-                    reject(err);
+                    reject('Server unknow error');
                 } else {
                     resolve(_user);
                 }
@@ -445,24 +462,32 @@ var updateUserTokenByUserId = (userId, tokenId) => {
 
 /** User Friend Part */
 var addFriend = (userID, friendID, remarkName) => {
-    return new Promise((resolve, reject) => {
-        FriendModel.findOneAndUpdate({ userID: userID }, {
-            $push: {
-                friends: {
-                    userID: friendID,
-                    remarkName: remarkName
-                }
+    return new Promise(async (resolve, reject) => {
+        try {
+            let friend = {
+                userID: friendID,     // current user add other friend
+                remarkName: remarkName
+            };
+            let _friend = {
+                userID: userID,       // other friend add current user
+                remarkName: ''
             }
-        }, (err, result) => {
+            Promise.all([addFriendToEachOther(userID, friend), addFriendToEachOther(friendID, _friend)])
+                .then(result => { resolve(result) })
+                .catch(err => { reject('Server unknow error, add friend fail') })
+        } catch (err) {
+            console.log(err)
+            reject('Server unknow error, add friend fail')
+        }
+    })
+}
+
+var addFriendToEachOther = (userID, friend) => {
+    return new Promise((resolve, reject) => {
+        FriendModel.findOneAndUpdate({ userID: userID }, { $addToSet: { friends: friend } }, (err, result) => {
             if (err) {
-                reject(err);
-            } else if (!result) {
-                saveFriend(userID, friendID, remarkName).then(friendList => {
-                    resolve(friendList);
-                }).catch(err => {
-                    reject(err)
-                });
-            } else {
+                reject('Server unknow error, add friend fail');
+            } else if (result) {
                 resolve(result);
             }
         })
@@ -470,15 +495,18 @@ var addFriend = (userID, friendID, remarkName) => {
 }
 
 var deleteFriend = (userID, friendID) => {
+    return new Promise(async (resolve, reject) => {
+        Promise.all([deleteFriendToEachOther(userID, friendID), deleteFriendToEachOther(friendID, userID)])
+            .then(result => { resolve(result) })
+            .catch(err => { reject('Server unknow error, delete friend fail') })
+    })
+}
+
+var deleteFriendToEachOther = (userID, friendID) => {
     return new Promise((resolve, reject) => {
-        FriendModel.update({ userID: userID }, {
-            $pull: { friends: { userID: friendID } }
-        }, (err, result) => {
+        FriendModel.update({ userID: userID }, { $pull: { friends: { userID: friendID } } }, (err, result) => {
             if (err) {
-                console.log(err)
-                reject(err);
-            } else if (!result) {
-                reject('Friend is not exist')
+                reject('Server unknow error, delete friend fail');
             } else {
                 resolve(result);
             }
@@ -486,16 +514,13 @@ var deleteFriend = (userID, friendID) => {
     })
 }
 
-/** init friend list */
-var saveFriend = (userID, friendID, remarkName) => {
+var initFriendList = userID => {
     return new Promise((resolve, reject) => {
-        let friends = [];
-        friends.push({ userID: friendID, remarkName: remarkName });
-        let friendModel = new FriendModel({ userID: userID, friends: friends });
+        let friendModel = new FriendModel({ userID: userID, friends: [] });
         friendModel.save((err, friendList) => {
             if (err) {
-                reject(err)
-                console.log('SAVE FRIEND FAIL', err)
+                console.log('INIT FRIEND LIST FAIL', err)
+                reject('Server unknow error, init friend list fail')
             } else {
                 resolve(friendList);
             }
@@ -503,8 +528,35 @@ var saveFriend = (userID, friendID, remarkName) => {
     })
 }
 
+var checkFriendIsExistByUserIDAndFriendID = async (userID, friendID) => {
+    let isExist = false;
+    try {
+        let userFriends = await queryUserFriendsByUserID(userID);
+        let friends = userFriends.friends;
+        for (let index = 0; index < friends.length; index++) {
+            let friend = friends[index];
+            if (friend.userID._id.toString() === friendID) {
+                isExist = true;
+                break;
+            }
+        }
+    } catch (err) {
+        console.log(err)
+        isExist = false;
+    }
+    return isExist;
+}
+
+var checkFriendIDIsCurrentUserID = (userID, friendID) => {
+    let _userID = JSON.parse(JSON.stringify(userID));
+    if (_userID) {
+        if (_userID.toString() === friendID) return true;
+    }
+    return false;
+}
+
 var updateRemarkName = (userID, friendID, remarkName) => {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         FriendModel.findOne({ userID: userID }, (err, friendList) => {
             if (err) {
                 reject(err)
@@ -515,7 +567,7 @@ var updateRemarkName = (userID, friendID, remarkName) => {
                         friends[i].remarkName = remarkName;
                         friendList.markModified('remarkName');
                         friendList.save((err, newFriendProfile) => {
-                            if (err) reject(err);
+                            if (err) reject('Server unknow error, update remark name fail');
                             else resolve(newFriendProfile);
                         });
                     }
@@ -528,11 +580,11 @@ var updateRemarkName = (userID, friendID, remarkName) => {
 var queryUserFriendsByUserID = userID => {
     return new Promise((resolve, reject) => {
         FriendModel.findOne({ userID: userID })
-            .populate("user", "userID")
+            .populate("friends.userID")    // 查询数组中的某个字段的ref数据
             .exec((err, friends) => {
                 if (err) {
-                    reject(err);
                     console.log(err);
+                    reject('Server unknow error, get user friend list fail');
                 } else {
                     resolve(friends || []);
                 }
@@ -542,12 +594,13 @@ var queryUserFriendsByUserID = userID => {
 
 var searchUserByTelephoneOrNickname = queryCondition => {
     return new Promise((resolve, reject) => {
-        UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: queryCondition }] })
+        const nickNameReg = new RegExp(queryCondition, 'i');
+        UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: { $regex: nickNameReg } }] })
             .populate("user")
             .exec((err, userList) => {
                 if (err) {
                     console.log('---[SEARCH USER FAIL]---', err)
-                    reject(err)
+                    reject('Server unknow error, search user fail')
                 } else if (!userList) {
                     reject('User is not exist')
                 } else {
@@ -558,7 +611,8 @@ var searchUserByTelephoneOrNickname = queryCondition => {
 }
 
 var convertUser = user => {
-    let _user = JSON.parse(JSON.stringify(user));
+    let _user = JSON.parse(JSON.stringify(user)) || {};
+    _user.userID = user._id;
     delete _user._id;
     delete _user.token;
     delete _user.meta;
@@ -567,10 +621,15 @@ var convertUser = user => {
     return _user;
 }
 
-var convertFriends = friends => {
-    let _friends = JSON.parse(JSON.stringify(friends));
-    delete _friends._id;
-    delete _friends.__v;
-    delete _friends.meta;
-    return _friends;
+var convertFriends = friendsData => {
+    let _friends = JSON.parse(JSON.stringify(friendsData.friends));
+    if (!_friends.length) return [];
+
+    let convertFriendsData = [];
+    for (let i = 0; i < _friends.length; i++) {
+        let friend = _friends[i];
+        friend = convertUser(friend.userID);
+        convertFriendsData.push(friend);
+    }
+    return convertFriendsData;
 }

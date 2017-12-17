@@ -38,7 +38,7 @@ exports.compareISODate = (preDateStr, nextDateStr) => {
     var preDate = formatDateString(preDateStr, '%Y-%m-%d %H:%M');
     var nextDate = formatDateString(nextDateStr, '%Y-%m-%d %H:%M');
 
-    var isBefore = moment(preDate).isBefore(nextDate);
+    var isBefore = moment(nextDate).isBefore(preDate);
     return isBefore;
 }
 

@@ -35,11 +35,11 @@ let validateNickname = nickname => {
 
 let UserSchema = new mongoose.Schema({
 
-    userID: {
-        type: String,
-        unique: 'UserID already exists',
-        trim: true
-    },
+    // userID: {
+    //     type: String,
+    //     unique: 'UserID already exists',
+    //     trim: true
+    // },
 
     // telephone
     telephone: {
