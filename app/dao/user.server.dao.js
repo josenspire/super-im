@@ -83,7 +83,7 @@ exports.queryByUserID = async (userID, cb) => {
         if (!user) {
             result.message = 'This user is not exist'
         } else {
-            result.data.userProfile = convertUser(user);
+            result.data.userProfile = convertUserProfile(user);
             result.status = CodeConstants.SUCCESS;
         }
     } catch (err) {
@@ -123,6 +123,7 @@ exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
         if (data.isMatch) {
             let token = data.user.token.token;
             let _user = await updateDeviceID(telephone, deviceID);
+            delete _user.deviceID;
             result.data.user = convertUser(_user);
             result.data.secretKey = Constants.AES_SECRET;
             result.data.token = token;
@@ -305,8 +306,8 @@ exports.updateRemarkName = async (userID, friendID, remarkName, cb) => {
 exports.queryUserFriendsByUserID = async (userID, cb) => {
     let result = { data: {}, message: '' };
     try {
-        let friends = await queryUserFriendsByUserID(userID);
-        result.data.friends = convertFriends(friends);
+        let friendsInfo = await queryUserFriendsByUserID(userID);
+        result.data.friends = convertFriends(friendsInfo);
         result.status = CodeConstants.SUCCESS;
     } catch (err) {
         console.log('---[QUERY FRIENDS FAIL]---', err)
@@ -615,20 +616,56 @@ var convertUser = user => {
     _user.userID = user._id;
     delete _user._id;
     delete _user.token;
+    delete _user.status;
+    delete _user.role;
     delete _user.meta;
     delete _user.password;
     delete _user.__v;
     return _user;
 }
 
+var convertUserProfile = user => {
+    let _user = JSON.parse(JSON.stringify(user)) || {};
+    _user.userID = user._id;
+    delete _user._id;
+    delete _user.token;
+    delete _user.deviceID;
+    delete _user.status;
+    delete _user.role;
+    delete _user.meta;
+    delete _user.password;
+    delete _user.__v;
+    return _user;
+}
+
+var convertFriendInfo = friend => {
+    let _friend = JSON.parse(JSON.stringify(friend)) || {};
+
+    let user = _friend.userID;
+    user.remarkName = _friend.remarkName;
+    user.userID = user._id;
+
+    delete user._id;
+    delete user.password;
+    delete user.deviceID;
+    delete user.__v;
+    delete user.token;
+    delete user.meta;
+    delete user.status;
+    delete user.role;
+
+    return user;
+}
+
 var convertFriends = friendsData => {
-    let _friends = JSON.parse(JSON.stringify(friendsData.friends));
-    if (!_friends.length) return [];
+    let _friendList = friendsData.friends;
+    console.log(JSON.stringify(_friendList))
+    if (!_friendList.length) return [];
 
     let convertFriendsData = [];
-    for (let i = 0; i < _friends.length; i++) {
-        let friend = _friends[i];
-        friend = convertUser(friend.userID);
+    for (let i = 0; i < _friendList.length; i++) {
+        let friend = _friendList[i];
+        friend = convertFriendInfo(friend);
         convertFriendsData.push(friend);
     }
     return convertFriendsData;
