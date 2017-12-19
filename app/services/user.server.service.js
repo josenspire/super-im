@@ -13,14 +13,15 @@ const fs = require('fs')
 exports.createUser = (user, cb) => {
     UserDao.createUser(user, createCallback => {
         if (createCallback.status === CodeConstants.SUCCESS) {
-            IMProxie.createUser(createCallback.data.user.userID, user.password, _cb => {
+            let userID = createCallback.data.user.userID;
+            IMProxie.createUser(userID, user.password, _cb => {
                 let _result = JSON.parse(_cb)
                 if (!_result.error) {
                     cb(createCallback);
                 } else {
                     console.log('---[IM CRETEUSER FAIL]---', _result.error)
-                    IMProxie.deleteUser(user.telephone, rollback => {
-                        console.log('--[CREATE USER ROLLBACK]--', rollback)
+                    IMProxie.deleteUser(userID, rollback => {
+                        console.log('---[CREATE USER ROLLBACK]---', rollback)
                     })
                     cb({
                         status: CodeConstants.FAIL,
@@ -48,6 +49,20 @@ exports.queryUserByTelephoneAndPassword = (telephone, password, deviceID, cb) =>
         }
         cb(_user)
     })
+}
+
+exports.getUserToken = async (userID, password, cb) => {
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let token = '';
+    try {
+        token = await getUserToken(userID, password);
+        result.status = CodeConstants.SUCCESS;
+        result.data.token = token;
+    } catch (err) {
+        console.log(err)
+        result.message = err;
+    }
+    cb(result)
 }
 
 // user login
@@ -183,8 +198,8 @@ exports.getUserFriends = (userID, cb) => {
     })
 }
 
-exports.searchUserByTelephoneOrNickname = (queryCondition, cb) => {
-    UserDao.searchUserByTelephoneOrNickname(queryCondition, searchResult => {
+exports.searchUserByTelephoneOrNickname = (queryCondition, pageIndex, cb) => {
+    UserDao.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
         cb(searchResult);
     })
 }
@@ -204,5 +219,41 @@ exports.getBlackList = (telephone, cb) => {
                 message: data.error
             })
         }
+    })
+}
+
+exports.searchUserByTelephoneOrNickname = (queryCondition, pageIndex, cb) => {
+    UserDao.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
+        cb(searchResult);
+    })
+}
+
+exports.getBlackList = (telephone, cb) => {
+    IMProxie.getBlacklist(telephone, _result => {
+        let data = JSON.parse(_result);
+        if (!data.error) {
+            let telephoneList = data.data || [];
+            UserDao.queryUserListByTelephone(telephoneList, userList => {
+                cb(userList);
+            })
+        } else {
+            cb({
+                status: CodeConstants.FAIL,
+                data: {},
+                message: data.error
+            })
+        }
+    })
+}
+
+var getUserToken = (userID, password) => {
+    return new Promise((resolve, reject) => {
+        IMProxie.accessCommonToken(userID, password, token => {
+            if (!token) {
+                reject("Username or password is invalid")
+            } else {
+                resolve(token)
+            }
+        })
     })
 }

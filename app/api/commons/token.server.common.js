@@ -29,14 +29,13 @@ function Token() {
     // request common user token
     this.accessCommonToken = function (username, password, callback) {
         var data = { grant_type: 'password', username: username, password: password };
-        console.log(data)
         request.httpRequest({
             data: data,
             path: 'token',
             method: 'POST',
             header: { 'Content-Type': 'application/json' },
             callback: function (data) {
-                console.log('Token result is: ' + data);
+                console.log('Token result is: ' + data, typeof data);
                 var d = JSON.parse(data);
                 token = d.access_token;
                 commonExpiredAt = d.expires_in * 1000 + new Date().getMilliseconds();

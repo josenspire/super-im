@@ -18,7 +18,6 @@ let routers = app => {
     app.post('/v1/api/auth/register', RSAAscept.decryptParam, User.register, RSAAscept.encryptParam);
     app.post('/v1/api/auth/login', RSAAscept.decryptParam, User.login, RSAAscept.encryptParam);
     app.post('/v1/api/auth/logout', RSAAscept.decryptParam, User.logout, RSAAscept.encryptParam);
-
     app.post('/v1/api/auth/tokenVerify', User.isTokenValid);
 
     app.post('/v1/api/auth/obtainSMSCode', RSAAscept.decryptParam, SMS.sendSMS, RSAAscept.encryptParam);
@@ -33,9 +32,9 @@ let routers = app => {
     app.post('/v1/api/user/updateRemarkName', AESAscept.decryptParam, User.updateRemarkName, AESAscept.encryptParam);
     app.post('/v1/api/user/getUserFriends', AESAscept.decryptParam, User.getUserFriends, AESAscept.encryptParam);
     app.post('/v1/api/user/deleteFriend', AESAscept.decryptParam, User.deleteFriend, AESAscept.encryptParam);
-    
-    app.post('/v1/api/user/searchFriend', AESAscept.decryptParam, User.searchUserByTelephoneOrNickname, AESAscept.encryptParam);
+    app.post('/v1/api/user/searchUser', AESAscept.decryptParam, User.searchUserByTelephoneOrNickname, AESAscept.encryptParam);
 
+    app.post('/v1/api/auth/getToken', User.getUserToken);
 }
 
 module.exports = routers;

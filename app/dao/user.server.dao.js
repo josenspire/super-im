@@ -17,9 +17,7 @@ const _ = require('lodash')
 let mongoose = require('mongoose')
 
 exports.createUser = async (user, cb) => {
-    let result = { data: {}, message: '' };
-
-    // user.userID = StringUtil.randomString(64);
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let userModel = new UserModel(user);
         let _user = await insertUser(userModel);
@@ -31,32 +29,33 @@ exports.createUser = async (user, cb) => {
         result.data.user = convertUser(_updateUser);
         result.data.token = _token.token;
         result.data.secretKey = Constants.AES_SECRET;
-        cb(result)
     } catch (err) {
         console.log(err)
-        cb(err)
+        result.message = err;
+        result.data = {};
     }
+    cb(result)
 }
 
 exports.queryUserByTelephoneAndPassword = async (telephone, password, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let data = await queryUserByTelephoneAndPassword(telephone, password);
         if (data.isMatch) {
             let _user = convertUser(data.user);
-            result.status = CodeConstants.SUCCESS;
             result.data.user = _user;
             result.data.token = await updateToken(data.user.token, uuidv4());
             result.data.secretKey = Constants.AES_SECRET;
+            result.status = CodeConstants.SUCCESS;
         } else {
-            result.status = CodeConstants.FAIL;
             result.message = 'Sorry, Your telephone or password is invalid';
         }
-        cb(result)
     } catch (err) {
         console.log(err)
-        cb(err)
+        result.message = err;
+        result.data = {};
     }
+    cb(result)
 }
 
 // check telephone is exist?
@@ -77,7 +76,7 @@ exports.isTelephoneExist = (telephone, cb) => {
 }
 
 exports.queryByUserID = async (userID, cb) => {
-    let result = { data: {}, message: '', status: CodeConstants.FAIL };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let user = await queryByUserID(userID);
         if (!user) {
@@ -87,14 +86,15 @@ exports.queryByUserID = async (userID, cb) => {
             result.status = CodeConstants.SUCCESS;
         }
     } catch (err) {
-        console.log('--[QUERY BY TELEPHONE FAIL]--', err)
+        console.log('--[QUERY BY USERID FAIL]--', err)
         result.message = err;
+        result.data = {};
     }
     cb(result)
 }
 
 exports.queryUserListByTelephone = async (telephoneList, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     let promiseList = telephoneList.map(telephone => {
         return queryByTelephone(telephone);
     })
@@ -108,16 +108,17 @@ exports.queryUserListByTelephone = async (telephoneList, cb) => {
         })
         result.status = CodeConstants.SUCCESS;
         result.data.userList = newUserList;
-        cb(result)
     } catch (err) {
         console.log('--[QUERY USERLIST FAIL]--', err)
-        cb(err)
+        result.message = err;
+        result.data = {};
     }
+    cb(result)
 }
 
 // update deviceID 
 exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let data = await queryUserByTelephoneAndPassword(telephone, password);
         if (data.isMatch) {
@@ -129,13 +130,12 @@ exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
             result.data.token = token;
             result.status = CodeConstants.SUCCESS;
         } else {
-            result.status = CodeConstants.FAIL;
             result.message = 'Telephone or password is incorrect';
         }
     } catch (err) {
         console.log('--[UPDATE DEVICEID FAIL]--', err)
-        status = CodeConstants.FAIL;
-        message = err;
+        result.message = err;
+        result.data = {};
     }
     cb(result)
 }
@@ -168,21 +168,19 @@ exports.autoLoginByTokenAuth = (token, cb) => {
 }
 
 exports.isTokenValid = (token, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     TokenModel.findOne({ token: token })
         .exec((err, token) => {
             if (err) {
                 result.status = CodeConstants.SERVER_UNKNOW_ERROR;
                 result.message = 'Sorry, server unknow error';
             } else if (!token) {
-                result.status = CodeConstants.FAIL;
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
                 if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now() - (1000 * 60 * 60 * 24)))) {
                     result.status = CodeConstants.SUCCESS;
                     result.data.userID = token.user;
                 } else {
-                    result.status = CodeConstants.FAIL;
                     result.message = 'This token is expired, please login again';
                 }
             }
@@ -191,7 +189,7 @@ exports.isTokenValid = (token, cb) => {
 }
 
 exports.resetTokenByToken = (token, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     TokenModel.findOneAndUpdate({ token: token }, { $set: { token: '' } })
         .exec((err, token) => {
             if (err) {
@@ -200,7 +198,6 @@ exports.resetTokenByToken = (token, cb) => {
             } else if (token) {
                 result.status = CodeConstants.SUCCESS;
             } else {
-                result.status = CodeConstants.FAIL;
                 result.message = 'The token is invalid'
             }
             cb(result)
@@ -208,7 +205,7 @@ exports.resetTokenByToken = (token, cb) => {
 }
 
 exports.resetPassword = (telephone, newPassword, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     let password = jwt.encode(newPassword, JWT_SECRET.JWT_PASSWORD_SECRET);
     UserModel.findOneAndUpdate({ telephone: telephone }, { $set: { password: password } })
         .exec((err, user) => {
@@ -218,7 +215,6 @@ exports.resetPassword = (telephone, newPassword, cb) => {
             } else if (user) {
                 result.status = CodeConstants.SUCCESS;
             } else {
-                result.status = CodeConstants.FAIL;
                 result.message = 'This telephone is no exist'
             }
             cb(result)
@@ -228,7 +224,7 @@ exports.resetPassword = (telephone, newPassword, cb) => {
 
 /** User Friend Part */
 exports.addFriend = async (userID, friendID, remarkName, cb) => {
-    let result = { data: {}, message: '', status: CodeConstants.FAIL };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let isCurrentUser = checkFriendIDIsCurrentUserID(userID, friendID);
         if (isCurrentUser) {
@@ -250,12 +246,13 @@ exports.addFriend = async (userID, friendID, remarkName, cb) => {
     } catch (err) {
         console.log('---[ADD FRIEND FAIL]---', err)
         result.message = err;
+        result.data = {};
     }
     cb(result)
 }
 
 exports.deleteFriend = async (userID, friendID, cb) => {
-    let result = { data: {}, message: '', status: CodeConstants.FAIL };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let isCurrentUser = checkFriendIDIsCurrentUserID(userID, friendID);
         if (isCurrentUser) {
@@ -277,12 +274,13 @@ exports.deleteFriend = async (userID, friendID, cb) => {
     } catch (err) {
         console.log('---[DELETE FRIEND FAIL]---', err)
         result.message = err;
+        result.data = {};
     }
     cb(result)
 }
 
 exports.updateRemarkName = async (userID, friendID, remarkName, cb) => {
-    let result = { data: {}, message: '', status: CodeConstants.FAIL };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let isCurrentUser = checkFriendIDIsCurrentUserID(userID, friendID);
         if (isCurrentUser) {
@@ -299,34 +297,39 @@ exports.updateRemarkName = async (userID, friendID, remarkName, cb) => {
     } catch (err) {
         console.log('---[UPDATE FRIEND REMARK FAIL]---', err)
         result.message = err;
+        result.data = {};
     }
     cb(result);
 }
 
 exports.queryUserFriendsByUserID = async (userID, cb) => {
-    let result = { data: {}, message: '' };
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let friendsInfo = await queryUserFriendsByUserID(userID);
-        result.data.friends = convertFriends(friendsInfo);
-        result.status = CodeConstants.SUCCESS;
+        if (!friendsInfo) {
+            result.data.friends = [];
+        } else {
+            result.data.friends = convertFriends(friendsInfo);
+            result.status = CodeConstants.SUCCESS;
+        }
     } catch (err) {
         console.log('---[QUERY FRIENDS FAIL]---', err)
-        result.status = CodeConstants.FAIL;
         result.message = err;
+        result.data = {};
     }
     cb(result)
 }
 
-exports.searchUserByTelephoneOrNickname = async (queryCondition, cb) => {
-    let result = { data: {}, message: '' };
+exports.searchUserByTelephoneOrNickname = async (queryCondition, pageIndex, cb) => {
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
-        let userList = await searchUserByTelephoneOrNickname(queryCondition);
-        result.data.userList = userList;
+        let userList = await searchUserByTelephoneOrNickname(queryCondition, pageIndex);
+        result.data.userList = convertSearchUserList(userList);
         result.status = CodeConstants.SUCCESS;
     } catch (err) {
-        console.log('---[QUERY FRIENDS FAIL]---', err)
-        result.status = CodeConstants.FAIL;
+        console.log('---[QUERY USER FAIL]---', err)
         result.message = err;
+        result.data = {};
     }
     cb(result);
 }
@@ -533,12 +536,16 @@ var checkFriendIsExistByUserIDAndFriendID = async (userID, friendID) => {
     let isExist = false;
     try {
         let userFriends = await queryUserFriendsByUserID(userID);
-        let friends = userFriends.friends;
-        for (let index = 0; index < friends.length; index++) {
-            let friend = friends[index];
-            if (friend.userID._id.toString() === friendID) {
-                isExist = true;
-                break;
+        if (!userFriends) {
+            isExist = false;
+        } else {
+            let friends = userFriends.friends;
+            for (let index = 0; index < friends.length; index++) {
+                let friend = friends[index];
+                if (friend.userID._id.toString() === friendID) {
+                    isExist = true;
+                    break;
+                }
             }
         }
     } catch (err) {
@@ -587,17 +594,19 @@ var queryUserFriendsByUserID = userID => {
                     console.log(err);
                     reject('Server unknow error, get user friend list fail');
                 } else {
-                    resolve(friends || []);
+                    resolve(friends);
                 }
             })
     })
 }
 
-var searchUserByTelephoneOrNickname = queryCondition => {
+var searchUserByTelephoneOrNickname = (queryCondition, pageIndex) => {
     return new Promise((resolve, reject) => {
         const nickNameReg = new RegExp(queryCondition, 'i');
         UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: { $regex: nickNameReg } }] })
             .populate("user")
+            .limit(20)
+            .skip(pageIndex * 20)
             .exec((err, userList) => {
                 if (err) {
                     console.log('---[SEARCH USER FAIL]---', err)
@@ -659,7 +668,6 @@ var convertFriendInfo = friend => {
 
 var convertFriends = friendsData => {
     let _friendList = friendsData.friends;
-    console.log(JSON.stringify(_friendList))
     if (!_friendList.length) return [];
 
     let convertFriendsData = [];
@@ -669,4 +677,17 @@ var convertFriends = friendsData => {
         convertFriendsData.push(friend);
     }
     return convertFriendsData;
+}
+
+var convertSearchUserList = userList => {
+    let _userList = JSON.parse(JSON.stringify(userList));
+    if (!_userList.length) return [];
+
+    let convertUserListData = [];
+    for (let i = 0; i < _userList.length; i++) {
+        let user = _userList[i];
+        user = convertUserProfile(user);
+        convertUserListData.push(user);
+    }
+    return convertUserListData;
 }

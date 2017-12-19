@@ -221,10 +221,18 @@ exports.getBlackList = (req, res, next) => {
 
 exports.searchUserByTelephoneOrNickname = (req, res, next) => {
     let input = req.body.input;
-    let queryCondition = input.queryCondition;
-    UserService.searchUserByTelephoneOrNickname(queryCondition, searchResult => {
+    let queryCondition = input.queryCondition || "";
+    let pageIndex = parseInt(input.pageIndex) || 0;
+    UserService.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
         req.body.output = searchResult;
         next();
     })
 }
 
+exports.getUserToken = (req, res, next) => {
+    let userID = req.body.params.userID;
+    let password = req.body.params.password;
+    UserService.getUserToken(userID, password, cb => {
+        return res.json(cb);
+    })
+}
