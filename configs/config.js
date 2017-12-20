@@ -10,6 +10,11 @@ exports.IMConfig = {
     ca: ''
 }
 
+exports.RongCloudConfig = {
+    appKey: "82hegw5u8dlsx",
+    appSecret: "eGtWsu6nz6WiEJ"
+}
+
 exports.SMSConfig = {
     // accessKeyId: "LTAI74WHaxSZiyC3",  //阿里短信服务所用的密钥ID
     // secretAccessKey: "MptxNQw0puzat32v0H9lJLpsATthbO", //阿里短信服务所用的密钥值
