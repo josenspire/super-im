@@ -83,9 +83,10 @@ let UserSchema = new mongoose.Schema({
         trim: true
     },
 
+    // unknow: 0, male: 1, female: 2
     male: {
-        type: Boolean,
-        default: false
+        type: Number,
+        default: 0
     },
 
     signature: {

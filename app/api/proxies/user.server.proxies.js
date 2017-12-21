@@ -3,20 +3,22 @@ const RongCloudConfig = require('../../../configs/config').RongCloudConfig;
 
 rongcloudSDK.init(RongCloudConfig.appKey, RongCloudConfig.appSecret);
 
-exports.createUser = (userID, nickName, avatar, callback) => {
-    rongcloudSDK.user.getToken(userID, nickName, avatar || 'http://files.domain.com/avatar.jpg', (err, _result) => {
+var errorHandle = (err) => {
+    console.log('---[IM REQUEST ERROR]---', err);
+    return err.text;
+}
+
+exports.createUser = (userID, nickname, avatar, callback) => {
+    rongcloudSDK.user.getToken(userID.toString(), nickname, avatar, (err, _result) => {
         if (err) {
-            // Handle the error
-            return callback(err);
-            console.log('---[GET TOKEN ERROR]---', err);
+            callback({ error: errorHandle(err) });
         } else {
             let result = JSON.parse(_result);
             if (result.code === 200) {
-                //Handle the result.token
-                return callback(result.token);
+                callback({ data: result.token });
+            } else {
+                callback({ error: result });
             }
-            return callback(result);
         }
     });
 }
-

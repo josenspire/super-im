@@ -16,17 +16,22 @@ const _ = require('lodash')
 
 let mongoose = require('mongoose')
 
-exports.createUser = async (user, cb) => {
+exports.createUser = async (user, token, cb) => {
     let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let tokenID = mongoose.Types.ObjectId();
     try {
+        user.token = tokenID;
         let userModel = new UserModel(user);
         let _user = await insertUser(userModel);
-        let tokenModel = new TokenModel({ token: uuidv4(), user: _user._id });
+
+        let tokenModel = new TokenModel({ _id: tokenID, token: token, user: user._id });
         let _token = await insertToken(tokenModel);
-        let _updateUser = await updateUserTokenByUserID(_user._id, _token._id);
-        let initFriends = await initFriendList(_user._id);
+
+        // let _updateUser = await updateUserTokenByUserID(_user._id, _token._id);
+        let initFriends = await initFriendList(user._id);
+        
         result.status = CodeConstants.SUCCESS;
-        result.data.user = convertUser(_updateUser);
+        result.data.user = convertUser(_user);
         result.data.token = _token.token;
         result.data.secretKey = Constants.AES_SECRET;
     } catch (err) {
@@ -379,11 +384,11 @@ var updateDeviceID = (telephone, deviceID) => {
 }
 
 var insertUser = userModel => {
+    let message = '';
     return new Promise((resolve, reject) => {
         userModel.save((err, user) => {
             if (err) {
                 console.log("[--CREATE USER FAIL--]", err);
-                let message = '';
                 let errMsg = err.errors;
                 if (errMsg) {
                     if (errMsg.telephone || errMsg.password) {

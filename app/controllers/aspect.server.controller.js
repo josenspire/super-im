@@ -27,9 +27,8 @@ exports.RSA = {
         })
     },
 
-
     // decryptParam: (req, res, next) => {
-    //     let params = req.body;
+    //     let params = req.body.params;
     //     console.log('---[INPUT DATA]---', params, typeof params)
     //     req.body.input = params;
     //     next();

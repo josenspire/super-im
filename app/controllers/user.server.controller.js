@@ -71,18 +71,15 @@ exports.register = (req, res, next) => {
             SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
                 if (_sms.status === CodeConstants.SUCCESS) {
                     UserService.createUser(user, callback => {
-                        // return res.json(callback)
                         req.body.output = callback;
                         next();
                     })
                 } else {
-                    // return res.json(_sms)
                     req.body.output = _sms;
                     next();
                 }
             })
         } else {
-            // return res.json(isExist)
             let result = { data: {} };
             result.status = CodeConstants.FAIL;
             result.message = isExist.message;
@@ -110,7 +107,6 @@ exports.logout = (req, res, next) => {
     UserService.resetTokenByToken(token, callback => {
         req.body.output = callback;
         next();
-        // return res.json(callback);
     })
 }
 

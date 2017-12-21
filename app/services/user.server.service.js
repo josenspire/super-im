@@ -6,34 +6,29 @@ let IMProxie = require('../api/proxies/user.server.proxies')
 let QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 
 const uuidv4 = require('uuid/v4');
-
 const fs = require('fs')
+
+const mongoose = require('mongoose')
 
 // create user
 exports.createUser = (user, cb) => {
-    UserDao.createUser(user, createCallback => {
-        if (createCallback.status === CodeConstants.SUCCESS) {
-            let userID = createCallback.data.user.userID;
-            IMProxie.createUser(userID, user.password, _cb => {
-                let _result = JSON.parse(_cb)
-                if (!_result.error) {
-                    cb(createCallback);
-                } else {
-                    console.log('---[IM CRETEUSER FAIL]---', _result.error)
-                    IMProxie.deleteUser(userID, rollback => {
-                        console.log('---[CREATE USER ROLLBACK]---', rollback)
-                    })
-                    cb({
-                        status: CodeConstants.FAIL,
-                        data: {},
-                        message: _result.error
-                    })
-                }
+    let userID = mongoose.Types.ObjectId();
+    IMProxie.createUser(userID, user.nickname, null, response => {
+        if (!response.error) {
+            user._id = userID;
+            UserDao.createUser(user, response.data, createCallback => {
+                cb(createCallback)
             })
         } else {
-            cb(createCallback)
+            console.log('---[IM CRETEUSER FAIL]---', response.error)
+            cb({
+                status: CodeConstants.FAIL,
+                data: {},
+                message: response.error
+            })
         }
     })
+
 }
 
 // user login
@@ -49,20 +44,6 @@ exports.queryUserByTelephoneAndPassword = (telephone, password, deviceID, cb) =>
         }
         cb(_user)
     })
-}
-
-exports.getUserToken = async (userID, password, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
-    let token = '';
-    try {
-        token = await getUserToken(userID, password);
-        result.status = CodeConstants.SUCCESS;
-        result.data.token = token;
-    } catch (err) {
-        console.log(err)
-        result.message = err;
-    }
-    cb(result)
 }
 
 // user login
@@ -99,23 +80,8 @@ exports.isTelephoneExist = (telephone, cb) => {
 
 // reset user's password
 exports.resetPassword = (telephone, cb) => {
-    IMProxie.resetPassword(telephone, oldpwd, newpwd, result => {
-        if (!callback.error) {
-            UserDao.resetPassword(telephone, newpwd, _result => {
-                if (_result.status != CodeConstants.SUCCESS) {
-                    IMProxie.resetPassword(telephone, newpwd, oldpwd, rollback => {
-                        console.log('--[RESET ROLLBACK]--', rollback)
-                    })
-                }
-                cb(_result)
-            })
-        } else {
-            cb({
-                status: CodeConstants.FAIL,
-                data: {},
-                message: result.error
-            })
-        }
+    UserDao.resetPassword(telephone, newpwd, _result => {
+        cb(_result)
     })
 }
 
@@ -146,43 +112,45 @@ exports.uploadAvatar = (telephone, cb) => {
 
 exports.addFriend = (userID, friendID, remarkName, cb) => {
     UserDao.addFriend(userID, friendID, remarkName || '', result => {
-        if (result.status === CodeConstants.SUCCESS) {
-            IMProxie.addFriend(userID, friendID, _result => {
-                let data = JSON.parse(_result);
-                if (!data.error) {
-                    cb(result)
-                } else {
-                    cb({
-                        status: CodeConstants.FAIL,
-                        data: {},
-                        message: data.error
-                    })
-                }
-            })
-        } else {
-            cb(result)
-        }
+        // if (result.status === CodeConstants.SUCCESS) {
+        //     IMProxie.addFriend(userID, friendID, _result => {
+        //         let data = JSON.parse(_result);
+        //         if (!data.error) {
+        //             cb(result)
+        //         } else {
+        //             cb({
+        //                 status: CodeConstants.FAIL,
+        //                 data: {},
+        //                 message: data.error
+        //             })
+        //         }
+        //     })
+        // } else {
+        //     cb(result)
+        // }
+        cb(result)
     });
 }
 
 exports.deleteFriend = (userID, friendID, cb) => {
     UserDao.deleteFriend(userID, friendID, result => {
-        if (result.status === CodeConstants.SUCCESS) {
-            IMProxie.deleteFriend(userID, friendID, _result => {
-                let data = JSON.parse(_result);
-                if (!data.error) {
-                    cb(result)
-                } else {
-                    cb({
-                        status: CodeConstants.FAIL,
-                        data: {},
-                        message: data.error
-                    })
-                }
-            })
-        } else {
-            cb(result)
-        }
+        // if (result.status === CodeConstants.SUCCESS) {
+        //     IMProxie.deleteFriend(userID, friendID, _result => {
+        //         let data = JSON.parse(_result);
+        //         if (!data.error) {
+        //             cb(result)
+        //         } else {
+        //             cb({
+        //                 status: CodeConstants.FAIL,
+        //                 data: {},
+        //                 message: data.error
+        //             })
+        //         }
+        //     })
+        // } else {
+        //     cb(result)
+        // }
+        cb(result);
     });
 }
 
@@ -205,21 +173,22 @@ exports.searchUserByTelephoneOrNickname = (queryCondition, pageIndex, cb) => {
 }
 
 exports.getBlackList = (telephone, cb) => {
-    IMProxie.getBlacklist(telephone, _result => {
-        let data = JSON.parse(_result);
-        if (!data.error) {
-            let telephoneList = data.data || [];
-            UserDao.queryUserListByTelephone(telephoneList, userList => {
-                cb(userList);
-            })
-        } else {
-            cb({
-                status: CodeConstants.FAIL,
-                data: {},
-                message: data.error
-            })
-        }
-    })
+    // IMProxie.getBlacklist(telephone, _result => {
+    //     let data = JSON.parse(_result);
+    //     if (!data.error) {
+    //         let telephoneList = data.data || [];
+    //         UserDao.queryUserListByTelephone(telephoneList, userList => {
+    //             cb(userList);
+    //         })
+    //     } else {
+    //         cb({
+    //             status: CodeConstants.FAIL,
+    //             data: {},
+    //             message: data.error
+    //         })
+    //     }
+    // })
+    cb([])
 }
 
 exports.searchUserByTelephoneOrNickname = (queryCondition, pageIndex, cb) => {
@@ -229,31 +198,20 @@ exports.searchUserByTelephoneOrNickname = (queryCondition, pageIndex, cb) => {
 }
 
 exports.getBlackList = (telephone, cb) => {
-    IMProxie.getBlacklist(telephone, _result => {
-        let data = JSON.parse(_result);
-        if (!data.error) {
-            let telephoneList = data.data || [];
-            UserDao.queryUserListByTelephone(telephoneList, userList => {
-                cb(userList);
-            })
-        } else {
-            cb({
-                status: CodeConstants.FAIL,
-                data: {},
-                message: data.error
-            })
-        }
-    })
-}
-
-var getUserToken = (userID, password) => {
-    return new Promise((resolve, reject) => {
-        IMProxie.accessCommonToken(userID, password, token => {
-            if (!token) {
-                reject("Username or password is invalid")
-            } else {
-                resolve(token)
-            }
-        })
-    })
+    // IMProxie.getBlacklist(telephone, _result => {
+    //     let data = JSON.parse(_result);
+    //     if (!data.error) {
+    //         let telephoneList = data.data || [];
+    //         UserDao.queryUserListByTelephone(telephoneList, userList => {
+    //             cb(userList);
+    //         })
+    //     } else {
+    //         cb({
+    //             status: CodeConstants.FAIL,
+    //             data: {},
+    //             message: data.error
+    //         })
+    //     }
+    // })
+    cb([])
 }
