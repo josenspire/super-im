@@ -2,7 +2,7 @@ const UserDao = require('../dao/user.server.dao')
 const SMSService = require('./sms.server.service')
 const CodeConstants = require('../utils/CodeConstants')
 
-let IMProxie = require('../api/proxies/user.server.proxies')
+let IMProxie = require('../api/proxies/rongCloud.server.proxies')
 let QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 
 const uuidv4 = require('uuid/v4');

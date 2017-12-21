@@ -1,3 +1,4 @@
+
 const rongcloudSDK = require('rongcloud-sdk');
 const RongCloudConfig = require('../../../configs/config').RongCloudConfig;
 
@@ -8,6 +9,7 @@ var errorHandle = (err) => {
     return err.text;
 }
 
+// User
 exports.createUser = (userID, nickname, avatar, callback) => {
     rongcloudSDK.user.getToken(userID.toString(), nickname, avatar, (err, _result) => {
         if (err) {
@@ -21,4 +23,15 @@ exports.createUser = (userID, nickname, avatar, callback) => {
             }
         }
     });
+}
+
+
+
+// IM
+exports.sendSystemMessage = ( fromUserId, toUserID, content, pushContent, callback) => {
+    let system = rongcloudSDK.message.system;
+    // TODO
+    system.publish(fromUserId, toUserID, 'RC:TxtMsg', content){
+
+    }
 }
