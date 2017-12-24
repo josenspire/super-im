@@ -110,24 +110,36 @@ exports.uploadAvatar = (telephone, cb) => {
 
 /** User Friends Part */
 
+exports.requestAddFriend = (userID, friendID, message, cb) => {
+    IMProxie.sendContactNotification(userID, friendID, message, result => {
+        if (!result.error) {
+            cb({
+                status: CodeConstants.SUCCESS,
+                data: {},
+                message: ""
+            })
+        } else {
+            cb({
+                status: CodeConstants.FAIL,
+                data: {},
+                message: result.error
+            })
+        }
+    })
+}
+
 exports.addFriend = (userID, friendID, remarkName, cb) => {
     UserDao.addFriend(userID, friendID, remarkName || '', result => {
-        // if (result.status === CodeConstants.SUCCESS) {
-        //     IMProxie.addFriend(userID, friendID, _result => {
-        //         let data = JSON.parse(_result);
-        //         if (!data.error) {
-        //             cb(result)
-        //         } else {
-        //             cb({
-        //                 status: CodeConstants.FAIL,
-        //                 data: {},
-        //                 message: data.error
-        //             })
-        //         }
-        //     })
-        // } else {
-        //     cb(result)
-        // }
+        if (result.status === CodeConstants.SUCCESS) {
+            try {
+                const message = "You've added him to be a friend";
+                Promise.all([IMProxie.sendContactNotification(userID, friendID, message), IMProxie.sendContactNotification(friendID, userID, message)]);
+            } catch (err) {
+                result.status = CodeConstants.FAIL;
+                result.data = {};
+                result.message = err;
+            }
+        }
         cb(result)
     });
 }

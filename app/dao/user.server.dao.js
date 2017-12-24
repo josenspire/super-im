@@ -29,7 +29,7 @@ exports.createUser = async (user, token, cb) => {
 
         // let _updateUser = await updateUserTokenByUserID(_user._id, _token._id);
         let initFriends = await initFriendList(user._id);
-        
+
         result.status = CodeConstants.SUCCESS;
         result.data.user = convertUser(_user);
         result.data.token = _token.token;
@@ -48,8 +48,9 @@ exports.queryUserByTelephoneAndPassword = async (telephone, password, cb) => {
         let data = await queryUserByTelephoneAndPassword(telephone, password);
         if (data.isMatch) {
             let _user = convertUser(data.user);
+            await updateToken(data.user.token);
+            result.data.token = data.user.token.token;
             result.data.user = _user;
-            result.data.token = await updateToken(data.user.token, uuidv4());
             result.data.secretKey = Constants.AES_SECRET;
             result.status = CodeConstants.SUCCESS;
         } else {
@@ -182,12 +183,14 @@ exports.isTokenValid = (token, cb) => {
             } else if (!token) {
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
-                if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now() - (1000 * 60 * 60 * 24)))) {
-                    result.status = CodeConstants.SUCCESS;
-                    result.data.userID = token.user;
-                } else {
-                    result.message = 'This token is expired, please login again';
-                }
+                result.status = CodeConstants.SUCCESS;
+                result.data.userID = token.user;
+                // if (DateUtils.compareISODate(token.loginTime, DateUtils.formatCommonUTCDate(Date.now() - (1000 * 60 * 60 * 24)))) {
+                //     result.status = CodeConstants.SUCCESS;
+                //     result.data.userID = token.user;
+                // } else {
+                //     result.message = 'This token is expired, please login again';
+                // }
             }
             cb(result)
         })
@@ -354,16 +357,16 @@ var insertToken = tokenModel => {
     })
 }
 
-var updateToken = (_id, uuid) => {
+var updateToken = (_id) => {
     return new Promise((resolve, reject) => {
-        let opts = { loginTime: DateUtils.formatCommonUTCDate(Date.now()), token: uuid };
+        let opts = { loginTime: DateUtils.formatCommonUTCDate(Date.now()) };
         TokenModel.findByIdAndUpdate(_id, { $set: opts })
             .exec(err => {
                 if (err) {
                     console.log('--[UPDATE TOKEN ERROR]--', err.message);
                     reject('Server unknow error, login fail')
                 } else {
-                    resolve(uuid)
+                    resolve()
                 }
             })
     })
@@ -439,7 +442,7 @@ var queryByUserID = userID => {
 var queryUserByTelephoneAndPassword = (telephone, password) => {
     return new Promise((resolve, reject) => {
         UserModel.findOne({ telephone: telephone })
-            .populate('token', 'token')
+            .populate('token')
             .exec((err, user) => {
                 if (err) {
                     console.log(err)

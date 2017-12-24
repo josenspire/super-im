@@ -27,14 +27,16 @@ let routers = app => {
     app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, User.getUserProfile, AESAscept.encryptParam);
     app.post('/v1/api/user/getBlackList', AESAscept.decryptParam, User.getBlackList, AESAscept.encryptParam);
     app.put('/v1/api/user/uploadAvatar', AESAscept.decryptParam, User.uploadAvatar, AESAscept.encryptParam);
-    
+
+    // friend
+    app.post('/v1/api/auth/requestAddFriend', AESAscept.decryptParam, User.requestAddFriend, AESAscept.encryptParam);
     app.post('/v1/api/user/addFriend', AESAscept.decryptParam, User.addFriend, AESAscept.encryptParam);
+    
     app.post('/v1/api/user/updateRemarkName', AESAscept.decryptParam, User.updateRemarkName, AESAscept.encryptParam);
     app.post('/v1/api/user/getUserFriends', AESAscept.decryptParam, User.getUserFriends, AESAscept.encryptParam);
     app.post('/v1/api/user/deleteFriend', AESAscept.decryptParam, User.deleteFriend, AESAscept.encryptParam);
     app.post('/v1/api/user/searchUser', AESAscept.decryptParam, User.searchUserByTelephoneOrNickname, AESAscept.encryptParam);
 
-    app.post('/v1/api/auth/getToken', User.getUserToken);
 }
 
 module.exports = routers;

@@ -225,10 +225,13 @@ exports.searchUserByTelephoneOrNickname = (req, res, next) => {
     })
 }
 
-exports.getUserToken = (req, res, next) => {
-    let userID = req.body.params.userID;
-    let password = req.body.params.password;
-    UserService.getUserToken(userID, password, cb => {
-        return res.json(cb);
+exports.requestAddFriend = (req, res, next) => {
+    let input = req.body.input;
+    let userID = input.userID;
+    let friendID = input.friendID;
+    let message = input.message;
+    UserService.requestAddFriend(userID, friendID, message, inviteResult => {
+        req.body.output = inviteResult;
+        next();
     })
 }
