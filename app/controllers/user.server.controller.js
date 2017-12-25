@@ -144,10 +144,8 @@ exports.uploadAvatar = (req, res, next) => {
         if (req.file) {
             let file = req.file;
             let fileName = userID + '-' + uuidv4() + '-' + file.filename;
-
             try {
                 let result = await QiniuProxie.uploadAvatar(fileName, file.path);
-
                 return res.json(result)
             } catch (err) {
                 return res.json(err)
@@ -160,26 +158,48 @@ exports.uploadAvatar = (req, res, next) => {
 
 
 /** User Friend Part */
-exports.addFriend = (req, res, next) => {
-    let input = req.body.input;
 
+exports.requestAddContact = (req, res, next) => {
+    let input = req.body.input;
+    let userID = input.userID;
+    let friendID = input.friendID;
+    let message = input.reason || "";
+    UserService.requestAddContact(userID, friendID, message, inviteResult => {
+        req.body.output = inviteResult;
+        next();
+    })
+}
+
+exports.acceptAddContact = (req, res, next) => {
+    let input = req.body.input;
     let userID = input.userID;
     let friendID = input.friendID;
     let remarkName = input.remarkName;
-    console.log(input)
 
-    UserService.addFriend(userID, friendID, remarkName, friendList => {
+    UserService.acceptAddContact(userID, friendID, remarkName, friendList => {
         req.body.output = friendList;
         next();
     })
 }
 
-exports.deleteFriend = (req, res, next) => {
+exports.rejectAddContact = (req, res, next) => {
+    let input = req.body.input;
+    let userID = input.userID;
+    let rejectUserID = input.rejectUserID;
+    let rejectReason = input.reason || "";
+
+    UserService.rejectAddContact(userID, rejectUserID, rejectReason, friendList => {
+        req.body.output = friendList;
+        next();
+    })
+}
+
+exports.deleteContact = (req, res, next) => {
     let input = req.body.input;
 
     let userID = input.userID;
     let friendID = input.friendID;
-    UserService.deleteFriend(userID, friendID, deleteResult => {
+    UserService.deleteContact(userID, friendID, deleteResult => {
         req.body.output = deleteResult;
         next();
     })
@@ -198,9 +218,9 @@ exports.updateRemarkName = (req, res, next) => {
     })
 }
 
-exports.getUserFriends = (req, res, next) => {
+exports.getUserContacts = (req, res, next) => {
     let userID = req.body.input.userID;
-    UserService.getUserFriends(userID, userList => {
+    UserService.getUserContacts(userID, userList => {
         req.body.output = userList;
         next();
     })
@@ -221,17 +241,6 @@ exports.searchUserByTelephoneOrNickname = (req, res, next) => {
     let pageIndex = parseInt(input.pageIndex) || 0;
     UserService.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
         req.body.output = searchResult;
-        next();
-    })
-}
-
-exports.requestAddFriend = (req, res, next) => {
-    let input = req.body.input;
-    let userID = input.userID;
-    let friendID = input.friendID;
-    let message = input.message;
-    UserService.requestAddFriend(userID, friendID, message, inviteResult => {
-        req.body.output = inviteResult;
         next();
     })
 }

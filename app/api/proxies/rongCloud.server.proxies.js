@@ -4,7 +4,6 @@ const RongCloudConfig = require('../../../configs/config').RongCloudConfig;
 
 rongcloudSDK.init(RongCloudConfig.appKey, RongCloudConfig.appSecret);
 
-const CONTACT_OPERATION_REQUEST = 'op1'
 
 var errorHandle = (err) => {
     console.log('---[IM REQUEST ERROR]---', err);
@@ -28,13 +27,13 @@ exports.createUser = (userID, nickname, avatar, callback) => {
 }
 
 // IM
-exports.sendContactNotification = async (currentUserID, friendID, message, callback) => {
+exports.sendContactNotification = async (currentUserID, friendID, message, operation, callback) => {
     try {
         let timestamp = Date.now();
-        await sendContactNotification(currentUserID.toString(), friendID, CONTACT_OPERATION_REQUEST, message, timestamp);
-        callback({ status: 200 })
+        await sendContactNotification(currentUserID.toString(), friendID, operation, message, timestamp);
+        callback(null, 200)
     } catch (err) {
-        callback({ status: 400, error: err })
+        callback(err, 400)
     }
 }
 
@@ -45,7 +44,7 @@ var sendContactNotification = (userID, friendID, operation, message, timestamp) 
         targetUserId: friendID,
         message: message,
         extra: {
-            sourceUserNickname: "系统消息",
+            sourceUserNickname: "System Notification",
             version: timestamp
         }
     };

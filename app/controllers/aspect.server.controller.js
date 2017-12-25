@@ -4,40 +4,40 @@ const AESUtil = require('../utils/AESUtil');
 const UserService = require('../services/user.server.service');
 
 exports.RSA = {
-    // decryptParam: (req, res, next) => {
-    //     let params = req.body.params;
-    //     console.log('---[INPUT DATA]---', params, typeof params)
-    //     RSAUtil.privateDecrypt(params, data => {
-    //         console.log('--[', req.path, ']--')
-    //         console.log('--[REQUEST DATA]--', data)
-    //         req.body.input = data;
-    //         req.body.clientPublicKey
-    //     })
-    //     next();
-    // },
-
-    // encryptParam: (req, res) => {
-    //     let input = req.body.input;
-    //     let publicKey = input ? input.params.clientPublicKey : "";
-    //     let output = req.body.output;
-
-    //     console.log('--[RESPONSE DATA]--', output)
-    //     RSAUtil.publicEncryptObj(output, publicKey, params => {
-    //         return res.json(params);
-    //     })
-    // },
-
     decryptParam: (req, res, next) => {
         let params = req.body.params;
         console.log('---[INPUT DATA]---', params, typeof params)
-        req.body.input = params;
+        RSAUtil.privateDecrypt(params, data => {
+            console.log('--[', req.path, ']--')
+            console.log('--[REQUEST DATA]--', data)
+            req.body.input = data;
+            req.body.clientPublicKey
+        })
         next();
     },
+
     encryptParam: (req, res) => {
+        let input = req.body.input;
+        let publicKey = input ? input.params.clientPublicKey : "";
         let output = req.body.output;
+
         console.log('--[RESPONSE DATA]--', output)
-        return res.json(output);
-    }
+        RSAUtil.publicEncryptObj(output, publicKey, params => {
+            return res.json(params);
+        })
+    },
+
+    // decryptParam: (req, res, next) => {
+    //     let params = req.body.params;
+    //     console.log('---[INPUT DATA]---', params, typeof params)
+    //     req.body.input = params;
+    //     next();
+    // },
+    // encryptParam: (req, res) => {
+    //     let output = req.body.output;
+    //     console.log('--[RESPONSE DATA]--', output)
+    //     return res.json(output);
+    // }
 }
 
 exports.AES = {
@@ -68,8 +68,9 @@ exports.AES = {
     },
 
     decryptParam: (req, res, next) => {
-        // let data = JSON.parse(req.body.params);
-        let data = req.body.params;
+        let data = JSON.parse(req.body.params);
+        // let data = req.body.params;
+
         if(!data.token) {
             return res.json({
                 status: 400,
