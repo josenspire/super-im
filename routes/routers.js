@@ -25,8 +25,9 @@ let routers = app => {
 
     // user profile
     app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, User.getUserProfile, AESAscept.encryptParam);
-    // TODO
-    app.put('/v1/api/user/uploadAvatar', AESAscept.decryptParam, User.uploadAvatar, AESAscept.encryptParam);
+
+    // TODO special api handle
+    app.put('/v1/api/user/uploadAvatar', User.uploadAvatar);
     app.post('/v1/api/user/getBlackList', AESAscept.decryptParam, User.getBlackList, AESAscept.encryptParam);
 
     // contacts
@@ -34,7 +35,7 @@ let routers = app => {
     app.post('/v1/api/user/acceptContact', AESAscept.decryptParam, User.acceptAddContact, AESAscept.encryptParam);
     app.post('/v1/api/user/rejectContact', AESAscept.decryptParam, User.rejectAddContact, AESAscept.encryptParam);
     app.post('/v1/api/user/deleteContact', AESAscept.decryptParam, User.deleteContact, AESAscept.encryptParam);
-    
+
     app.post('/v1/api/user/updateRemarkName', AESAscept.decryptParam, User.updateRemarkName, AESAscept.encryptParam);
     app.post('/v1/api/user/getUserContacts', AESAscept.decryptParam, User.getUserContacts, AESAscept.encryptParam);
     app.post('/v1/api/user/searchUser', AESAscept.decryptParam, User.searchUserByTelephoneOrNickname, AESAscept.encryptParam);

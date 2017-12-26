@@ -23,7 +23,7 @@ let uploadAvatar = (upToken, key, localFile) => {
         let extra = new qiniu.form_up.PutExtra();
         formUploader.putFile(upToken, key, localFile, extra, function (err, ret) {
             if (!err) {
-                console.log('---[UPLOAD AVATAR SUCCESS]---', ret, '=========================')
+                console.log('---[UPLOAD AVATAR SUCCESS]---', ret)
                 // console.log(ret.hash, ret.key, ret.persistentId);
                 resolve(ret)
             } else {

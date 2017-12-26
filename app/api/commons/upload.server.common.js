@@ -1,5 +1,4 @@
 const multer = require('multer')
-const moment = require('moment')
 const bytes = require('bytes')
 const uuidv4 = require('uuid/v4');
 

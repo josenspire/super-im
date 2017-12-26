@@ -3,8 +3,9 @@ const SMSService = require('../services/sms.server.service')
 const RSAUtil = require('../utils/RSAUtil')
 const CodeConstants = require('../utils/CodeConstants');
 const Constants = require('../utils/Constants');
-const fs = require('fs')
 
+const fs = require('fs')
+const multiparty = require('multiparty');
 const uuidv4 = require('uuid/v4');
 const atavarUpload = require('../api/commons/upload.server.common')
 const QiniuProxie = require('../api/proxies/qiniu.server.proxies')
@@ -128,27 +129,50 @@ exports.getUserProfile = (req, res, next) => {
 }
 
 /** User avatar upload */
-exports.uploadAvatar = (req, res, next) => {
-    let userID = req.body.input.userID;
+exports.uploadAvatar2 = (req, res, next) => {
+    let userID = req.params.userID;
+    console.log(userID, req.params, req.body, req.query)
+    return res.json('=========' + JSON.stringify(req))
+    // let result = { status: CodeConstants.FAIL, data: {}, message: "" };
+    // atavarUpload.single('uploadAvatar')(req, res, async err => {
+    //     if (err) {
+    //         console.error(err)
+    //         result.message = err;
+    //     } else if (req.file) {
+    //         let file = req.file;
+    //         let fileName = userID + '-' + uuidv4() + '-' + file.filename;
+    //         try {
+    //             let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
+    //             result.status = CodeConstants.SUCCESS;
+    //             result.data = { avatar: uploadAvatarResult.key };
+    //         } catch (err) {
+    //             result.message = err;
+    //         }
+    //     } else {
+    //         result.message = "Parameters is incompleteness";
+    //     }
+    //     return res.json(result);
+    // })
+}
 
-    atavarUpload.single('uploadAvatar')(req, res, async err => {
-        if (err) {
-            console.error(err)
-            return res.json(err)
+exports.uploadAvatar = (req, res, next) => {
+    let form = new multiparty.Form();
+    form.parse(req, async (err, fields, files) => {
+        let avatarBase64 = fields.uploadAvatar[0].replace(/^data:image\/\w+;base64,/, '');
+        let userID = fields.userID[0];
+
+        let avatar = new Buffer(avatarBase64, 'base64');
+        // TODO
+        let fileName = userID + '-' + uuidv4() + '-' + file.filename;
+
+        try {
+            let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
+            result.status = CodeConstants.SUCCESS;
+            result.data = { avatar: uploadAvatarResult.key };
+        } catch (err) {
+            result.message = err;
         }
-        if (req.file) {
-            let file = req.file;
-            let fileName = userID + '-' + uuidv4() + '-' + file.filename;
-            try {
-                let result = await QiniuProxie.uploadAvatar(fileName, file.path);
-                return res.json(result)
-            } catch (err) {
-                return res.json(err)
-            }
-        } else {
-            return res.json('FAIL')
-        }
-    })
+    });
 }
 
 
@@ -237,5 +261,18 @@ exports.searchUserByTelephoneOrNickname = (req, res, next) => {
     UserService.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
         req.body.output = searchResult;
         next();
+    })
+}
+
+var saveFile = (filename, path, avatar) => {
+    return new Promise((resolve, reject) => {
+        fs.writeFile(path + filename, avatar, err => {
+            if (err) {
+                console.log('---[SAVE FILE ERROR]---')
+                reject("Server error, save file fail")
+            } else {
+                resolve()
+            }
+        })
     })
 }
