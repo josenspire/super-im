@@ -56,12 +56,6 @@ exports.queryUserWithoutVerify = (telephone, password, cb) => {
     })
 }
 
-exports.resetTokenByToken = (token, cb) => {
-    UserDao.resetTokenByToken(token, callback => {
-        cb(callback);
-    })
-}
-
 exports.isTokenValid = (token, cb) => {
     UserDao.isTokenValid(token, callback => {
         cb(callback);
@@ -120,13 +114,9 @@ exports.requestAddContact = (userID, contactID, message, cb) => {
                 cb(result);
             } else {
                 IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_REQUEST, (err, _result) => {
-                    if (err) {
-                        result.message = err;
-                        cb(result);
-                    } else {
-                        result.status = CodeConstants.SUCCESS;
-                        cb(result);
-                    }
+                    if (err) { result.message = err; }
+                    else { result.status = CodeConstants.SUCCESS; }
+                    cb(result);
                 })
             }
         } else {
@@ -152,34 +142,30 @@ exports.acceptAddContact = (userID, contactID, remarkName, cb) => {
 }
 
 exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
-    // TODO handle onece reject request
-    IMProxie.sendContactNotification(userID, rejectUserID, rejectReason, CONTACT_OPERATION_REJECT);
-    cb({
-        status: CodeConstants.SUCCESS,
-        data: {},
-        message: ""
+    let result = { status: CodeConstants.FAIL, data: {}, message: "" };
+
+    UserDao.queryByUserID(rejectUserID, async user => {
+        if (user.status === CodeConstants.SUCCESS) {
+            let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, rejectUserID);
+            if (isContact) {
+                result.message = "Error operating, this user is already your contact";
+                return cb(result);
+            }
+            IMProxie.sendContactNotification(userID, rejectUserID, rejectReason, CONTACT_OPERATION_REJECT);
+            cb({
+                status: CodeConstants.SUCCESS,
+                data: {},
+                message: ""
+            })
+        } else {
+            cb(user);
+        }
     })
 }
 
 exports.deleteContact = (userID, contactID, cb) => {
     UserDao.deleteContact(userID, contactID, result => {
         IMProxie.sendContactNotification(userID, contactID, "", CONTACT_OPERATION_DELETE);
-        // if (result.status === CodeConstants.SUCCESS) {
-        //     IMProxie.deleteContact(userID, contactID, _result => {
-        //         let data = JSON.parse(_result);
-        //         if (!data.error) {
-        //             cb(result)
-        //         } else {
-        //             cb({
-        //                 status: CodeConstants.FAIL,
-        //                 data: {},
-        //                 message: data.error
-        //             })
-        //         }
-        //     })
-        // } else {
-        //     cb(result)
-        // }
         cb(result);
     });
 }
@@ -203,45 +189,6 @@ exports.searchUserByTelephoneOrNickname = (queryCondition, pageIndex, cb) => {
 }
 
 exports.getBlackList = (telephone, cb) => {
-    // IMProxie.getBlacklist(telephone, _result => {
-    //     let data = JSON.parse(_result);
-    //     if (!data.error) {
-    //         let telephoneList = data.data || [];
-    //         UserDao.queryUserListByTelephone(telephoneList, userList => {
-    //             cb(userList);
-    //         })
-    //     } else {
-    //         cb({
-    //             status: CodeConstants.FAIL,
-    //             data: {},
-    //             message: data.error
-    //         })
-    //     }
-    // })
-    cb([])
-}
-
-exports.searchUserByTelephoneOrNickname = (queryCondition, pageIndex, cb) => {
-    UserDao.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
-        cb(searchResult);
-    })
-}
-
-exports.getBlackList = (telephone, cb) => {
-    // IMProxie.getBlacklist(telephone, _result => {
-    //     let data = JSON.parse(_result);
-    //     if (!data.error) {
-    //         let telephoneList = data.data || [];
-    //         UserDao.queryUserListByTelephone(telephoneList, userList => {
-    //             cb(userList);
-    //         })
-    //     } else {
-    //         cb({
-    //             status: CodeConstants.FAIL,
-    //             data: {},
-    //             message: data.error
-    //         })
-    //     }
-    // })
+    // TODO
     cb([])
 }

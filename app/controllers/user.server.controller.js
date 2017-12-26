@@ -97,14 +97,12 @@ exports.isTokenValid = (req, res, next) => {
 }
 
 exports.logout = (req, res, next) => {
-    let data = req.body.input.params || {};
-    let token = data.token;
-
-    console.log('[--LOGOUT]--', data)
-    UserService.resetTokenByToken(token, callback => {
-        req.body.output = callback;
-        next();
-    })
+    req.body.output = {
+        status: CodeConstants.SUCCESS,
+        data: {},
+        message: ""
+    };
+    next();
 }
 
 /** User profile */

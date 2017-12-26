@@ -5,15 +5,11 @@ const ContactModel = require('../models/contact.server.model')
 const CodeConstants = require('../utils/CodeConstants')
 const Constants = require('../utils/Constants')
 const DateUtils = require('../utils/DateUtils')
+const StringUtil = require('../utils/StringUtil')
 const JWT_SECRET = require('../utils/Constants')   // secret key
 
 const jwt = require('jwt-simple')
-const uuidv4 = require('uuid/v4');
-
-const StringUtil = require('../utils/StringUtil')
-
 const _ = require('lodash')
-
 let mongoose = require('mongoose')
 
 exports.createUser = async (user, token, cb) => {
@@ -78,6 +74,16 @@ exports.isTelephoneExist = (telephone, cb) => {
         }
         cb(result)
     })
+}
+
+exports.isUserExist = async userID => {
+    try {
+        let user = await queryByUserID(userID);
+        if (!user) return false;
+        return true;
+    } catch (err) {
+        console.log('---[CHECK USER EXIST ERROR]---', err);
+    }
 }
 
 exports.queryByUserID = async (userID, cb) => {
@@ -157,22 +163,6 @@ exports.isTokenValid = (token, cb) => {
             } else if (token) {
                 result.status = CodeConstants.SUCCESS;
                 result.data.userID = token.user;
-            }
-            cb(result)
-        })
-}
-
-exports.resetTokenByToken = (token, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
-    TokenModel.findOneAndUpdate({ token: token }, { $set: { token: '' } })
-        .exec((err, token) => {
-            if (err) {
-                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
-                result.message = 'Sorry, server unknow error';
-            } else if (token) {
-                result.status = CodeConstants.SUCCESS;
-            } else {
-                result.message = 'The token is invalid'
             }
             cb(result)
         })
@@ -404,10 +394,10 @@ var queryByUserID = userID => {
         UserModel.findOne({ _id: userID })
             .exec((err, user) => {
                 if (err) {
-                    console.log('---[QUERY BY USERID]---')
-                    reject('This user is not exist')
+                    console.log('---[QUERY BY USERID]---');
+                    reject('Server unknow error, query user fail');
                 } else {
-                    resolve(user)
+                    resolve(user);
                 }
             })
     })
