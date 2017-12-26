@@ -22,18 +22,17 @@ exports.getPublicKey = (req, res, next) => {
 exports.login = (req, res, next) => {
     let data = req.body.input.params || {};
 
-    let verifyCode = data.verifyCode;
+    let verifyCode = data.verifyCode || "";
     let user = {};
     user.telephone = data.telephone;
     user.password = data.password;
     user.deviceID = data.deviceID;
 
     console.log('[--LOGIN--]: ', data)
-    if (verifyCode === '') {
+    if (verifyCode === "") {
         UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
             req.body.output = callback;
             next();
-            // res.json(callback)
         })
     } else {
         SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, validateCallback => {
@@ -41,10 +40,8 @@ exports.login = (req, res, next) => {
                 UserService.updateDeviceID(user.telephone, user.password, user.deviceID, callback => {
                     req.body.output = callback;
                     next();
-                    // res.json(callback)
                 })
             } else {
-                // res.json(result)
                 req.body.output = validateCallback;
                 next();
             }
@@ -157,14 +154,14 @@ exports.uploadAvatar = (req, res, next) => {
 }
 
 
-/** User Friend Part */
+/** User Contact Part */
 
 exports.requestAddContact = (req, res, next) => {
     let input = req.body.input;
     let userID = input.userID;
-    let friendID = input.friendID;
+    let contactID = input.contactID;
     let message = input.reason || "";
-    UserService.requestAddContact(userID, friendID, message, inviteResult => {
+    UserService.requestAddContact(userID, contactID, message, inviteResult => {
         req.body.output = inviteResult;
         next();
     })
@@ -173,11 +170,11 @@ exports.requestAddContact = (req, res, next) => {
 exports.acceptAddContact = (req, res, next) => {
     let input = req.body.input;
     let userID = input.userID;
-    let friendID = input.friendID;
+    let contactID = input.contactID;
     let remarkName = input.remarkName;
 
-    UserService.acceptAddContact(userID, friendID, remarkName, friendList => {
-        req.body.output = friendList;
+    UserService.acceptAddContact(userID, contactID, remarkName, contactList => {
+        req.body.output = contactList;
         next();
     })
 }
@@ -188,8 +185,8 @@ exports.rejectAddContact = (req, res, next) => {
     let rejectUserID = input.rejectUserID;
     let rejectReason = input.reason || "";
 
-    UserService.rejectAddContact(userID, rejectUserID, rejectReason, friendList => {
-        req.body.output = friendList;
+    UserService.rejectAddContact(userID, rejectUserID, rejectReason, contactList => {
+        req.body.output = contactList;
         next();
     })
 }
@@ -198,8 +195,8 @@ exports.deleteContact = (req, res, next) => {
     let input = req.body.input;
 
     let userID = input.userID;
-    let friendID = input.friendID;
-    UserService.deleteContact(userID, friendID, deleteResult => {
+    let contactID = input.contactID;
+    UserService.deleteContact(userID, contactID, deleteResult => {
         req.body.output = deleteResult;
         next();
     })
@@ -209,10 +206,10 @@ exports.updateRemarkName = (req, res, next) => {
     let input = req.body.input;
 
     let userID = input.userID;
-    let friendID = input.friendID;
+    let contactID = input.contactID;
     let remarkName = input.remarkName;
 
-    UserService.updateRemarkName(userID, friendID, remarkName, updateResult => {
+    UserService.updateRemarkName(userID, contactID, remarkName, updateResult => {
         req.body.output = updateResult;
         next();
     })

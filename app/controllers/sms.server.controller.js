@@ -17,13 +17,11 @@ exports.sendSMS = async (req, res, next) => {
         switch (codeType) {
             case Constants.SMS_TYPE_REGISTER:
                 result = await register(telephone, verifyCode);
-                // return res.json(result);
                 req.body.output = result;
                 break;
             case Constants.SMS_TYPE_LOGIN:
                 result = await login(userInformation, telephone, verifyCode);
                 req.body.output = result;
-                // return res.json(result);
                 break;
             case Constants.SMS_TYPE_OTHERS:
                 return res.json('Others Type SMS')

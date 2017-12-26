@@ -27,21 +27,21 @@ exports.createUser = (userID, nickname, avatar, callback) => {
 }
 
 // IM
-exports.sendContactNotification = async (currentUserID, friendID, message, operation, callback) => {
+exports.sendContactNotification = async (currentUserID, contactID, message, operation, callback) => {
     try {
         let timestamp = Date.now();
-        await sendContactNotification(currentUserID.toString(), friendID, operation, message, timestamp);
+        await sendContactNotification(currentUserID.toString(), contactID, operation, message, timestamp);
         callback(null, 200)
     } catch (err) {
         callback(err, 400)
     }
 }
 
-var sendContactNotification = (userID, friendID, operation, message, timestamp) => {
+var sendContactNotification = (userID, contactID, operation, message, timestamp) => {
     let content = {
         operation: operation,
         sourceUserId: userID,
-        targetUserId: friendID,
+        targetUserId: contactID,
         message: message,
         extra: {
             sourceUserNickname: "System Notification",
@@ -49,7 +49,7 @@ var sendContactNotification = (userID, friendID, operation, message, timestamp) 
         }
     };
     return new Promise((resolve, reject) => {
-        return rongcloudSDK.message.system.publish(userID, [friendID], 'RC:ContactNtf', JSON.stringify(content), (err, resultText) => {
+        return rongcloudSDK.message.system.publish(userID, [contactID], 'RC:ContactNtf', JSON.stringify(content), (err, resultText) => {
             if (err) {
                 console.log('---[SYSTEM PUBLISH ERROR]---', err.response.body.errorMessage);
                 reject(err.response.body.errorMessage);

@@ -32,7 +32,7 @@ version(3.0)
 RSA -- KEY save in configs/rsa_priv.pem, configs/rsa_pub.pem
 AES -- KEY save in app/utils/Constants.js. ASE_SCETKEY
 
-# 环信
+# 融云
 configs/IMConfig
 
 # alicloud

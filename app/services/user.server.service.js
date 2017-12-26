@@ -6,8 +6,6 @@ let IMProxie = require('../api/proxies/rongCloud.server.proxies')
 let QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 
 const uuidv4 = require('uuid/v4');
-const fs = require('fs')
-
 const mongoose = require('mongoose')
 
 const CONTACT_OPERATION_REQUEST = 'Request';
@@ -55,13 +53,6 @@ exports.queryUserByTelephoneAndPassword = (telephone, password, deviceID, cb) =>
 exports.queryUserWithoutVerify = (telephone, password, cb) => {
     UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
         cb(_user)
-    })
-}
-
-// auto login by auth token
-exports.autoLoginByTokenAuth = (token, cb) => {
-    UserDao.autoLoginByTokenAuth(token, callback => {
-        cb(callback)
     })
 }
 
@@ -113,22 +104,22 @@ exports.uploadAvatar = (telephone, cb) => {
         })
 }
 
-/** User Friends Part */
+/** User Contacts Part */
 
-exports.requestAddContact = (userID, friendID, message, cb) => {
+exports.requestAddContact = (userID, contactID, message, cb) => {
     let result = { status: CodeConstants.FAIL, data: {}, message: "" };
-    if (userID.toString() === friendID) {
-        result.message = 'You can\'t add yourself to a friend';
+    if (userID.toString() === contactID) {
+        result.message = 'You can\'t add yourself to a contact';
         return cb(result);
     }
-    UserDao.queryByUserID(friendID, async user => {
+    UserDao.queryByUserID(contactID, async user => {
         if (user.status === CodeConstants.SUCCESS) {
-            let isFriend = await UserDao.checkContactIsExistByUserIDAndContactID(userID, friendID);
-            if (isFriend) {
-                result.message = "This user is already your friend";
+            let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
+            if (isContact) {
+                result.message = "This user is already your contact";
                 cb(result);
             } else {
-                IMProxie.sendContactNotification(userID, friendID, message, CONTACT_OPERATION_REQUEST, (err, _result) => {
+                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_REQUEST, (err, _result) => {
                     if (err) {
                         result.message = err;
                         cb(result);
@@ -139,18 +130,17 @@ exports.requestAddContact = (userID, friendID, message, cb) => {
                 })
             }
         } else {
-            result.message = "Server error, query user fail"
-            cb(result);
+            cb(user);
         }
     })
 }
 
-exports.acceptAddContact = (userID, friendID, remarkName, cb) => {
-    UserDao.acceptAddContact(userID, friendID, remarkName || '', result => {
+exports.acceptAddContact = (userID, contactID, remarkName, cb) => {
+    UserDao.acceptAddContact(userID, contactID, remarkName || '', result => {
         if (result.status === CodeConstants.SUCCESS) {
             try {
-                const message = "You've added him to be a friend";
-                IMProxie.sendContactNotification(userID, friendID, message, CONTACT_OPERATION_ACCEPT);
+                const message = "You've added him to be a contact";
+                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_ACCEPT);
             } catch (err) {
                 result.status = CodeConstants.FAIL;
                 result.data = {};
@@ -171,11 +161,11 @@ exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
     })
 }
 
-exports.deleteContact = (userID, friendID, cb) => {
-    UserDao.deleteContact(userID, friendID, result => {
-        IMProxie.sendContactNotification(userID, friendID, "", CONTACT_OPERATION_DELETE);
+exports.deleteContact = (userID, contactID, cb) => {
+    UserDao.deleteContact(userID, contactID, result => {
+        IMProxie.sendContactNotification(userID, contactID, "", CONTACT_OPERATION_DELETE);
         // if (result.status === CodeConstants.SUCCESS) {
-        //     IMProxie.deleteContact(userID, friendID, _result => {
+        //     IMProxie.deleteContact(userID, contactID, _result => {
         //         let data = JSON.parse(_result);
         //         if (!data.error) {
         //             cb(result)
@@ -194,8 +184,8 @@ exports.deleteContact = (userID, friendID, cb) => {
     });
 }
 
-exports.updateRemarkName = (userID, friendID, remarkName, cb) => {
-    UserDao.updateRemarkName(userID, friendID, remarkName, updateResult => {
+exports.updateRemarkName = (userID, contactID, remarkName, cb) => {
+    UserDao.updateRemarkName(userID, contactID, remarkName, updateResult => {
         cb(updateResult);
     })
 }

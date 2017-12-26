@@ -25,8 +25,9 @@ let routers = app => {
 
     // user profile
     app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, User.getUserProfile, AESAscept.encryptParam);
-    app.post('/v1/api/user/getBlackList', AESAscept.decryptParam, User.getBlackList, AESAscept.encryptParam);
+    // TODO
     app.put('/v1/api/user/uploadAvatar', AESAscept.decryptParam, User.uploadAvatar, AESAscept.encryptParam);
+    app.post('/v1/api/user/getBlackList', AESAscept.decryptParam, User.getBlackList, AESAscept.encryptParam);
 
     // contacts
     app.post('/v1/api/user/requestContact', AESAscept.decryptParam, User.requestAddContact, AESAscept.encryptParam);

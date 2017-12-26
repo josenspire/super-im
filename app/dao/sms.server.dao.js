@@ -2,47 +2,41 @@ const SMSModel = require('../models/sms.server.model')
 const CodeConstants = require('../utils/CodeConstants')
 
 // save verifyCode
-exports.saveSMS = (telephone, verifyCode, codeType, cb) => {
+exports.saveSMS = async (telephone, verifyCode, codeType, cb) => {
     let result = {
-        data: { skipVerify: false }
+        status: CodeConstants.FAIL,
+        data: { skipVerify: false },
+        message: ""
     };
     let newDate = Date.now();
-    let _sms = new SMSModel({ telephone: telephone, verifyCode: verifyCode, codeType: codeType });
-    SMSModel.findOneAndUpdate({ telephone: telephone, codeType: codeType }, { verifyCode: verifyCode, expiresAt: newDate }, (err, _result) => {
-        if (err) {
-            console.log(err)
-            result.status = CodeConstants.SERVER_UNKNOW_ERROR;
-            result.message = 'Sorry, server unknow error';
-            cb(result)
-        } else if (_result) {
+    let conditions = { telephone: telephone, codeType: codeType };
+    let opts = { verifyCode: verifyCode, expiresAt: newDate };
+    try {
+        let updateResult = await findAndUpdateSMSInfo(conditions, opts);
+        if (updateResult) {
+            console.log('---[SMS]---', updateResult);
             result.status = CodeConstants.SUCCESS;
-            console.log('---[SMS]---', _result);
             result.data.verifyCode = verifyCode;
             result.data.expiresAt = newDate;
             result.message = 'Send SMS verify code success, expires time is 15 min'
-            cb(result)
-        } else if (!_result) {
-            _sms.save((err, _result) => {
-                if (err) {
-                    console.log(err)
-                    result.status = CodeConstants.SERVER_UNKNOW_ERROR;
-                    result.message = 'Sorry, server unknow error';
-                } else {
-                    result.status = CodeConstants.SUCCESS;
-                    result.data.verifyCode = verifyCode;
-                    result.data.expiresAt = _result.expiresAt;
-                    result.message = 'Send SMS verify code success, expires time is 15 min'
-                }
-                cb(result)
-            });
+        } else {
+            let _sms = new SMSModel({ telephone: telephone, verifyCode: verifyCode, codeType: codeType });
+            let newSMSInfo = await saveSMSInformation(_sms);
+            result.status = CodeConstants.SUCCESS;
+            result.data.verifyCode = verifyCode;
+            result.data.expiresAt = newSMSInfo.expiresAt;
+            result.message = 'Send SMS verify code success, expires time is 15 min'
         }
-    });
+    } catch (err) {
+        result.data = { skipVerify: false };
+        result.message = err;
+    }
+    cb(result);
 }
 
 // check telephone and verifyCode
 exports.validateRecord = (telephone, verifyCode, codeType, cb) => {
-    console.log('--[VALIDATE CODE]--', telephone, verifyCode, codeType);
-    let result = { data: {} };
+    let result = { status: CodeConstants.FAIL, data: {}, message: "" };
     SMSModel.findOne({ telephone: telephone, codeType: codeType }, (err, _sms) => {
         if (err) {
             console.log(err)
@@ -50,17 +44,40 @@ exports.validateRecord = (telephone, verifyCode, codeType, cb) => {
             result.message = 'Sorry, server unknow error';
         } else if (_sms) {
             if (verifyCode === _sms.verifyCode) {
-                result.data.verifyCode = verifyCode;
                 result.status = CodeConstants.SUCCESS;
+                result.data.verifyCode = verifyCode;
                 result.message = 'The SMS verify code validate success';
             } else {
-                result.status = CodeConstants.FAIL;
                 result.message = 'The SMS verify code validation invalid';
             }
         } else if (!_sms) {
-            result.status = CodeConstants.FAIL;
             result.message = 'The verify code is expires, please get the code again'
         }
         cb(result)
+    })
+}
+
+var findAndUpdateSMSInfo = (conditions, opts) => {
+    return new Promise((resolve, reject) => {
+        SMSModel.findOneAndUpdate(conditions, opts, (err, result) => {
+            if (err) {
+                console.log("---[SMS]---", err)
+                reject("Sorry, server unknow error");
+            } else {
+                resolve(result);
+            }
+        })
+    })
+}
+
+var saveSMSInformation = smsModel => {
+    return new Promise((resolve, reject) => {
+        smsModel.save((err, result) => {
+            if (err) {
+                reject("Sorry, server unknow error");
+            } else {
+                resolve(result)
+            }
+        });
     })
 }
