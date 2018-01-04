@@ -1,5 +1,4 @@
 const UserDao = require('../dao/user.server.dao')
-const SMSService = require('./sms.server.service')
 const CodeConstants = require('../utils/CodeConstants')
 
 let IMProxie = require('../api/proxies/rongCloud.server.proxies')

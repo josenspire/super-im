@@ -1,9 +1,6 @@
 const SMSDao = require('../dao/sms.server.dao')
-const UserDao = require('../dao/user.server.dao')
 const AliyunSMSUtil = require('../utils/AliyunSMSUtil');
 const CodeConstants = require('../utils/CodeConstants');
-const Constants = require('../utils/Constants');
-const RSAUtil = require('../utils/RSAUtil')
 
 // save sms verify code
 exports.sendSMS = (telephone, verifyCode, codeType, cb) => {
