@@ -86,6 +86,12 @@ exports.getUserProfile = (userID, cb) => {
     })
 }
 
+exports.updateUserProfile = (userID, userProfile, cb) => {
+    UserDao.updateUserProfile(userID, userProfile, callback => {
+        cb(callback);
+    })
+}
+
 exports.uploadAvatar = (telephone, cb) => {
     let fileName = telephone + '-' + uuidv4() + '.jpg';
     QiniuProxie.uploadAvatar(fileName, '/avatar/avatar.jpg')

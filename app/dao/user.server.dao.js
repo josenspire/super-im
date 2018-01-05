@@ -104,6 +104,19 @@ exports.queryByUserID = async (userID, cb) => {
     cb(result)
 }
 
+exports.updateUserProfile = async (userID, userProfile, cb) => {
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    try {
+        await updateUserProfile(userID, userProfile);
+        result.status = CodeConstants.SUCCESS;
+    } catch (err) {
+        console.log('--[QUERY BY USERID FAIL]--')
+        result.message = err;
+        result.data = {};
+    }
+    cb(result)
+}
+
 exports.queryUserListByTelephone = async (telephoneList, cb) => {
     let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     let promiseList = telephoneList.map(telephone => {
@@ -398,6 +411,25 @@ var queryByUserID = userID => {
                     reject('Server unknow error, query user fail');
                 } else {
                     resolve(user);
+                }
+            })
+    })
+}
+
+var updateUserProfile = (userID, userProfile) => {
+    let opts = {};
+    opts.nickname = userProfile.nickname;
+    opts.male = userProfile.male;
+    opts.signature = userProfile.signature;
+    return new Promise((resolve, reject) => {
+        UserModel.findOneAndUpdate({ _id: userID }, { $set: opts })
+            .exec((err, user) => {
+                if (err) {
+                    reject("Server error, fail to update user profile")
+                } else if (!user) {
+                    reject("Sorry, this user is not exist")
+                } else {
+                    resolve();
                 }
             })
     })

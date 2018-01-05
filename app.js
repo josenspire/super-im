@@ -5,7 +5,7 @@ const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const StringUtil = require('./app/utils/StringUtil')
-const routers = require('./routes/routers');
+const routers = require('./app/routes/routers');
 // connect mongodb
 const mongoose = require('mongoose')
 mongoose.promise = global.promise;

@@ -24,6 +24,7 @@ let routers = app => {
 
     // user profile
     app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, UserControl.getUserProfile, AESAscept.encryptParam);
+    app.post('/v1/api/user/updateUserProfile', AESAscept.decryptParam, UserControl.updateUserProfile, AESAscept.encryptParam);
 
     // TODO special api handle
     app.put('/v1/api/user/uploadAvatar', UserControl.uploadAvatar);

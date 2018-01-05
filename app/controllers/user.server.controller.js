@@ -120,10 +120,19 @@ exports.resetPassword = (req, res, next) => {
 
 exports.getUserProfile = (req, res, next) => {
     let input = req.body.input;
-
     let userID = input.targetUserID;
     UserService.getUserProfile(userID, userProfile => {
         req.body.output = userProfile;
+        next();
+    })
+}
+
+exports.updateUserProfile = (req, res, next) => {
+    let input = req.body.input;
+    let userID = input.userID;
+    let userProfile = input.params;
+    UserService.updateUserProfile(userID, userProfile, updateResult => {
+        req.body.output = updateResult;
         next();
     })
 }
