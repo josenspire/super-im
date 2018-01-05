@@ -1,10 +1,10 @@
-const Index = require('../app/controllers/index')
-const AsceptControl = require('../app/controllers/aspect.server.controller');
-const UserControl = require('../app/controllers/user.server.controller')
-const SMSControl = require('../app/controllers/sms.server.controller')
-const CommunityControl = require('../app/controllers/community.server.controller')
+const Index = require('../controllers/index')
+const AsceptControl = require('../controllers/aspect.server.controller');
+const UserControl = require('../controllers/user.server.controller')
+const SMSControl = require('../controllers/sms.server.controller')
+const CommunityControl = require('../controllers/community.server.controller')
 
-const AESUtil = require('../app/utils/AESUtil')
+const AESUtil = require('../utils/AESUtil')
 
 let RSAAscept = AsceptControl.RSA;
 let AESAscept = AsceptControl.AES;
