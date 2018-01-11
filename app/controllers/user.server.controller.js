@@ -139,7 +139,11 @@ exports.updateUserProfile = (req, res, next) => {
 
 /** User avatar upload */
 exports.uploadAvatar = (req, res, next) => {
-    let userID = req.params.userID;
+    // let userID = req.params.userID;
+    // let userID = req.body.userID;
+    let userID = atavarUpload.single('userID');
+    console.log("==============", userID)
+    return res.json(userID);
     let result = { status: CodeConstants.FAIL, data: {}, message: "" };
     atavarUpload.single('uploadAvatar')(req, res, async err => {
         if (err) {
@@ -162,26 +166,25 @@ exports.uploadAvatar = (req, res, next) => {
     })
 }
 
-// exports.uploadAvatar = (req, res, next) => {
-//     let form = new multiparty.Form();
-//     form.parse(req, async (err, fields, files) => {
-//         let avatarBase64 = fields.uploadAvatar[0].replace(/^data:image\/\w+;base64,/, '');
-//         let userID = fields.userID[0];
+exports.uploadAvatarByBase64 = (req, res, next) => {
+    let form = new multiparty.Form();
+    form.parse(req, async (err, fields, files) => {
+        let avatarBase64 = fields.uploadAvatar[0].replace(/^data:image\/\w+;base64,/, '');
+        // let avatarBase64 = fields.uploadAvatar[0];
+        let userID = fields.userID[0];
+        let avatar = new Buffer(avatarBase64, 'base64');
+        // TODO
+        let fileName = userID + '-' + uuidv4() + '-' + file.filename;
 
-//         let avatar = new Buffer(avatarBase64, 'base64');
-//         // TODO
-//         let fileName = userID + '-' + uuidv4() + '-' + file.filename;
-
-//         try {
-//             let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
-//             result.status = CodeConstants.SUCCESS;
-//             result.data = { avatar: uploadAvatarResult.key };
-//         } catch (err) {
-//             result.message = err;
-//         }
-//     });
-// }
-
+        try {
+            let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
+            result.status = CodeConstants.SUCCESS;
+            result.data = { avatar: uploadAvatarResult.key };
+        } catch (err) {
+            result.message = err;
+        }
+    });
+}
 
 /** User Contact Part */
 

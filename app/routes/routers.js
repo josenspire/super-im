@@ -27,7 +27,9 @@ let routers = app => {
     app.post('/v1/api/user/updateUserProfile', AESAscept.decryptParam, UserControl.updateUserProfile, AESAscept.encryptParam);
 
     // TODO special api handle
-    app.put('/v1/api/user/uploadAvatar', UserControl.uploadAvatar);
+    app.post('/v1/api/user/uploadAvatar', UserControl.uploadAvatar);
+    app.post('/v1/api/user/uploadAvatarByBase64', UserControl.uploadAvatarByBase64);
+    
     app.post('/v1/api/user/getBlackList', AESAscept.decryptParam, UserControl.getBlackList, AESAscept.encryptParam);
 
     // contacts
