@@ -138,19 +138,19 @@ exports.updateUserProfile = (req, res, next) => {
 }
 
 /** User avatar upload */
-exports.uploadAvatar = (req, res, next) => {
+exports.uploadAvatar = async (req, res, next) => {
     // let userID = req.params.userID;
     // let userID = req.body.userID;
-    let userID = atavarUpload.single('userID');
-    console.log("==============", userID)
-    return res.json(userID);
     let result = { status: CodeConstants.FAIL, data: {}, message: "" };
+    let userID = await getFormParams(req);
+
     atavarUpload.single('uploadAvatar')(req, res, async err => {
         if (err) {
             console.error(err)
             result.message = err;
         } else if (req.file) {
             let file = req.file;
+            console.log(userID);
             let fileName = userID + '-' + uuidv4() + '-' + file.filename;
             try {
                 let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
@@ -284,5 +284,15 @@ var saveFile = (filename, path, avatar) => {
                 resolve()
             }
         })
+    })
+}
+
+var getFormParams = (req) => {
+    let form = new multiparty.Form();
+    return new Promise((resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+            let userID = fields.userID ? fields.userID[0] : null;
+            resolve(userID);
+        });
     })
 }
