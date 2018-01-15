@@ -5,7 +5,8 @@ const UserService = require('../services/user.server.service');
 
 exports.RSA = {
     decryptParam: (req, res, next) => {
-        let params = req.body.params;
+        // let params = req.body.params;
+        let params = req.body;          //  special for text/plain type
         console.log('---[INPUT DATA]---', params, typeof params)
         RSAUtil.privateDecrypt(params, data => {
             console.log('--[', req.path, ']--')
@@ -68,8 +69,9 @@ exports.AES = {
     },
 
     decryptParam: (req, res, next) => {
-        let data = JSON.parse(req.body.params);
+        // let data = JSON.parse(req.body.params);
         // let data = req.body.params;
+        let params = JSON.parse(req.body);         //  special for text/plain type
         data.params = data.params ? data.params : {};
 
         if (!data.token) {

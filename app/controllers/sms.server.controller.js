@@ -49,7 +49,7 @@ exports.verifyCode = (req, res, next) => {
     })
 }
 
-var register = (telephone, verifyCode,) => {
+var register = (telephone, verifyCode, ) => {
     return new Promise((resolve, reject) => {
         UserService.isTelephoneExist(telephone, isExist => {
             if (isExist.status === false) {
