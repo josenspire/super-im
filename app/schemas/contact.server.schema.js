@@ -15,9 +15,23 @@ let ContactSchema = new mongoose.Schema({
             type: ObjectId,
             ref: 'User'
         },
-        remarkName: {
-            type: String,
-            default: ''
+        remark: {
+            remarkName: {
+                type: String,
+                default: ''
+            },
+            telephone: {
+                type: Number,
+                default: null
+            },
+            description: {
+                type: String,
+                default: ''
+            },
+            tags: {
+                type: String,
+                default: ''
+            }
         }
     }],
 

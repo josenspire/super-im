@@ -175,8 +175,8 @@ exports.deleteContact = (userID, contactID, cb) => {
     });
 }
 
-exports.updateRemarkName = (userID, contactID, remarkName, cb) => {
-    UserDao.updateRemarkName(userID, contactID, remarkName, updateResult => {
+exports.updateRemark = (userID, contactID, remark, cb) => {
+    UserDao.updateRemark(userID, contactID, remark, updateResult => {
         cb(updateResult);
     })
 }

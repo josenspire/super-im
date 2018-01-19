@@ -256,18 +256,18 @@ exports.deleteContact = async (userID, contactID, cb) => {
     cb(result)
 }
 
-exports.updateRemarkName = async (userID, contactID, remarkName, cb) => {
+exports.updateRemark = async (userID, contactID, remark, cb) => {
     let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
         let isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
         if (isCurrentUser) {
-            result.message = 'You can\'t set yourself a remark name'
+            result.message = 'You can\'t set yourself a remark'
         } else {
             let isExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
             if (!isExist) {
                 result.message = 'This user is not your contact';
             } else {
-                let updateResult = await updateRemarkName(userID, contactID, remarkName);
+                let updateResult = await updateRemark(userID, contactID, remark);
                 result.status = CodeConstants.SUCCESS;
             }
         }
@@ -555,7 +555,7 @@ var checkContactIDIsCurrentUserID = (userID, contactID) => {
     return false;
 }
 
-var updateRemarkName = (userID, contactID, remarkName) => {
+var updateRemark = (userID, contactID, remark) => {
     return new Promise(async (resolve, reject) => {
         ContactModel.findOne({ userID: userID }, (err, contactList) => {
             if (err) {
@@ -564,8 +564,8 @@ var updateRemarkName = (userID, contactID, remarkName) => {
                 let contacts = contactList.contacts;
                 for (let i = 0; i < contacts.length; i++) {
                     if (contacts[i].userID == contactID) {
-                        contacts[i].remarkName = remarkName;
-                        contactList.markModified('remarkName');
+                        contacts[i].remark = remark;
+                        contactList.markModified('remark');
                         contactList.save((err, newContactProfile) => {
                             if (err) reject('Server unknow error, update remark name fail');
                             else resolve(newContactProfile);
@@ -594,8 +594,9 @@ var queryUserContactsByUserID = userID => {
 
 var searchUserByTelephoneOrNickname = (queryCondition, pageIndex) => {
     return new Promise((resolve, reject) => {
-        const nickNameReg = new RegExp(queryCondition, 'i');
-        UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: { $regex: nickNameReg } }] })
+        // const nickNameReg = new RegExp(queryCondition, 'i');
+        // UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: { $regex: nickNameReg } }] })
+        UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: queryCondition }] })
             .populate("user")
             .limit(20)
             .skip(pageIndex * 20)
@@ -643,7 +644,7 @@ var convertContactInfo = contact => {
     let _contact = JSON.parse(JSON.stringify(contact)) || {};
 
     let user = _contact.userID;
-    user.remarkName = _contact.remarkName;
+    user.remark = _contact.remark;
     user.userID = user._id;
 
     delete user._id;

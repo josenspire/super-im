@@ -37,7 +37,7 @@ let routers = app => {
     app.post('/v1/api/user/acceptContact', AESAscept.decryptParam, UserControl.acceptAddContact, AESAscept.encryptParam);
     app.post('/v1/api/user/rejectContact', AESAscept.decryptParam, UserControl.rejectAddContact, AESAscept.encryptParam);
     app.post('/v1/api/user/deleteContact', AESAscept.decryptParam, UserControl.deleteContact, AESAscept.encryptParam);
-    app.post('/v1/api/user/updateRemarkName', AESAscept.decryptParam, UserControl.updateRemarkName, AESAscept.encryptParam);
+    app.post('/v1/api/user/updateRemark', AESAscept.decryptParam, UserControl.updateRemark, AESAscept.encryptParam);
     app.post('/v1/api/user/getUserContacts', AESAscept.decryptParam, UserControl.getUserContacts, AESAscept.encryptParam);
     app.post('/v1/api/user/searchUser', AESAscept.decryptParam, UserControl.searchUserByTelephoneOrNickname, AESAscept.encryptParam);
 

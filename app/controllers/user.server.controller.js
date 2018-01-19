@@ -233,14 +233,14 @@ exports.deleteContact = (req, res, next) => {
     })
 }
 
-exports.updateRemarkName = (req, res, next) => {
+exports.updateRemark = (req, res, next) => {
     let input = req.body.input;
 
     let userID = input.userID;
     let contactID = input.contactID;
-    let remarkName = input.remarkName;
+    let remark = input.remark;
 
-    UserService.updateRemarkName(userID, contactID, remarkName, updateResult => {
+    UserService.updateRemark(userID, contactID, remark, updateResult => {
         req.body.output = updateResult;
         next();
     })
