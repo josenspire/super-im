@@ -27,17 +27,17 @@ exports.createUser = (userID, nickname, avatar, callback) => {
 }
 
 // IM
-exports.sendContactNotification = async (currentUserID, contactID, message, operation, callback) => {
+exports.sendContactNotification = async (currentUserID, contactID, message, operation, remark, callback) => {
     try {
         let timestamp = Date.now();
-        await sendContactNotification(currentUserID.toString(), contactID, operation, message, timestamp);
+        await sendContactNotification(currentUserID.toString(), contactID, operation, message, timestamp, remark);
         callback(null, 200)
     } catch (err) {
         callback(err, 400)
     }
 }
 
-var sendContactNotification = (userID, contactID, operation, message, timestamp) => {
+var sendContactNotification = (userID, contactID, operation, message, timestamp, remark) => {
     let content = {
         operation: operation,
         sourceUserId: userID,
@@ -45,7 +45,9 @@ var sendContactNotification = (userID, contactID, operation, message, timestamp)
         message: message,
         extra: {
             sourceUserNickname: "System Notification",
-            version: timestamp
+            version: timestamp,
+            nickname: remark ? remark.nickname : "",
+            avatar: remark ? remark.avatar : ""
         }
     };
     return new Promise((resolve, reject) => {

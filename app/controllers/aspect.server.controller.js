@@ -7,38 +7,28 @@ exports.RSA = {
     decryptParam: (req, res, next) => {
         // let params = req.body.params;
         let params = req.body;          //  special for text/plain type
+        req.data = {};
         console.log('---[INPUT DATA]---', params, typeof params)
         RSAUtil.privateDecrypt(params, data => {
             console.log('--[', req.path, ']--')
             console.log('--[REQUEST DATA]--', data)
-            req.body.input = data;
-            req.body.clientPublicKey
+
+            req.data.input = data;
+            req.data.clientPublicKey = data.params.clientPublicKey;
+            next();
         })
-        next();
     },
 
     encryptParam: (req, res) => {
-        let input = req.body.input;
+        let input = req.data.input;
         let publicKey = input ? input.params.clientPublicKey : "";
-        let output = req.body.output;
+        let output = req.data.output;
 
         console.log('--[RESPONSE DATA]--', output)
         RSAUtil.publicEncryptObj(output, publicKey, params => {
             return res.json(params);
         })
-    },
-
-    // decryptParam: (req, res, next) => {
-    //     let params = req.body.params;
-    //     console.log('---[INPUT DATA]---', params, typeof params)
-    //     req.body.input = params;
-    //     next();
-    // },
-    // encryptParam: (req, res) => {
-    //     let output = req.body.output;
-    //     console.log('--[RESPONSE DATA]--', output)
-    //     return res.json(output);
-    // }
+    }
 }
 
 exports.AES = {
@@ -69,11 +59,10 @@ exports.AES = {
     },
 
     decryptParam: (req, res, next) => {
-        // let data = JSON.parse(req.body.params);
-        // let data = req.body.params;
-        let params = JSON.parse(req.body);         //  special for text/plain type
-        data.params = data.params ? data.params : {};
-
+        // let data = JSON.parse(req.body);      //  special for text/plain type
+        let data = JSON.parse(req.body);      //  special for text/plain type
+        
+        console.log('---[ORIGIN REQUEST DATA]---', req.body, typeof req.body)
         if (!data.token) {
             return res.json({
                 status: 400,
@@ -82,18 +71,19 @@ exports.AES = {
             })
         }
         console.log('---[REQUEST DATA]---', data, typeof data)
+        req.data = {};
         UserService.isTokenValid(data.token, isValid => {
             if (isValid.status != 200) {
                 return res.json(isValid);
             } else {
                 data.params.userID = isValid.data.userID;
-                req.body.input = data.params;
+                req.data.input = data.params;
                 next();
             }
         })
     },
     encryptParam: (req, res) => {
-        let output = req.body.output;
+        let output = req.data.output;
         console.log('---[RESPONSE DATA]---', output)
         return res.json(output);
     }

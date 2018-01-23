@@ -21,7 +21,7 @@ exports.getPublicKey = (req, res, next) => {
 }
 
 exports.login = (req, res, next) => {
-    let data = req.body.input.params || {};
+    let data = req.data.input.params || {};
 
     let verifyCode = data.verifyCode || "";
     let user = {};
@@ -32,18 +32,18 @@ exports.login = (req, res, next) => {
     console.log('[--LOGIN--]: ', data)
     if (verifyCode === "") {
         UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
-            req.body.output = callback;
+            req.data.output = callback;
             next();
         })
     } else {
         SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, validateCallback => {
             if (validateCallback.status === CodeConstants.SUCCESS) {
                 UserService.updateDeviceID(user.telephone, user.password, user.deviceID, callback => {
-                    req.body.output = callback;
+                    req.data.output = callback;
                     next();
                 })
             } else {
-                req.body.output = validateCallback;
+                req.data.output = validateCallback;
                 next();
             }
         })
@@ -51,7 +51,7 @@ exports.login = (req, res, next) => {
 }
 
 exports.register = (req, res, next) => {
-    let data = req.body.input.params || {};
+    let data = req.data.input.params || {};
 
     let user = {};
     user.telephone = data.telephone;
@@ -69,11 +69,11 @@ exports.register = (req, res, next) => {
             SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
                 if (_sms.status === CodeConstants.SUCCESS) {
                     UserService.createUser(user, callback => {
-                        req.body.output = callback;
+                        req.data.output = callback;
                         next();
                     })
                 } else {
-                    req.body.output = _sms;
+                    req.data.output = _sms;
                     next();
                 }
             })
@@ -81,16 +81,16 @@ exports.register = (req, res, next) => {
             let result = { data: {} };
             result.status = CodeConstants.FAIL;
             result.message = isExist.message;
-            req.body.output = result;
+            req.data.output = result;
             next();
         }
     })
 }
 
 exports.isTokenValid = (req, res, next) => {
-    let params = JSON.parse(req.body.params);
-    let token = params.token;
-    console.log('[--TOKEN AUTH--]', params);
+    let data = JSON.parse(req.body);
+    let token = data.token;
+    console.log('[--TOKEN AUTH--]', token);
 
     UserService.isTokenValid(token, callback => {
         return res.json(callback);
@@ -98,7 +98,7 @@ exports.isTokenValid = (req, res, next) => {
 }
 
 exports.logout = (req, res, next) => {
-    req.body.output = {
+    req.data.output = {
         status: CodeConstants.SUCCESS,
         data: {},
         message: ""
@@ -108,7 +108,7 @@ exports.logout = (req, res, next) => {
 
 /** User profile */
 exports.resetPassword = (req, res, next) => {
-    let data = req.body.input.params || {};
+    let data = req.data.input.params || {};
 
     let telephone = data.telephone;
     let verifyCode = data.verifyCode;
@@ -119,20 +119,20 @@ exports.resetPassword = (req, res, next) => {
 }
 
 exports.getUserProfile = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
     let userID = input.targetUserID;
     UserService.getUserProfile(userID, userProfile => {
-        req.body.output = userProfile;
+        req.data.output = userProfile;
         next();
     })
 }
 
 exports.updateUserProfile = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
     let userID = input.userID;
     let userProfile = input.params;
     UserService.updateUserProfile(userID, userProfile, updateResult => {
-        req.body.output = updateResult;
+        req.data.output = updateResult;
         next();
     })
 }
@@ -188,87 +188,87 @@ exports.uploadAvatarByBase64 = (req, res, next) => {
 /** User Contact Part */
 
 exports.requestAddContact = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
     let userID = input.userID;
     let contactID = input.contactID;
     let message = input.reason || "";
     UserService.requestAddContact(userID, contactID, message, inviteResult => {
-        req.body.output = inviteResult;
+        req.data.output = inviteResult;
         next();
     })
 }
 
 exports.acceptAddContact = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
     let userID = input.userID;
     let contactID = input.contactID;
     let remarkName = input.remarkName;
 
     UserService.acceptAddContact(userID, contactID, remarkName, contactList => {
-        req.body.output = contactList;
+        req.data.output = contactList;
         next();
     })
 }
 
 exports.rejectAddContact = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
     let userID = input.userID;
     let rejectUserID = input.rejectUserID;
     let rejectReason = input.reason || "";
 
     UserService.rejectAddContact(userID, rejectUserID, rejectReason, contactList => {
-        req.body.output = contactList;
+        req.data.output = contactList;
         next();
     })
 }
 
 exports.deleteContact = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
 
     let userID = input.userID;
     let contactID = input.contactID;
     UserService.deleteContact(userID, contactID, deleteResult => {
-        req.body.output = deleteResult;
+        req.data.output = deleteResult;
         next();
     })
 }
 
 exports.updateRemark = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
 
     let userID = input.userID;
     let contactID = input.contactID;
     let remark = input.remark;
 
     UserService.updateRemark(userID, contactID, remark, updateResult => {
-        req.body.output = updateResult;
+        req.data.output = updateResult;
         next();
     })
 }
 
 exports.getUserContacts = (req, res, next) => {
-    let userID = req.body.input.userID;
+    let userID = req.data.input.userID;
     UserService.getUserContacts(userID, userList => {
-        req.body.output = userList;
+        req.data.output = userList;
         next();
     })
 }
 
 exports.getBlackList = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
     let userID = input.userID;
     UserService.getBlackList(userID, userList => {
-        req.body.output = userList;
+        req.data.output = userList;
         next();
     })
 }
 
 exports.searchUserByTelephoneOrNickname = (req, res, next) => {
-    let input = req.body.input;
+    let input = req.data.input;
     let queryCondition = input.queryCondition || "";
     let pageIndex = parseInt(input.pageIndex) || 0;
     UserService.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
-        req.body.output = searchResult;
+        req.data.output = searchResult;
         next();
     })
 }

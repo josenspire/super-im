@@ -118,7 +118,7 @@ exports.requestAddContact = (userID, contactID, message, cb) => {
                 result.message = "This user is already your contact";
                 cb(result);
             } else {
-                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_REQUEST, (err, _result) => {
+                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_REQUEST, user.data.userProfile, (err, _result) => {
                     if (err) { result.message = err; }
                     else { result.status = CodeConstants.SUCCESS; }
                     cb(result);
@@ -135,7 +135,7 @@ exports.acceptAddContact = (userID, contactID, remarkName, cb) => {
         if (result.status === CodeConstants.SUCCESS) {
             try {
                 const message = "You've added him to be a contact";
-                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_ACCEPT);
+                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_ACCEPT, null);
             } catch (err) {
                 result.status = CodeConstants.FAIL;
                 result.data = {};
@@ -156,7 +156,7 @@ exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
                 result.message = "Error operating, this user is already your contact";
                 return cb(result);
             }
-            IMProxie.sendContactNotification(userID, rejectUserID, rejectReason, CONTACT_OPERATION_REJECT);
+            IMProxie.sendContactNotification(userID, rejectUserID, rejectReason, CONTACT_OPERATION_REJECT, user.data.userProfile);
             cb({
                 status: CodeConstants.SUCCESS,
                 data: {},
@@ -170,7 +170,7 @@ exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
 
 exports.deleteContact = (userID, contactID, cb) => {
     UserDao.deleteContact(userID, contactID, result => {
-        IMProxie.sendContactNotification(userID, contactID, "", CONTACT_OPERATION_DELETE);
+        IMProxie.sendContactNotification(userID, contactID, "", CONTACT_OPERATION_DELETE, null);
         cb(result);
     });
 }
