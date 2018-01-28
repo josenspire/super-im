@@ -61,6 +61,12 @@ exports.isTokenValid = (token, cb) => {
     })
 }
 
+exports.tokenVerify = (token, cb) => {
+    UserDao.tokenVerify(token, callback => {
+        cb(callback);
+    })
+}
+
 exports.isTelephoneExist = (telephone, cb) => {
     UserDao.isTelephoneExist(telephone, isExist => {
         cb(isExist)

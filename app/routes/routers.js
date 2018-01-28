@@ -17,7 +17,7 @@ let routers = app => {
     app.post('/v1/api/auth/register', RSAAscept.decryptParam, UserControl.register, RSAAscept.encryptParam);
     app.post('/v1/api/auth/login', RSAAscept.decryptParam, UserControl.login, RSAAscept.encryptParam);
     app.post('/v1/api/auth/logout', RSAAscept.decryptParam, UserControl.logout, RSAAscept.encryptParam);
-    app.post('/v1/api/auth/tokenVerify', UserControl.isTokenValid);
+    app.post('/v1/api/auth/tokenVerify', UserControl.tokenVerify);
     // sms
     app.post('/v1/api/auth/obtainSMSCode', RSAAscept.decryptParam, SMSControl.sendSMS, RSAAscept.encryptParam);
     app.post('/v1/api/auth/verifySMSCode', RSAAscept.decryptParam, SMSControl.verifyCode, RSAAscept.encryptParam);

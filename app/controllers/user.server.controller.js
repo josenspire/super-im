@@ -87,12 +87,13 @@ exports.register = (req, res, next) => {
     })
 }
 
-exports.isTokenValid = (req, res, next) => {
-    let data = JSON.parse(req.body);
+exports.tokenVerify = (req, res, next) => {
+    // let data = JSON.parse(req.body);
+    let data = req.body;
     let token = data.token;
     console.log('[--TOKEN AUTH--]', token);
 
-    UserService.isTokenValid(token, callback => {
+    UserService.tokenVerify(token, callback => {
         return res.json(callback);
     })
 }

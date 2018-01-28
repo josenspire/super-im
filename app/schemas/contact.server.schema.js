@@ -6,7 +6,7 @@ let ObjectId = Schema.Types.ObjectId;
 
 let ContactSchema = new mongoose.Schema({
 
-    userID: { 
+    userID: {
         type: String
     },
 
@@ -21,8 +21,8 @@ let ContactSchema = new mongoose.Schema({
                 default: ''
             },
             telephone: {
-                type: Number,
-                default: null
+                type: Array,
+                default: []
             },
             description: {
                 type: String,

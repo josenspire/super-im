@@ -181,6 +181,24 @@ exports.isTokenValid = (token, cb) => {
         })
 }
 
+exports.tokenVerify = (token, cb) => {
+    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    TokenModel.findOne({ token: token })
+        .populate('user')
+        .exec((err, token) => {
+            if (err) {
+                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                result.message = 'Sorry, server unknow error';
+            } else if (!token) {
+                result.message = 'This token is invalid, please login again';
+            } else if (token) {
+                result.status = CodeConstants.SUCCESS;
+                result.data.userProfile = convertTokenInfo(token);
+            }
+            cb(result)
+        })
+}
+
 exports.resetPassword = (telephone, newPassword, cb) => {
     let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     let password = jwt.encode(newPassword, JWT_SECRET.JWT_PASSWORD_SECRET);
@@ -683,4 +701,19 @@ var convertSearchUserList = userList => {
         convertUserListData.push(user);
     }
     return convertUserListData;
+}
+
+var convertTokenInfo = tokenInfo => {
+    let _tokenInfo = JSON.parse(JSON.stringify(tokenInfo));
+
+    let userProfile = _tokenInfo.user;
+    userProfile.userID = _tokenInfo._id;
+    
+    delete userProfile._id;
+    delete userProfile.__v;
+    delete userProfile.meta;
+    delete userProfile.deviceID;
+    delete userProfile.password;
+
+    return userProfile;
 }
