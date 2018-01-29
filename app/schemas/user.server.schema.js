@@ -35,17 +35,11 @@ let validateNickname = nickname => {
 
 let UserSchema = new mongoose.Schema({
 
-    // userID: {
-    //     type: String,
-    //     unique: 'UserID already exists',
-    //     trim: true
-    // },
-
     // telephone
     telephone: {
         type: String,
         unique: 'Telephone already exists',
-        // required: 'Please fill in a telephone number.',
+        required: 'Please fill in a telephone number.',
         validate: [validateTel, "Telephone number's length should be 11 bits"],
         trim: true
     },

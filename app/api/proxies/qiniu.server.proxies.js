@@ -1,6 +1,7 @@
 let path = require('path')
 let qiniu = require("qiniu");
-const QiniuConfig = require(path.resolve('./configs/config')).QiniuConfig
+// const QiniuConfig = require(path.resolve('./configs/config')).QiniuConfig
+const QiniuConfig = require('../../../configs/config').QiniuConfig;
 const Promise = require("bluebird");
 
 qiniu.conf.ACCESS_KEY = QiniuConfig.AccessKey;
