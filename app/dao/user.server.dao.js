@@ -193,7 +193,7 @@ exports.tokenVerify = (token, cb) => {
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
                 result.status = CodeConstants.SUCCESS;
-                result.data.userProfile = convertTokenInfo(token);
+                result.data.user = convertTokenInfo(token);
             }
             cb(result)
         })
@@ -425,7 +425,7 @@ var queryByUserID = userID => {
         UserModel.findOne({ _id: userID })
             .exec((err, user) => {
                 if (err) {
-                    console.log('---[QUERY BY USERID]---');
+                    console.log('---[QUERY BY USERID]---', err);
                     reject('Server unknow error, query user fail');
                 } else {
                     resolve(user);
@@ -714,6 +714,7 @@ var convertTokenInfo = tokenInfo => {
     delete userProfile.meta;
     delete userProfile.deviceID;
     delete userProfile.password;
+    delete userProfile.token;
 
     return userProfile;
 }

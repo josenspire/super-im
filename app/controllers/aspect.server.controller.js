@@ -59,10 +59,10 @@ exports.AES = {
     },
 
     decryptParam: (req, res, next) => {
-        // let data = JSON.parse(req.body);      //  special for text/plain type
         let data = JSON.parse(req.body);      //  special for text/plain type
+        // let data = req.body;
         
-        console.log('---[ORIGIN REQUEST DATA]---', req.body, typeof req.body)
+        console.log('---[REQUEST DATA]---', data, typeof data)
         if (!data.token) {
             return res.json({
                 status: 400,
@@ -70,7 +70,6 @@ exports.AES = {
                 message: 'Parameters is incompleteness'
             })
         }
-        console.log('---[REQUEST DATA]---', data, typeof data)
         req.data = {};
         UserService.isTokenValid(data.token, isValid => {
             if (isValid.status != 200) {
