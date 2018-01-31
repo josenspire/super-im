@@ -705,9 +705,9 @@ var convertSearchUserList = userList => {
 
 var convertTokenInfo = tokenInfo => {
     let _tokenInfo = JSON.parse(JSON.stringify(tokenInfo));
-
+    
     let userProfile = _tokenInfo.user;
-    userProfile.userID = _tokenInfo._id;
+    userProfile.userID = userProfile._id;
     
     delete userProfile._id;
     delete userProfile.__v;
