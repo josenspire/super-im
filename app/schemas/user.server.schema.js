@@ -73,7 +73,7 @@ let UserSchema = new mongoose.Schema({
 
     avatar: {
         type: String,
-        default: "http://ozjhae6uc.bkt.clouddn.com/13631270436-2404f826-f0a5-4a0d-bd47-d3f42ec90bd9-f26a10d9-61f2-438f-a795-a7cf2a43d579.jpg",
+        default: "http://ozjhae6uc.bkt.clouddn.com/103e2911-091d-4de7-a002-542fea592b72.jpg",
         trim: true
     },
 

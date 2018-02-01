@@ -144,18 +144,22 @@ exports.uploadAvatar = (req, res, next) => {
 
     atavarUpload.single('uploadAvatar')(req, res, async err => {
         if (err) {
-            console.error(err)
+            console.error("---[Upload avatar error]---", err)
             result.message = err;
         } else if (req.file) {
             let file = req.file;
             let data = req.body;
             console.log("===[REQUEST DATA]===", data)
 
-            let fileName = uuidv4() + '-' + file.filename;
+            let fileName = file.filename;
             try {
                 let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
                 result.status = CodeConstants.SUCCESS;
-                result.data = { avatar: uploadAvatarResult.key };
+                result.data = {
+                    avatarUrl: Constants.QN_DEFAULT_EXTERNAL_LINK + uploadAvatarResult.key,
+                    width: "200",
+                    height: "200"
+                };
             } catch (err) {
                 result.message = err;
             }

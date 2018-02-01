@@ -3,7 +3,7 @@ const constants = {
 
     JWT_PASSWORD_SECRET: 'NODE_USER_SECRET',
     JWT_USERID_SECRET: 'NODE_USERID_SECRET',
-    
+
     MAX_ENCRYPT_BLOCK: 117,   // PKCS_1    2048 bit
     MAX_DECRYPT_BLOCK: 128,
 
@@ -12,6 +12,8 @@ const constants = {
     SMS_TYPE_OTHERS: 'OTHERS',
 
     SKIP_VERIFY: 'SKIP_VERIFY',
+
+    QN_DEFAULT_EXTERNAL_LINK: "http://ozjhae6uc.bkt.clouddn.com/",
 }
 
 module.exports = constants;
