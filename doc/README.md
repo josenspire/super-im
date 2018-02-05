@@ -151,7 +151,7 @@ Success：
             "status": true,
             "role": 0,
             "signature": "This guy is lazy. He doesn't fill in anything...",
-            "male": false
+            "sex": 1
         },
         secretKey: "DE_MA_XI_YA!!!" ,
         token: "7y6GxZZ7Kj34b33ZABcyG4AHmMmJ4WJJ",
@@ -197,7 +197,7 @@ nickname | String | 用户昵称 | Yes
 deviceID | String | 设备ID | YES
 avatar | String | 头像 | No
 countryCode | String | 国际码 | No
-male | Boolean | 是否女生 | No
+sex | Boolean | 是否女生 | No
 signature | String | 签名 | No
 verifyCode | String | 验证码 | YES
 clientPublicKey | String | 客户端公钥 | Yes
@@ -225,7 +225,7 @@ Success：
             "status": true,
             "role": 0,
             "signature": "This guy is lazy. He doesn't fill in anything...",
-            "male": false
+            "sex": 1
         },
         secretKey: "DE_MA_XI_YA!!!" ,
         token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw=="
@@ -298,7 +298,7 @@ Success：
             "status": true,
             "role": 0,
             "signature": "This guy is lazy. He doesn't fill in anything...",
-            "male": false
+            "sex": 1
         },
         verifyTelephone: false,
         secretKey: "DE_MA_XI_YA!!!" ,
@@ -359,7 +359,7 @@ Success：
             nickname: "james01",
             avatar: "http://baidu.com",
             signature: "",
-            male: false,
+            sex: false,
             countryCode: ""
         }
     },
@@ -571,14 +571,14 @@ Success：
                 "nickname": "james01",
                 "avatar": "http://baidu.com",
                 "signature": "",
-                "male": false,
+                "sex": 0,
             },
             {
                 "userID ": "59fbf016f1bbf808bac67d5c",
                 "nickname": "james02",
                 "avatar": "http://baidu.com",
                 "signature": "",
-                "male": false,
+                "sex": 0,
             }
         ]
     },
@@ -619,7 +619,7 @@ Success：
                 "avatar": "http://baidu.com",
                 "status": true,
                 "signature": "",
-                "male": false,
+                "sex": 1,
             },
             {
                 "userID": "59fbf016f1bbf808bac67d5c",
@@ -627,7 +627,7 @@ Success：
                 "avatar": "http://baidu.com",
                 "status": true,
                 "signature": "",
-                "male": false,
+                "sex": 2,
             }
         ]
     },
@@ -722,7 +722,7 @@ Success：
                 "avatar": "http://baidu.com",
                 "status": true,
                 "signature": "",
-                "male": false,
+                "sex": 0,
             },
             {
                 "userID": "59fbf016f1bbf808bac67d5f",
@@ -730,7 +730,7 @@ Success：
                 "avatar": "http://baidu.com",
                 "status": true,
                 "signature": "",
-                "male": false,
+                "sex": 1,
             }
         ]
     },
@@ -794,9 +794,11 @@ Fail：
 ```
 { 
     params: {
-        nickname: "测试nick", 
-        male: 1,
+        nickname: "newNickname", 
+        birthdate: "201758501121",
         signture: "德玛西亚人永不言弃！"
+        location: "CHINA-ZHA"
+        sex: 1,
     },
     token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
 }

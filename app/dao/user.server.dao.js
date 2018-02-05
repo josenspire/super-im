@@ -107,7 +107,14 @@ exports.queryByUserID = async (userID, cb) => {
 exports.updateUserProfile = async (userID, userProfile, cb) => {
     let result = { status: CodeConstants.FAIL, data: {}, message: '' };
     try {
-        await updateUserProfile(userID, userProfile);
+        let opts = {};
+        opts.nickname = userProfile.nickname;
+        opts.birthdate = userProfile.birthdate;
+        opts.signature = userProfile.signature;
+        opts.location = userProfile.location;
+        opts.sex = userProfile.sex;
+
+        await updateUserProfile(userID, opts);
         result.status = CodeConstants.SUCCESS;
     } catch (err) {
         console.log('--[QUERY BY USERID FAIL]--')
@@ -434,11 +441,7 @@ var queryByUserID = userID => {
     })
 }
 
-var updateUserProfile = (userID, userProfile) => {
-    let opts = {};
-    opts.nickname = userProfile.nickname;
-    opts.male = userProfile.male;
-    opts.signature = userProfile.signature;
+var updateUserProfile = (userID, opts) => {
     return new Promise((resolve, reject) => {
         UserModel.findOneAndUpdate({ _id: userID }, { $set: opts })
             .exec((err, user) => {
@@ -705,10 +708,10 @@ var convertSearchUserList = userList => {
 
 var convertTokenInfo = tokenInfo => {
     let _tokenInfo = JSON.parse(JSON.stringify(tokenInfo));
-    
+
     let userProfile = _tokenInfo.user;
     userProfile.userID = userProfile._id;
-    
+
     delete userProfile._id;
     delete userProfile.__v;
     delete userProfile.meta;

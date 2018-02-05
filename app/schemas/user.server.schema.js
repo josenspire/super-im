@@ -78,14 +78,25 @@ let UserSchema = new mongoose.Schema({
     },
 
     // unknow: 0, male: 1, female: 2
-    male: {
+    sex: {
         type: Number,
         default: 0
+    },
+
+    birthdate: {
+        type: Date,
+        default: null
     },
 
     signature: {
         type: String,
         default: "This guy is lazy. He doesn't fill in anything..."
+    },
+
+    // geographical location
+    location: {
+        type: String,
+        default: null
     },
 
     token: {
