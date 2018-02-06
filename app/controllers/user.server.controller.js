@@ -57,9 +57,12 @@ exports.register = (req, res, next) => {
     user.telephone = data.telephone;
     user.password = data.password;
     user.nickname = data.nickname;
-    user.deviceID = data.deviceID;
-    user.countryCode = data.countryCode || '';
+    user.sex = data.sex || 0;
+    user.birthdate = data.birthdate || 0;
+    user.location = data.location || '';
     user.signature = data.signature || '';
+    user.countryCode = data.countryCode || '';
+    user.deviceID = data.deviceID;
 
     let verifyCode = data.verifyCode || '';
 
