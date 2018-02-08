@@ -1,5 +1,5 @@
 const UserDao = require('../dao/user.server.dao')
-const CodeConstants = require('../utils/CodeConstants')
+const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
 
 let IMProxie = require('../api/proxies/rongCloud.server.proxies')
 let QiniuProxie = require('../api/proxies/qiniu.server.proxies')
@@ -24,7 +24,7 @@ exports.createUser = (user, cb) => {
         } else {
             console.log('---[IM CRETEUSER FAIL]---', response.error)
             cb({
-                status: CodeConstants.FAIL,
+                status: FAIL,
                 data: {},
                 message: response.error
             })
@@ -36,7 +36,7 @@ exports.createUser = (user, cb) => {
 // user login
 exports.queryUserByTelephoneAndPassword = (telephone, password, deviceID, cb) => {
     UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
-        if (_user.status === CodeConstants.SUCCESS) {
+        if (_user.status === SUCCESS) {
             if (_user.data.user.deviceID != deviceID) {
                 _user.data.user = {};
                 _user.data.verifyTelephone = true;
@@ -112,13 +112,13 @@ exports.uploadAvatar = (telephone, cb) => {
 /** User Contacts Part */
 
 exports.requestAddContact = (userID, contactID, message, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: "" };
+    let result = { status: FAIL, data: {}, message: "" };
     if (userID.toString() === contactID) {
         result.message = 'You can\'t add yourself to a contact';
         return cb(result);
     }
     UserDao.queryByUserID(contactID, async user => {
-        if (user.status === CodeConstants.SUCCESS) {
+        if (user.status === SUCCESS) {
             let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
             if (isContact) {
                 result.message = "This user is already your contact";
@@ -126,7 +126,7 @@ exports.requestAddContact = (userID, contactID, message, cb) => {
             } else {
                 IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_REQUEST, user.data.userProfile, (err, _result) => {
                     if (err) { result.message = err; }
-                    else { result.status = CodeConstants.SUCCESS; }
+                    else { result.status = SUCCESS; }
                     cb(result);
                 })
             }
@@ -138,12 +138,12 @@ exports.requestAddContact = (userID, contactID, message, cb) => {
 
 exports.acceptAddContact = (userID, contactID, remarkName, cb) => {
     UserDao.acceptAddContact(userID, contactID, remarkName || '', result => {
-        if (result.status === CodeConstants.SUCCESS) {
+        if (result.status === SUCCESS) {
             try {
                 const message = "You've added him to be a contact";
                 IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_ACCEPT, null);
             } catch (err) {
-                result.status = CodeConstants.FAIL;
+                result.status = FAIL;
                 result.data = {};
                 result.message = err;
             }
@@ -153,10 +153,10 @@ exports.acceptAddContact = (userID, contactID, remarkName, cb) => {
 }
 
 exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: "" };
+    let result = { status: FAIL, data: {}, message: "" };
 
     UserDao.queryByUserID(rejectUserID, async user => {
-        if (user.status === CodeConstants.SUCCESS) {
+        if (user.status === SUCCESS) {
             let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, rejectUserID);
             if (isContact) {
                 result.message = "Error operating, this user is already your contact";
@@ -164,7 +164,7 @@ exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
             }
             IMProxie.sendContactNotification(userID, rejectUserID, rejectReason, CONTACT_OPERATION_REJECT, user.data.userProfile);
             cb({
-                status: CodeConstants.SUCCESS,
+                status: SUCCESS,
                 data: {},
                 message: ""
             })

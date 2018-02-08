@@ -1,7 +1,7 @@
 const UserService = require('../services/user.server.service')
 const SMSService = require('../services/sms.server.service')
 const RSAUtil = require('../utils/RSAUtil')
-const CodeConstants = require('../utils/CodeConstants');
+const { SUCCESS, FAIL } = require("../utils/CodeConstants");
 const Constants = require('../utils/Constants');
 
 const fs = require('fs')
@@ -12,7 +12,7 @@ const QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 
 exports.getPublicKey = (req, res, next) => {
     return res.json({
-        status: CodeConstants.SUCCESS,
+        status: SUCCESS,
         data: {
             secretKey: RSAUtil.getPublicKey()
         },
@@ -37,7 +37,7 @@ exports.login = (req, res, next) => {
         })
     } else {
         SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, validateCallback => {
-            if (validateCallback.status === CodeConstants.SUCCESS) {
+            if (validateCallback.status === SUCCESS) {
                 UserService.updateDeviceID(user.telephone, user.password, user.deviceID, callback => {
                     req.data.output = callback;
                     next();
@@ -70,7 +70,7 @@ exports.register = (req, res, next) => {
     UserService.isTelephoneExist(user.telephone, isExist => {
         if (isExist.status === false) {
             SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
-                if (_sms.status === CodeConstants.SUCCESS) {
+                if (_sms.status === SUCCESS) {
                     UserService.createUser(user, callback => {
                         req.data.output = callback;
                         next();
@@ -82,7 +82,7 @@ exports.register = (req, res, next) => {
             })
         } else {
             let result = { data: {} };
-            result.status = CodeConstants.FAIL;
+            result.status = FAIL;
             result.message = isExist.message;
             req.data.output = result;
             next();
@@ -103,7 +103,7 @@ exports.tokenVerify = (req, res, next) => {
 
 exports.logout = (req, res, next) => {
     req.data.output = {
-        status: CodeConstants.SUCCESS,
+        status: SUCCESS,
         data: {},
         message: ""
     };
@@ -143,7 +143,7 @@ exports.updateUserProfile = (req, res, next) => {
 
 /** User avatar upload */
 exports.uploadAvatar = (req, res, next) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: "" };
+    let result = { status: FAIL, data: {}, message: "" };
 
     atavarUpload.single('uploadAvatar')(req, res, async err => {
         if (err) {
@@ -157,7 +157,7 @@ exports.uploadAvatar = (req, res, next) => {
             let fileName = file.filename;
             try {
                 let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
-                result.status = CodeConstants.SUCCESS;
+                result.status = SUCCESS;
                 result.data = {
                     avatarUrl: Constants.QN_DEFAULT_EXTERNAL_LINK + uploadAvatarResult.key,
                     width: "200",
@@ -185,7 +185,7 @@ exports.uploadAvatarByBase64 = (req, res, next) => {
 
         try {
             let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
-            result.status = CodeConstants.SUCCESS;
+            result.status = SUCCESS;
             result.data = { avatar: uploadAvatarResult.key };
         } catch (err) {
             result.message = err;

@@ -14,6 +14,9 @@ const constants = {
     SKIP_VERIFY: 'SKIP_VERIFY',
 
     QN_DEFAULT_EXTERNAL_LINK: "http://ozjhae6uc.bkt.clouddn.com/",
+
+    GROUP_NAME_MAX_LENGTH: 32,
+    MAX_GROUP_COUNT: 10
 }
 
 module.exports = constants;

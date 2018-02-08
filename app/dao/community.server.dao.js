@@ -1,8 +1,8 @@
 const CommunityModel = require('../models/community.server.model')
-const CodeConstants = require('../utils/CodeConstants')
+const { SUCCESS, FAIL } = require("../utils/CodeConstants");
 
 exports.queryCommunityByUserID = (userID, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: "" };
+    let result = { status: FAIL, data: {}, message: "" };
     CommunityModel.findOne({ userID: userID, status: 1 }, (err, community) => {
         if (err) {
             result.message = "Server error, query community fail"
@@ -10,7 +10,7 @@ exports.queryCommunityByUserID = (userID, cb) => {
             result.message = "Sorry, this user has not open community "
         } else {
             result.data.community = convertCommunity(community);
-            result.status = CodeConstants.SUCCESS;
+            result.status = SUCCESS;
         }
         cb(result);
     })

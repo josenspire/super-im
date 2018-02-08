@@ -1,7 +1,8 @@
 const CommunityDao = require('../dao/community.server.dao')
 const UserDao = require('../dao/user.server.dao')
 
-const CodeConstants = require('../utils/CodeConstants');
+const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
+
 const Constants = require('../utils/Constants');
 
 // obtain user's community information

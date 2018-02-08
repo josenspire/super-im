@@ -1,10 +1,11 @@
 const Index = require('../controllers/index')
 const AsceptControl = require('../controllers/aspect.server.controller');
-const UserControl = require('../controllers/user.server.controller')
-const SMSControl = require('../controllers/sms.server.controller')
-const CommunityControl = require('../controllers/community.server.controller')
+const UserControl = require('../controllers/user.server.controller');
+const SMSControl = require('../controllers/sms.server.controller');
+const GroupControl = require('../controllers/group.server.controller');
+const CommunityControl = require('../controllers/community.server.controller');
 
-const AESUtil = require('../utils/AESUtil')
+const AESUtil = require('../utils/AESUtil');
 
 let RSAAscept = AsceptControl.RSA;
 let AESAscept = AsceptControl.AES;
@@ -40,6 +41,9 @@ let routers = app => {
     app.post('/v1/api/user/updateRemark', AESAscept.decryptParam, UserControl.updateRemark, AESAscept.encryptParam);
     app.post('/v1/api/user/getUserContacts', AESAscept.decryptParam, UserControl.getUserContacts, AESAscept.encryptParam);
     app.post('/v1/api/user/searchUser', AESAscept.decryptParam, UserControl.searchUserByTelephoneOrNickname, AESAscept.encryptParam);
+
+    // group
+    app.post('/v1/api/group/create', AESAscept.decryptParam, GroupControl.createGroup, AESAscept.encryptParam);
 
     // community
     app.post('/v1/api/community/getUserCommunity', AESAscept.decryptParam, CommunityControl.getUserCommunity, AESAscept.encryptParam);

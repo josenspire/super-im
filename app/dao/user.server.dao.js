@@ -2,7 +2,8 @@ const UserModel = require('../models/user.server.model')
 const TokenModel = require('../models/token.server.model')
 const ContactModel = require('../models/contact.server.model')
 
-const CodeConstants = require('../utils/CodeConstants')
+const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
+
 const Constants = require('../utils/Constants')
 const DateUtils = require('../utils/DateUtils')
 const StringUtil = require('../utils/StringUtil')
@@ -13,7 +14,7 @@ const _ = require('lodash')
 let mongoose = require('mongoose')
 
 exports.createUser = async (user, token, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     let tokenID = mongoose.Types.ObjectId();
     try {
         user.token = tokenID;
@@ -25,7 +26,7 @@ exports.createUser = async (user, token, cb) => {
 
         await initContactList(user._id);
 
-        result.status = CodeConstants.SUCCESS;
+        result.status = SUCCESS;
         result.data.user = convertUser(_user);
         result.data.token = _token.token;
         result.data.secretKey = Constants.AES_SECRET;
@@ -38,7 +39,7 @@ exports.createUser = async (user, token, cb) => {
 }
 
 exports.queryUserByTelephoneAndPassword = async (telephone, password, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let data = await queryUserByTelephoneAndPassword(telephone, password);
         if (data.isMatch) {
@@ -47,7 +48,7 @@ exports.queryUserByTelephoneAndPassword = async (telephone, password, cb) => {
             result.data.token = data.user.token.token;
             result.data.user = _user;
             result.data.secretKey = Constants.AES_SECRET;
-            result.status = CodeConstants.SUCCESS;
+            result.status = SUCCESS;
         } else {
             result.message = 'Sorry, Your telephone or password is invalid';
         }
@@ -87,14 +88,14 @@ exports.isUserExist = async userID => {
 }
 
 exports.queryByUserID = async (userID, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let user = await queryByUserID(userID);
         if (!user) {
             result.message = 'This user is not exist'
         } else {
             result.data.userProfile = convertUserProfile(user);
-            result.status = CodeConstants.SUCCESS;
+            result.status = SUCCESS;
         }
     } catch (err) {
         console.log('--[QUERY BY USERID FAIL]--')
@@ -105,7 +106,7 @@ exports.queryByUserID = async (userID, cb) => {
 }
 
 exports.updateUserProfile = async (userID, userProfile, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let opts = {};
         opts.nickname = userProfile.nickname;
@@ -115,7 +116,7 @@ exports.updateUserProfile = async (userID, userProfile, cb) => {
         opts.sex = userProfile.sex;
 
         await updateUserProfile(userID, opts);
-        result.status = CodeConstants.SUCCESS;
+        result.status = SUCCESS;
     } catch (err) {
         console.log('--[QUERY BY USERID FAIL]--')
         result.message = err;
@@ -125,7 +126,7 @@ exports.updateUserProfile = async (userID, userProfile, cb) => {
 }
 
 exports.queryUserListByTelephone = async (telephoneList, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     let promiseList = telephoneList.map(telephone => {
         return queryByTelephone(telephone);
     })
@@ -133,11 +134,11 @@ exports.queryUserListByTelephone = async (telephoneList, cb) => {
         let userList = await Promise.all(promiseList);
         let newUserList = [];
         userList.forEach(user => {
-            if (user.status === CodeConstants.SUCCESS) {
+            if (user.status === SUCCESS) {
                 newUserList.push(user.data.user)
             }
         })
-        result.status = CodeConstants.SUCCESS;
+        result.status = SUCCESS;
         result.data.userList = newUserList;
     } catch (err) {
         console.log('--[QUERY USERLIST FAIL]--', err)
@@ -149,7 +150,7 @@ exports.queryUserListByTelephone = async (telephoneList, cb) => {
 
 // update deviceID 
 exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let data = await queryUserByTelephoneAndPassword(telephone, password);
         if (data.isMatch) {
@@ -159,7 +160,7 @@ exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
             result.data.user = convertUser(_user);
             result.data.secretKey = Constants.AES_SECRET;
             result.data.token = token;
-            result.status = CodeConstants.SUCCESS;
+            result.status = SUCCESS;
         } else {
             result.message = 'Telephone or password is incorrect';
         }
@@ -172,16 +173,16 @@ exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
 }
 
 exports.isTokenValid = (token, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     TokenModel.findOne({ token: token })
         .exec((err, token) => {
             if (err) {
-                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                result.status = SERVER_UNKNOW_ERROR;
                 result.message = 'Sorry, server unknow error';
             } else if (!token) {
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
-                result.status = CodeConstants.SUCCESS;
+                result.status = SUCCESS;
                 result.data.userID = token.user;
             }
             cb(result)
@@ -189,17 +190,17 @@ exports.isTokenValid = (token, cb) => {
 }
 
 exports.tokenVerify = (token, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     TokenModel.findOne({ token: token })
         .populate('user')
         .exec((err, token) => {
             if (err) {
-                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                result.status = SERVER_UNKNOW_ERROR;
                 result.message = 'Sorry, server unknow error';
             } else if (!token) {
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
-                result.status = CodeConstants.SUCCESS;
+                result.status = SUCCESS;
                 result.data.user = convertTokenInfo(token);
             }
             cb(result)
@@ -207,15 +208,15 @@ exports.tokenVerify = (token, cb) => {
 }
 
 exports.resetPassword = (telephone, newPassword, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     let password = jwt.encode(newPassword, JWT_SECRET.JWT_PASSWORD_SECRET);
     UserModel.findOneAndUpdate({ telephone: telephone }, { $set: { password: password } })
         .exec((err, user) => {
             if (err) {
-                result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+                result.status = SERVER_UNKNOW_ERROR;
                 result.message = 'Sorry, server unknow error';
             } else if (user) {
-                result.status = CodeConstants.SUCCESS;
+                result.status = SUCCESS;
             } else {
                 result.message = 'This telephone is no exist'
             }
@@ -226,7 +227,7 @@ exports.resetPassword = (telephone, newPassword, cb) => {
 
 /** User Contact Part */
 exports.acceptAddContact = async (userID, contactID, remarkName, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
         if (isCurrentUser) {
@@ -241,7 +242,7 @@ exports.acceptAddContact = async (userID, contactID, remarkName, cb) => {
                     result.message = 'This user is already your contact';
                 } else {
                     await acceptAddContact(userID, contactID, remarkName);
-                    result.status = CodeConstants.SUCCESS;
+                    result.status = SUCCESS;
                 }
             }
         }
@@ -254,7 +255,7 @@ exports.acceptAddContact = async (userID, contactID, remarkName, cb) => {
 }
 
 exports.deleteContact = async (userID, contactID, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
         if (isCurrentUser) {
@@ -269,7 +270,7 @@ exports.deleteContact = async (userID, contactID, cb) => {
                     result.message = 'This user is not your contact';
                 } else {
                     let deleteResult = await deleteContact(userID, contactID);
-                    result.status = CodeConstants.SUCCESS;
+                    result.status = SUCCESS;
                 }
             }
         }
@@ -282,7 +283,7 @@ exports.deleteContact = async (userID, contactID, cb) => {
 }
 
 exports.updateRemark = async (userID, contactID, remark, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
         if (isCurrentUser) {
@@ -293,7 +294,7 @@ exports.updateRemark = async (userID, contactID, remark, cb) => {
                 result.message = 'This user is not your contact';
             } else {
                 let updateResult = await updateRemark(userID, contactID, remark);
-                result.status = CodeConstants.SUCCESS;
+                result.status = SUCCESS;
             }
         }
     } catch (err) {
@@ -305,14 +306,14 @@ exports.updateRemark = async (userID, contactID, remark, cb) => {
 }
 
 exports.queryUserContactsByUserID = async (userID, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let contactsInfo = await queryUserContactsByUserID(userID);
         if (!contactsInfo) {
             result.data.contacts = [];
         } else {
             result.data.contacts = convertContacts(contactsInfo);
-            result.status = CodeConstants.SUCCESS;
+            result.status = SUCCESS;
         }
     } catch (err) {
         console.log('---[QUERY CONTACTS FAIL]---', err)
@@ -323,11 +324,11 @@ exports.queryUserContactsByUserID = async (userID, cb) => {
 }
 
 exports.searchUserByTelephoneOrNickname = async (queryCondition, pageIndex, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: '' };
+    let result = { status: FAIL, data: {}, message: '' };
     try {
         let userList = await searchUserByTelephoneOrNickname(queryCondition, pageIndex);
         result.data.userList = convertSearchUserList(userList);
-        result.status = CodeConstants.SUCCESS;
+        result.status = SUCCESS;
     } catch (err) {
         console.log('---[QUERY USER FAIL]---', err)
         result.message = err;

@@ -1,3 +1,4 @@
+const _ = require("lodash");
 
 exports.randomString = len => {
     len = len || 64;
@@ -11,6 +12,14 @@ exports.randomString = len => {
 }
 
 exports.randomCodeString = len => {
-    let result = Math.floor(Math.random()*89999) + 10000;
+    let result = Math.floor(Math.random() * 89999) + 10000;
     return result + "";
+}
+
+exports.stringSubstr = (strings, maxLength) => {
+    let result = _.cloneDeep(strings);
+    if (result.length > maxLength) {
+        result = result.substr(0, maxLength);
+    }
+    return result;
 }

@@ -1,10 +1,10 @@
 const SMSModel = require('../models/sms.server.model')
-const CodeConstants = require('../utils/CodeConstants')
+const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
 
 // save verifyCode
 exports.saveSMS = async (telephone, verifyCode, codeType, cb) => {
     let result = {
-        status: CodeConstants.FAIL,
+        status: FAIL,
         data: { skipVerify: false },
         message: ""
     };
@@ -15,14 +15,14 @@ exports.saveSMS = async (telephone, verifyCode, codeType, cb) => {
         let updateResult = await findAndUpdateSMSInfo(conditions, opts);
         if (updateResult) {
             console.log('---[SMS]---', updateResult);
-            result.status = CodeConstants.SUCCESS;
+            result.status = SUCCESS;
             result.data.verifyCode = verifyCode;
             result.data.expiresAt = newDate;
             result.message = 'Send SMS verify code success, expires time is 15 min'
         } else {
             let _sms = new SMSModel({ telephone: telephone, verifyCode: verifyCode, codeType: codeType });
             let newSMSInfo = await saveSMSInformation(_sms);
-            result.status = CodeConstants.SUCCESS;
+            result.status = SUCCESS;
             result.data.verifyCode = verifyCode;
             result.data.expiresAt = newSMSInfo.expiresAt;
             result.message = 'Send SMS verify code success, expires time is 15 min'
@@ -36,15 +36,15 @@ exports.saveSMS = async (telephone, verifyCode, codeType, cb) => {
 
 // check telephone and verifyCode
 exports.validateRecord = (telephone, verifyCode, codeType, cb) => {
-    let result = { status: CodeConstants.FAIL, data: {}, message: "" };
+    let result = { status: FAIL, data: {}, message: "" };
     SMSModel.findOne({ telephone: telephone, codeType: codeType }, (err, _sms) => {
         if (err) {
             console.log(err)
-            result.status = CodeConstants.SERVER_UNKNOW_ERROR;
+            result.status = SERVER_UNKNOW_ERROR;
             result.message = 'Sorry, server unknow error';
         } else if (_sms) {
             if (verifyCode === _sms.verifyCode) {
-                result.status = CodeConstants.SUCCESS;
+                result.status = SUCCESS;
                 result.data.verifyCode = verifyCode;
                 result.message = 'The SMS verify code validate success';
             } else {

@@ -2,7 +2,7 @@ const SMSService = require('../services/sms.server.service')
 const UserService = require('../services/user.server.service')
 const StringUtil = require('../utils/StringUtil');
 const RSAUtil = require('../utils/RSAUtil')
-const CodeConstants = require('../utils/CodeConstants');
+const { SUCCESS, FAIL } = require("../utils/CodeConstants");
 const Constants = require('../utils/Constants');
 
 exports.sendSMS = async (req, res, next) => {
@@ -58,7 +58,7 @@ var register = (telephone, verifyCode) => {
                 })
             } else {
                 resolve({
-                    status: CodeConstants.FAIL,
+                    status: FAIL,
                     data: {},
                     message: isExist.message
                 });
@@ -70,14 +70,14 @@ var register = (telephone, verifyCode) => {
 var login = (user, telephone, verifyCode) => {
     return new Promise((resolve, reject) => {
         UserService.queryUserByTelephoneAndPassword(user.telephone, user.password, user.deviceID, callback => {
-            if (callback.status === CodeConstants.SUCCESS) {
+            if (callback.status === SUCCESS) {
                 if (callback.data.verifyTelephone === true) {       // need to verify telephone
                     SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_LOGIN, sms => {
                         resolve(sms);
                     })
                 } else {
                     resolve({
-                        status: CodeConstants.SUCCESS,
+                        status: SUCCESS,
                         data: {
                             verifyCode: "",
                             skipVerify: true

@@ -1,6 +1,6 @@
 const SMSDao = require('../dao/sms.server.dao')
 const AliyunSMSUtil = require('../utils/AliyunSMSUtil');
-const CodeConstants = require('../utils/CodeConstants');
+const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
 
 // save sms verify code
 exports.sendSMS = (telephone, verifyCode, codeType, cb) => {
@@ -12,7 +12,7 @@ exports.sendSMS = (telephone, verifyCode, codeType, cb) => {
     //     } else {
     //         console.log(_sms)
     //         cb({
-    //             status: CodeConstants.FAIL,
+    //             status: FAIL,
     //             data: {},
     //             message: _sms.data.Message,
     //         })
