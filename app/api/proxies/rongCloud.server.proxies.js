@@ -1,8 +1,8 @@
 
-const rongcloudSDK = require('rongcloud-sdk');
+const rongCloud = require('rongcloud-sdk');
 const RongCloudConfig = require('../../../configs/config').RongCloudConfig;
 
-rongcloudSDK.init(RongCloudConfig.appKey, RongCloudConfig.appSecret);
+rongCloud.init(RongCloudConfig.appKey, RongCloudConfig.appSecret);
 
 
 var errorHandle = (err) => {
@@ -12,7 +12,7 @@ var errorHandle = (err) => {
 
 // User
 exports.createUser = (userID, nickname, avatar, callback) => {
-    rongcloudSDK.user.getToken(userID.toString(), nickname, avatar, (err, _result) => {
+    rongCloud.user.getToken(userID.toString(), nickname, avatar, (err, _result) => {
         if (err) {
             callback({ error: errorHandle(err) });
         } else {
@@ -26,18 +26,65 @@ exports.createUser = (userID, nickname, avatar, callback) => {
     });
 }
 
-// IM
+// IM - send concact notification
 exports.sendContactNotification = async (currentUserID, contactID, message, operation, remark, callback) => {
     try {
-        let timestamp = Date.now();
-        await sendContactNotification(currentUserID.toString(), contactID, operation, message, timestamp, remark);
+        await sendContactNotification(currentUserID.toString(), contactID, operation, message, remark);
         callback(null, 200)
     } catch (err) {
         callback(err, 400)
     }
 }
 
-var sendContactNotification = (userID, contactID, operation, message, timestamp, remark) => {
+// IM - send group notification
+exports.sendGroupNotification = async (currentUserID, groupId, operation, remark, callback) => {
+    try {
+        await sendGroupNotification(currentUserID.toString(), groupId, operation, remark);
+        callback(null, 200)
+    } catch (err) {
+        callback(err, 400)
+    }
+};
+
+// Group
+exports.createGroup = (groupId, name, members) => {
+    return new Promise((resolve, reject) => {
+        rongCloud.group.create(members, groupId, name, (err, resultText) => {
+            if (err) {
+                reject(`Error: create group failed on IM server, error: ${err}`);
+            }
+            let result = JSON.parse(resultText);
+            if (result.code === 200) {
+                console.log("Success: create group success");
+                resolve();
+            } else {
+                console.log(`Error: create group failed on IM server, error`, result);
+                reject(`Error: create group failed on IM server, code: ${result.code}`);
+            }
+        })
+    })
+};
+
+exports.joinGroup = (groupId, name, members) => {
+    return new Promise((resolve, reject) => {
+        rongCloud.group.join(members, groupId, name, (err, resultText) => {
+            if (err) {
+                reject(`Error: join group failed on IM server, error: ${err}`);
+            }
+            let result = JSON.parse(resultText);
+            if (result.code === 200) {
+                console.log("Success: join group success");
+                resolve();
+            } else {
+                console.log(`Error: join group failed on IM server, error`, result);
+                reject(`Error: join group failed on IM server, code: ${result.code}`);
+            }
+        })
+    })
+}
+
+
+var sendContactNotification = (userID, contactID, operation, message, remark) => {
     let content = {
         operation: operation,
         sourceUserId: userID,
@@ -45,13 +92,13 @@ var sendContactNotification = (userID, contactID, operation, message, timestamp,
         message: message,
         extra: {
             sourceUserNickname: "System Notification",
-            version: timestamp,
+            version: Date.now(),
             nickname: remark ? remark.nickname : "",
             avatar: remark ? remark.avatar : ""
         }
     };
     return new Promise((resolve, reject) => {
-        return rongcloudSDK.message.system.publish(userID, [contactID], 'RC:ContactNtf', JSON.stringify(content), (err, resultText) => {
+        return rongCloud.message.system.publish(userID, [contactID], 'RC:ContactNtf', JSON.stringify(content), (err, resultText) => {
             if (err) {
                 console.log('---[SYSTEM PUBLISH ERROR]---', err.response.body.errorMessage);
                 reject(err.response.body.errorMessage);
@@ -60,4 +107,25 @@ var sendContactNotification = (userID, contactID, operation, message, timestamp,
             }
         });
     })
+};
+
+var sendGroupNotification = (currentUserID, groupId, operation, remark) => {
+    let groupNotificationMessage = {
+        operatorUserId: currentUserID,
+        operation: operation,
+        data: remark,
+        message: ''
+    };
+    console.log('Sending GroupNotificationMessage: ', JSON.stringify(groupNotificationMessage));
+    return new Promise((resolve, reject) => {
+        return rongCloud.message.group.publish(currentUserID, groupId, 'RC:GrpNtf', JSON.stringify(groupNotificationMessage), (err, resultText) => {
+            if (err) {
+                console.log('Error: send group notification failed: %s', err);
+                reject(err);
+            } else {
+                console.log('Sending group notification Success: ', resultText);
+                resolve(resultText);
+            };
+        });
+    });
 };

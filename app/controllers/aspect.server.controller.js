@@ -71,12 +71,14 @@ exports.AES = {
             })
         }
         req.data = {};
-        UserService.isTokenValid(data.token, isValid => {
+        UserService.tokenVerify(data.token, isValid => {
             if (isValid.status != 200) {
                 return res.json(isValid);
             } else {
-                data.params.userID = isValid.data.userID;
+                let user = isValid.data.user;
+                data.params.userID = user.userID;
                 req.data.input = data.params;
+                req.data.user = user;
                 next();
             }
         })

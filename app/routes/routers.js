@@ -44,6 +44,7 @@ let routers = app => {
 
     // group
     app.post('/v1/api/group/create', AESAscept.decryptParam, GroupControl.createGroup, AESAscept.encryptParam);
+    app.post('/v1/api/group/join', AESAscept.decryptParam, GroupControl.joinGroup, AESAscept.encryptParam);
 
     // community
     app.post('/v1/api/community/getUserCommunity', AESAscept.decryptParam, CommunityControl.getUserCommunity, AESAscept.encryptParam);

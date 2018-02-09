@@ -26,13 +26,19 @@ let GroupSchema = new mongoose.Schema({
         default: ""
     },
 
+    avatar: {
+        type: String,
+        default: null
+    },
+
     members: [{
         userID: {
             type: ObjectId,
             ref: "User"
         },
         alias: {
-            type: "String"
+            type: String,
+            default: "Anonymous User"
         },
         role: {
             type: Number,
@@ -45,12 +51,7 @@ let GroupSchema = new mongoose.Schema({
     }],
 }, {
         versionKey: false,
-        timestamps: {
-            meta: {
-                createdAt: 'createTime',
-                updatedAt: 'updateTime'
-            }
-        }
+        timestamps: { createdAt: 'createTime', updatedAt: 'updateTime' }
     }
 )
 

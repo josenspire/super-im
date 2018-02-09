@@ -805,6 +805,16 @@ Fail：
 
 ```
 
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+nickname | String | 昵称 | No
+birthdate | Timestamp | 生日 | No
+signture | String | 个人签名 | No
+location | String | 定位 | No
+sex | Int | 性别 | No
+
 - 返回示例：
 
 ```
@@ -823,7 +833,177 @@ Fail：
 
 ```
  
- 
+##### 17. 新建群组
+- API： http://{HOST}/{VERSION}/api/group/create
+- Method： POST
+- Desc：校验token
+- 请求示例：
+
+```
+{ 
+    params: {
+        "name": "测试群组1",
+		"members": [{
+            "userID": "5a41ee3cc5fefe50c4604447", 
+            "alias": "德玛西亚之力"
+        }, 
+        {
+            "userID": "5a7d0123f5ea7a472335632e",
+            "alias": "德玛西亚之屁"
+        }]
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+name | String | 群组名称 | YES
+members | Array | 群组成员 | YES
+
+- members参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+userID | String | 组员userID | YES
+alias | String | 组员别名(昵称) | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {
+        "group": {
+            "createTime": "2018-02-09T09:05:03.341Z",
+            "createBy": "5a41ec55ae0d113fb05ba1d8",
+            "owner": "5a41ec55ae0d113fb05ba1d8",
+            "members": [
+                {
+                    "userID": "5a41ec55ae0d113fb05ba1d8",
+                    "status": 0,
+                    "role": 0,
+                    "alias": "jamestest001"
+                },
+                {
+                    "userID": "5a41ee3cc5fefe50c4604447",
+                    "status": 0,
+                    "role": 0,
+                    "alias": "德玛西亚之力"
+                },
+                {
+                    "userID": "5a7d0123f5ea7a472335632e",
+                    "status": 0,
+                    "role": 0,
+                    "alias": "德玛西亚之屁"
+                }
+            ],
+            "avatar": null,
+            "notice": "",
+            "name": "测试群组1",
+            "groupID": "5a7d643fc15f01050c5f541d"
+        }
+    },
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "Current user's group count is out of max user group count limit (10)"
+}
+
+``` 
+
+##### 18. 群组添加组员
+- API： http://{HOST}/{VERSION}/api/group/join
+- Method： POST
+- Desc：校验token
+- 请求示例：
+
+```
+{ 
+    params: {
+        "name": "测试群组1",
+		"members": [{
+            "userID": "5a41ee3cc5fefe50c4604447", 
+            "alias": "德玛西亚之力"
+        }, 
+        {
+            "userID": "5a7d0123f5ea7a472335632e",
+            "alias": "德玛西亚之屁"
+        }]
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+groupID | String | 群组ID | YES
+members | Array | 群组成员 | YES
+
+- members参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+userID | String | 组员userID | YES
+alias | String | 组员别名(昵称) | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {
+        "group": {
+            "createTime": "2018-02-09T09:05:03.341Z",
+            "createBy": "5a41ec55ae0d113fb05ba1d8",
+            "owner": "5a41ec55ae0d113fb05ba1d8",
+            "members": [
+                {
+                    "userID": "5a41ec55ae0d113fb05ba1d8",
+                    "status": 0,
+                    "role": 0,
+                    "alias": "jamestest001"
+                },
+                {
+                    "userID": "5a41ee3cc5fefe50c4604447",
+                    "status": 0,
+                    "role": 0,
+                    "alias": "德玛西亚之力"
+                },
+                {
+                    "userID": "5a7d0123f5ea7a472335632e",
+                    "status": 0,
+                    "role": 0,
+                    "alias": "德玛西亚之屁"
+                }
+            ],
+            "avatar": null,
+            "notice": "",
+            "name": "测试群组1",
+            "groupID": "5a7d643fc15f01050c5f541d"
+        }
+    },
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "Current group's user count is out of max group user count limit (500)"
+}
+
+``` 
 
 ---
 
