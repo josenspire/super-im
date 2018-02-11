@@ -40,7 +40,11 @@ let MomentSchema = new mongoose.Schema({
             default: DateUtils.formatCommonUTCDate(Date.now())
         }
     }
-})
+}, {
+        versionKey: false
+    }
+)
+
 
 MomentSchema.pre('save', function (next) {
     let user = this

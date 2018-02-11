@@ -18,6 +18,5 @@ exports.queryCommunityByUserID = (userID, cb) => {
 
 var convertCommunity = community => {
     delete community._id;
-    delete community.__v;
     delete community.meta;
 }

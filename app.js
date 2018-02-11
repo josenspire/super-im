@@ -14,8 +14,8 @@ let session = require('express-session')
 let MongoStore = require('connect-mongo')(session)
 
 // const dbUrl = 'mongodb://superim:Password520@127.0.0.1:27017/super-im'
-const dbUrl = 'mongodb://127.0.0.1:27017/super-im'
-// const dbUrl = 'mongodb://47.95.250.204:27017/super-im'
+// const dbUrl = 'mongodb://127.0.0.1:27017/super-im'
+const dbUrl = 'mongodb://47.95.250.204:27017/super-im'
 const options = { replset: { strategy: 'ping' } };
 mongoose.connect(dbUrl, options)
 

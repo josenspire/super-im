@@ -40,7 +40,11 @@ let TokenSchema = new mongoose.Schema({
             default: DateUtils.formatCommonUTCDate(Date.now())
         }
     }
-})
+}, {
+        versionKey: false
+    }
+)
+
 
 TokenSchema.pre('save', function (next) {
     let token = this

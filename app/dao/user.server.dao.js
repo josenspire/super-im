@@ -644,7 +644,6 @@ var convertUser = user => {
     delete _user.role;
     delete _user.meta;
     delete _user.password;
-    delete _user.__v;
     return _user;
 }
 
@@ -658,7 +657,6 @@ var convertUserProfile = user => {
     delete _user.role;
     delete _user.meta;
     delete _user.password;
-    delete _user.__v;
     return _user;
 }
 
@@ -666,19 +664,21 @@ var convertContactInfo = contact => {
     let _contact = JSON.parse(JSON.stringify(contact)) || {};
 
     let user = _contact.userID;
-    user.remark = _contact.remark;
+
     user.userID = user._id;
 
     delete user._id;
     delete user.password;
     delete user.deviceID;
-    delete user.__v;
     delete user.token;
     delete user.meta;
     delete user.status;
     delete user.role;
 
-    return user;
+    let _user = {};
+    _user.userProfile = user;
+    _user.remark = _contact.remark;
+    return _user;
 }
 
 var convertContacts = contactsData => {
@@ -714,7 +714,6 @@ var convertTokenInfo = tokenInfo => {
     userProfile.userID = userProfile._id;
 
     delete userProfile._id;
-    delete userProfile.__v;
     delete userProfile.meta;
     delete userProfile.deviceID;
     delete userProfile.password;

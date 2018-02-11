@@ -38,8 +38,10 @@ let CommunitySchema = new mongoose.Schema({
             default: DateUtils.formatCommonUTCDate(Date.now())
         }
     }
-
-})
+}, {
+        versionKey: false
+    }
+)
 
 CommunitySchema.pre('save', function (next) {
     let user = this

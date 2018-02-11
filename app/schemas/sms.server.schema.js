@@ -8,7 +8,7 @@ let SMSSchema = new mongoose.Schema({
         // unique: 'Telephone already exists',
         trim: true
     },
-    
+
     codeType: {
         type: String,
         trim: true
@@ -37,7 +37,11 @@ let SMSSchema = new mongoose.Schema({
         default: Date.now(),
         expires: 60 * 60
     }
-})
+}, {
+        versionKey: false
+    }
+)
+
 
 SMSSchema.pre('save', function (next) {
     let verifyCode = this

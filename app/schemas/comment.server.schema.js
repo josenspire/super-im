@@ -42,7 +42,10 @@ let CommentSchema = new mongoose.Schema({
             default: DateUtils.formatCommonUTCDate(Date.now())
         }
     }
-})
+}, {
+        versionKey: false
+    }
+)
 
 CommentSchema.pre('save', function (next) {
     let user = this

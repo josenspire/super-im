@@ -46,8 +46,11 @@ let ContactSchema = new mongoose.Schema({
             default: DateUtils.formatCommonUTCDate(Date.now())
         }
     }
+}, {
+        versionKey: false
+    }
+)
 
-})
 
 ContactSchema.pre('save', function (next) {
     let user = this
