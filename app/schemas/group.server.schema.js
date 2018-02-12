@@ -31,6 +31,11 @@ let GroupSchema = new mongoose.Schema({
         default: null
     },
 
+    status: {
+        type: Boolean,
+        default: true
+    },
+
     members: [{
         userID: {
             type: ObjectId,

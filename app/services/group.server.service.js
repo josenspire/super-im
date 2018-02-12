@@ -30,9 +30,9 @@ exports.createGroup = (currentUser, groupInfo, cb) => {
     });
 }
 
-exports.joinGroup = (currentUser, groupID, members, cb) => {
+exports.addGroupMembers = (currentUser, groupID, members, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
-    GroupDao.joinGroup(groupID, members, async _result => {
+    GroupDao.addGroupMembers(groupID, members, async _result => {
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) return cb(result);
@@ -45,8 +45,8 @@ exports.joinGroup = (currentUser, groupID, members, cb) => {
                 targetUserIds: members,
                 targetUserDisplayNames: members.alias || "",
                 timestamp: Date.now()
-            }
-            IMProxie.sendGroupNotification(currentUser.userID.toString(), groupID, Constants.GROUP_OPERATION_ADD, content, (err, code) => { });
+            };
+            IMProxie.sendGroupNotification(currentUser.userID.toString(), groupID, Constants.GROUP_OPERATION_ADD, content);
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -54,7 +54,177 @@ exports.joinGroup = (currentUser, groupID, members, cb) => {
         }
         cb(result);
     })
+}
 
+exports.joinGroup = (currentUser, groupID, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    let member = {
+        userID: currentUser.userID,
+        alias: currentUser.alias
+    };
+    GroupDao.joinGroup(member, groupID, async _result => {
+        result = _.cloneDeep(_result);
+        try {
+            if (result.status != SUCCESS) return cb(result);
+
+            let group = result.data.group;
+            await IMProxie.joinGroup(groupID, group.name, [member]);
+
+            let content = {
+                operatorNickname: currentUser.nickname,
+                targetUserIds: member,
+                targetUserDisplayNames: member.alias || "",
+                timestamp: Date.now()
+            };
+            await IMProxie.sendGroupNotification(currentUser.userID.toString(), groupID, Constants.GROUP_OPERATION_ADD, content);
+            result.data = {};
+        } catch (err) {
+            result.status = FAIL;
+            result.data = {};
+            result.message = err;
+        }
+        cb(result);
+    })
+}
+
+exports.kickGroupMember = (currentUser, groupID, targetUserID, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    GroupDao.kickGroupMember(currentUser, groupID, targetUserID, async _result => {
+        result = _.cloneDeep(_result);
+        try {
+            if (result.status != SUCCESS) return cb(result);
+
+            let group = result.data.group;
+            await IMProxie.quitGroup(groupID, targetUserID);
+
+            let content = {
+                operatorNickname: currentUser.nickname,
+                targetUserIds: targetUserID,
+                targetUserDisplayNames: targetUserID || "",
+                timestamp: Date.now()
+            };
+            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_KICKED, content);
+            result.data = {};
+        } catch (err) {
+            result.status = FAIL;
+            result.data = {};
+            result.message = err;
+        }
+        cb(result);
+    });
+}
+
+exports.quitGroup = (currentUser, groupID, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    GroupDao.quitGroup(currentUser.userID, groupID, async _result => {
+        result = _.cloneDeep(_result);
+        try {
+            if (result.status != SUCCESS) return cb(result);
+            let group = result.data.group;
+            await IMProxie.quitGroup(groupID, currentUser.userID);
+
+            let content = {
+                operatorNickname: currentUser.nickname,
+                targetUserIds: currentUser.userID,
+                targetUserDisplayNames: currentUser.nickname || "",
+                timestamp: Date.now()
+            };
+            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_QUIT, content);
+            result.data = {};
+        } catch (err) {
+            result.status = FAIL;
+            result.data = {};
+            result.message = err;
+        }
+        cb(result);
+    });
+}
+
+exports.dismissGroup = (currentUser, groupID, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    GroupDao.dismissGroup(currentUser.userID, groupID, async _result => {
+        result = _.cloneDeep(_result);
+        try {
+            if (result.status != SUCCESS) return cb(result);
+
+            let group = result.data.group;
+            await IMProxie.dismissGroup(currentUser.userID, groupID);
+
+            let content = {
+                operatorNickname: currentUser.nickname,
+                targetUserIds: currentUser.userID,
+                targetUserDisplayNames: currentUser.nickname || "",
+                timestamp: Date.now()
+            };
+            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_DISMISS, content);
+            result.data = {};
+        } catch (err) {
+            result.status = FAIL;
+            result.data = {};
+            result.message = err;
+        }
+        cb(result);
+    });
+}
+
+exports.renameGroup = (currentUser, groupID, name, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    GroupDao.renameGroup(groupID, name, async _result => {
+        result = _.cloneDeep(_result);
+        try {
+            if (result.status != SUCCESS) return cb(result);
+
+            let group = result.data.group;
+            await IMProxie.renameGroup(currentUser.userID, groupID);
+
+            let content = {
+                operatorNickname: currentUser.nickname,
+                targetUserIds: currentUser.userID,
+                targetUserDisplayNames: currentUser.nickname || "",
+                timestamp: Date.now()
+            };
+            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_RENAME, content);
+            result.data = {};
+        } catch (err) {
+            result.status = FAIL;
+            result.data = {};
+            result.message = err;
+        }
+        cb(result);
+    });
+}
+
+exports.updateGroupNotice = (currentUser, groupID, notice, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    GroupDao.updateGroupNotice(groupID, notice, async _result => {
+        result = _.cloneDeep(_result);
+        try {
+            if (result.status != SUCCESS) return cb(result);
+
+            let group = result.data.group;
+            await IMProxie.renameGroup(currentUser.userID, groupID);
+
+            let content = {
+                operatorNickname: currentUser.nickname,
+                targetUserIds: currentUser.userID,
+                targetUserDisplayNames: currentUser.nickname || "",
+                timestamp: Date.now()
+            };
+            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_BULLETIN, content);
+            result.data = {};
+        } catch (err) {
+            result.status = FAIL;
+            result.data = {};
+            result.message = err;
+        }
+        cb(result);
+    });
+}
+
+exports.updateGroupMemberAlias = (currentUser, groupID, alias, cb) => {
+    GroupDao.updateGroupMemberAlias(groupID, currentUser.userID, alias, result => {
+        cb(result);
+    });
 }
 
 var convertMembers = members => {

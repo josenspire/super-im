@@ -376,7 +376,7 @@ Fail：
 ```
 
 ##### 7. 请求添加联系人
-- API： http://{HOST}/{VERSION}/api/user/requestContact
+- API： http://{HOST}/{VERSION}/api/contact/requestContact
 - Method： POST
 - Desc： 请求添加联系人
 - 请求示例：
@@ -416,7 +416,7 @@ Fail：
 ```
 
 ##### 8. 同意添加请求
-- API： http://{HOST}/{VERSION}/api/user/acceptContact
+- API： http://{HOST}/{VERSION}/api/contact/acceptContact
 - Method： POST
 - Desc： 添加联系人
 - 请求示例：
@@ -457,7 +457,7 @@ Fail：
 ```
 
 ##### 9. 拒绝添加请求
-- API： http://{HOST}/{VERSION}/api/user/rejectContact
+- API： http://{HOST}/{VERSION}/api/contact/rejectContact
 - Method： POST
 - Desc： 拒绝添加请求
 - 请求示例：
@@ -499,7 +499,7 @@ Fail：
 ```
 
 ##### 10. 删除联系人
-- API： http://{HOST}/{VERSION}/api/user/deleteContact
+- API： http://{HOST}/{VERSION}/api/contact/deleteContact
 - Method： POST
 - Desc： 删除用户联系人
 - 请求示例：
@@ -538,7 +538,7 @@ Fail：
 ```
 
 ##### 11. 获取当前用户联系人列表信息
-- API： http://{HOST}/{VERSION}/api/user/getUserContacts
+- API： http://{HOST}/{VERSION}/api/contact/getUserContacts
 - Method： POST
 - Desc： 获取用户联系人列表
 - 请求示例：
@@ -644,7 +644,7 @@ Fail：
 ```
 
 ##### 13. 更新联系人备注
-- API： http://{HOST}/{VERSION}/api/user/updateRemarkName
+- API： http://{HOST}/{VERSION}/api/contact/updateRemark
 - Method： POST
 - Desc：更新联系人备注名
 - 请求示例：
@@ -795,8 +795,8 @@ Fail：
 { 
     params: {
         nickname: "newNickname", 
-        birthdate: "201758501121",
-        signture: "德玛西亚人永不言弃！"
+        birthday: 201758501121,
+        signature: "德玛西亚人永不言弃！"
         location: "CHINA-ZHA"
         sex: 1,
     },
@@ -810,8 +810,8 @@ Fail：
 参数名 | 类型 | 说明 | 必含
 ---|---|---|---
 nickname | String | 昵称 | No
-birthdate | Timestamp | 生日 | No
-signture | String | 个人签名 | No
+birthday | Timestamp | 生日 | No
+signature | String | 个人签名 | No
 location | String | 定位 | No
 sex | Int | 性别 | No
 
@@ -836,7 +836,7 @@ Fail：
 ##### 17. 新建群组
 - API： http://{HOST}/{VERSION}/api/group/create
 - Method： POST
-- Desc：校验token
+- Desc：新建群
 - 请求示例：
 
 ```
@@ -920,9 +920,9 @@ Fail：
 ``` 
 
 ##### 18. 群组添加组员
-- API： http://{HOST}/{VERSION}/api/group/join
+- API： http://{HOST}/{VERSION}/api/group/add
 - Method： POST
-- Desc：校验token
+- Desc：添加群成员
 - 请求示例：
 
 ```
@@ -1001,6 +1001,302 @@ Fail：
     status: 400,
     data: {},
     message: "Current group's user count is out of max group user count limit (500)"
+}
+
+``` 
+
+##### 19. 加入群组
+- API： http://{HOST}/{VERSION}/api/group/join
+- Method： POST
+- Desc：用户主动加入某群
+- 请求示例：
+
+```
+{ 
+    params: {
+        groupID: "5a8129cb2c448e31c889ce70"
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+groupID | String | 群组ID | YES
+token | String | 当前用户token | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {},
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "Current group's user count is out of max group user count limit (500)"
+}
+
+``` 
+
+##### 20. 踢出群组
+- API： http://{HOST}/{VERSION}/api/group/kick
+- Method： POST
+- Desc：群主踢出群成员
+- 请求示例：
+
+```
+{ 
+    params: {
+        groupID: "5a8129cb2c448e31c889ce70",
+        targetUserID: "5a41ee3cc5fefe50c4604496"
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+groupID | String | 群组ID | YES
+targetUserID | String | 操作的用户 | YES
+token | String | 当前用户token | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {},
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "You do not have the right to do this"
+}
+
+``` 
+
+##### 21. 退出群组
+- API： http://{HOST}/{VERSION}/api/group/quit
+- Method： POST
+- Desc：当期用户主动退群
+- 请求示例：
+
+```
+{ 
+    params: {
+        groupID: "5a8129cb2c448e31c889ce70"
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+groupID | String | 群组ID | YES
+token | String | 当前用户token | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {},
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "You are not in current group"
+}
+
+``` 
+
+##### 22. 解散群组
+- API： http://{HOST}/{VERSION}/api/group/quit
+- Method： POST
+- Desc：群主 主动解散群
+- 请求示例：
+
+```
+{ 
+    params: {
+        groupID: "5a8129cb2c448e31c889ce70"
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+groupID | String | 群组ID | YES
+token | String | 当前用户token | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {},
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "You do not have the right to do this"
+}
+
+``` 
+
+
+##### 23. 重命名群名称
+- API： http://{HOST}/{VERSION}/api/group/rename
+- Method： POST
+- Desc：所有群组内用户都可以重命名所在群的群名称
+- 请求示例：
+
+```
+{ 
+    params: {
+        groupID: "5a8129cb2c448e31c889ce70"，
+        name: "新群名"
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+groupID | String | 群组ID | YES
+name | String | 群名 | YES
+token | String | 当前用户token | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {},
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "Server unknow error, update group name fail"
+}
+
+``` 
+
+##### 24. 更新群公告
+- API： http://{HOST}/{VERSION}/api/group/updateNotice
+- Method： POST
+- Desc：群主可以更新群公告
+- 请求示例：
+
+```
+{ 
+    params: {
+        groupID: "5a8129cb2c448e31c889ce70"，
+        notice: "新群名"
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+groupID | String | 群组ID | YES
+notice | String | 群公告 | YES
+token | String | 当前用户token | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {},
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "Your do not have right to do that"
+}
+
+``` 
+
+##### 25. 更新群中个人别名
+- API： http://{HOST}/{VERSION}/api/group/updateAlias
+- Method： POST
+- Desc：群主可以更新群公告
+- 请求示例：
+
+```
+{ 
+    params: {
+        groupID: "5a8129cb2c448e31c889ce70"，
+        alias: "群中展示名"
+    },
+    token: "3biuc+StGb0XIqe7ULTJNvZK/1jFtmFusIMYEkbc+UZ1T+oH6YIlHhpeVEWsmogXSj5xvi5cYhy5e6d3a9iF1Uy1WDf6lQ7KOrIgc+VinFv7MAIb2whLqw==",
+}
+
+```
+
+- 请求参数解析:
+
+参数名 | 类型 | 说明 | 必含
+---|---|---|---
+groupID | String | 群组ID | YES
+alias | String | 别名 | YES
+token | String | 当前用户token | YES
+
+- 返回示例：
+
+```
+Success：
+{
+    status: 200,
+    data: {},
+    message: ""
+}
+Fail：
+{
+    status: 400,
+    data: {},
+    message: "Your do not have right to do that"
 }
 
 ``` 

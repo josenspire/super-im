@@ -83,9 +83,9 @@ let UserSchema = new mongoose.Schema({
         default: 0
     },
 
-    birthdate: {
+    birthday: {
         type: Date,
-        default: null
+        default: 0
     },
 
     signature: {

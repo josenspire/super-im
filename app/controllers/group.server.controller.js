@@ -33,11 +33,81 @@ exports.createGroup = (req, res, next) => {
     });
 }
 
+exports.addGroupMembers = (req, res, next) => {
+    let input = req.data.input || {};
+    let currentUser = req.data.user;
+
+    GroupService.addGroupMembers(currentUser, input.groupID, input.members, result => {
+        return res.json(result);
+    });
+}
+
 exports.joinGroup = (req, res, next) => {
     let input = req.data.input || {};
     let currentUser = req.data.user;
 
-    GroupService.joinGroup(currentUser, input.groupID, input.members, result => {
+    GroupService.joinGroup(currentUser, input.groupID, result => {
+        return res.json(result);
+    });
+}
+
+exports.kickGroupMember = (req, res, next) => {
+    let input = req.data.input || {};
+    let currentUser = req.data.user;
+
+    GroupService.kickGroupMember(currentUser, input.groupID, input.targetUserID, result => {
+        return res.json(result);
+    });
+}
+
+exports.quitGroup = (req, res, next) => {
+    let input = req.data.input || {};
+    let currentUser = req.data.user;
+
+    GroupService.quitGroup(currentUser, input.groupID, result => {
+        return res.json(result);
+    });
+}
+
+exports.dismissGroup = (req, res, next) => {
+    let input = req.data.input || {};
+    let currentUser = req.data.user;
+
+    GroupService.dismissGroup(currentUser, input.groupID, result => {
+        return res.json(result);
+    });
+}
+
+exports.renameGroup = (req, res, next) => {
+    let input = req.data.input || {};
+    let currentUser = req.data.user;
+
+    GroupService.renameGroup(currentUser, input.groupID, input.name, result => {
+        return res.json(result);
+    });
+}
+
+exports.updateGroupNotice = (req, res, next) => {
+    let input = req.data.input || {};
+    let currentUser = req.data.user;
+
+    if (input.notice.length > 100) {
+        return res.json({
+            status: FAIL,
+            data: {},
+            message: `Group's notice is out of max length limit (${Constants.GROUP_NOTICE_MAX_LENGTH})`
+        })
+    }
+    GroupService.updateGroupNotice(currentUser, input.groupID, input.notice, result => {
+        return res.json(result);
+    });
+}
+
+exports.updateGroupMemberAlias = (req, res, next) => {
+    let input = req.data.input || {};
+    let currentUser = req.data.user;
+
+    GroupService.updateGroupMemberAlias(currentUser, input.groupID, input.alias, result => {
         return res.json(result);
     });
 }

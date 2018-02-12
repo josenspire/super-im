@@ -108,13 +108,13 @@ exports.queryByUserID = async (userID, cb) => {
 exports.updateUserProfile = async (userID, userProfile, cb) => {
     let result = { status: FAIL, data: {}, message: '' };
     try {
-        let opts = {};
-        opts.nickname = userProfile.nickname;
-        opts.birthdate = userProfile.birthdate;
-        opts.signature = userProfile.signature;
-        opts.location = userProfile.location;
-        opts.sex = userProfile.sex;
-
+        let opts = {
+            nickname: userProfile.nickname,
+            birthday: userProfile.birthday,
+            signature: userProfile.signature,
+            location: userProfile.location,
+            sex: userProfile.sex
+        };
         await updateUserProfile(userID, opts);
         result.status = SUCCESS;
     } catch (err) {
@@ -581,7 +581,7 @@ var updateRemark = (userID, contactID, remark) => {
     return new Promise(async (resolve, reject) => {
         ContactModel.findOne({ userID: userID }, (err, contactList) => {
             if (err) {
-                reject(err)
+                reject(err.message);
             } else if (contactList) {
                 let contacts = contactList.contacts;
                 for (let i = 0; i < contacts.length; i++) {

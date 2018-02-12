@@ -58,7 +58,7 @@ exports.register = (req, res, next) => {
     user.password = data.password;
     user.nickname = data.nickname;
     user.sex = data.sex || 0;
-    user.birthdate = data.birthdate || 0;
+    user.birthday = data.birthday || 0;
     user.location = data.location || '';
     user.signature = data.signature || '';
     user.countryCode = data.countryCode || '';
@@ -134,7 +134,13 @@ exports.getUserProfile = (req, res, next) => {
 exports.updateUserProfile = (req, res, next) => {
     let input = req.data.input;
     let userID = input.userID;
-    let userProfile = input.params;
+    let userProfile = {
+        nickname: input.nickname || "",
+        birthday: input.birthday || "",
+        signature: input.signature || "",
+        location: input.location || "",
+        sex: parseInt(input.sex) || 0,
+    };
     UserService.updateUserProfile(userID, userProfile, updateResult => {
         req.data.output = updateResult;
         next();

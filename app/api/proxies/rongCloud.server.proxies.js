@@ -37,22 +37,30 @@ exports.sendContactNotification = async (currentUserID, contactID, message, oper
 }
 
 // IM - send group notification
-exports.sendGroupNotification = async (currentUserID, groupId, operation, remark, callback) => {
-    try {
-        await sendGroupNotification(currentUserID.toString(), groupId, operation, remark);
-        callback(null, 200)
-    } catch (err) {
-        callback(err, 400)
-    }
+exports.sendGroupNotification = async (currentUserID, groupId, operation, remark) => {
+    let groupNotificationMessage = {
+        operatorUserId: currentUserID.toString(),
+        operation: operation,
+        data: remark,
+        message: ''
+    };
+    console.log('Sending GroupNotificationMessage: ', JSON.stringify(groupNotificationMessage));
+    return new Promise((resolve, reject) => {
+        return rongCloud.message.group.publish(currentUserID.toString(), groupId, 'RC:GrpNtf', JSON.stringify(groupNotificationMessage), (err, resultText) => {
+            if (err) return reject(`Error: send group notification failed: ${err}`);
+
+            console.log('Sending group notification Success: ', resultText);
+            resolve(resultText);
+        });
+    });
 };
 
 // Group
 exports.createGroup = (groupId, name, members) => {
     return new Promise((resolve, reject) => {
         rongCloud.group.create(members, groupId, name, (err, resultText) => {
-            if (err) {
-                reject(`Error: create group failed on IM server, error: ${err}`);
-            }
+            if (err) return reject(`Error: create group failed on IM server, error: ${err}`);
+
             let result = JSON.parse(resultText);
             if (result.code === 200) {
                 console.log("Success: create group success");
@@ -68,9 +76,8 @@ exports.createGroup = (groupId, name, members) => {
 exports.joinGroup = (groupId, name, members) => {
     return new Promise((resolve, reject) => {
         rongCloud.group.join(members, groupId, name, (err, resultText) => {
-            if (err) {
-                reject(`Error: join group failed on IM server, error: ${err}`);
-            }
+            if (err) return reject(`Error: join group failed on IM server, error: ${err}`);
+
             let result = JSON.parse(resultText);
             if (result.code === 200) {
                 console.log("Success: join group success");
@@ -81,8 +88,58 @@ exports.joinGroup = (groupId, name, members) => {
             }
         })
     })
+};
+
+exports.quitGroup = (groupId, targetUserID) => {
+    return new Promise((resolve, reject) => {
+        return rongCloud.group.quit(targetUserID, groupId, (err, resultText) => {
+            if (err) return reject(`Error: quit group failed on IM server, error: ${err}`);
+
+            let result = JSON.parse(resultText);
+            if (result.code === 200) {
+                console.log("Success: quit group success");
+                resolve();
+            } else {
+                console.log('Error: quit group failed on IM server, error', result);
+                reject(`Error: quit group failed on IM server, code: ${result.code}`);
+            }
+        })
+    })
 }
 
+exports.dismissGroup = (currentUserID, groupId) => {
+    return new Promise((resolve, reject) => {
+        return rongCloud.group.dismiss(currentUserID, groupId, (err, resultText) => {
+            if (err) return reject(`Error: quit group failed on IM server, error: ${err}`);
+
+            let result = JSON.parse(resultText);
+            if (result.code === 200) {
+                console.log("Success: dismiss group success");
+                resolve();
+            } else {
+                console.log('Error: dismiss group failed on IM server, error', result);
+                reject(`Error: dismiss group failed on IM server, code: ${result.code}`);
+            }
+        })
+    })
+}
+
+exports.renameGroup = (groupId, name) => {
+    return new Promise((resolve, reject) => {
+        rongCloud.group.refresh(groupId, name, (err, resultText) => {
+            if (err) return reject(`Error: refresh group info failed on IM server, error: ${err}`);
+
+            let result = JSON.parse(resultText);
+            if (result.code === 200) {
+                console.log("Success: refresh group name success");
+                resolve();
+            } else {
+                console.log('Error: refresh group info failed on IM server, error', result);
+                return reject(`Error: refresh group info failed on IM server, code: ${result.code}`);
+            }
+        })
+    })
+}
 
 var sendContactNotification = (userID, contactID, operation, message, remark) => {
     let content = {

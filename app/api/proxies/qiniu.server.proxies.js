@@ -29,7 +29,7 @@ let uploadAvatar = (upToken, key, localFile) => {
                 resolve(ret)
             } else {
                 console.log('---[UPLOAD AVATAR FAIL]---', err)
-                reject(err)
+                reject(err.message)
             }
         });
     })
