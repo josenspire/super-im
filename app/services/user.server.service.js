@@ -111,9 +111,10 @@ exports.uploadAvatar = (telephone, cb) => {
 
 /** User Contacts Part */
 
-exports.requestAddContact = (userID, contactID, message, cb) => {
+exports.requestAddContact = (currentUser, contactID, message, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
-    if (userID.toString() === contactID) {
+    let userID = currentUser.userID.toString();
+    if (userID === contactID) {
         result.message = 'You can\'t add yourself to a contact';
         return cb(result);
     }
@@ -124,7 +125,7 @@ exports.requestAddContact = (userID, contactID, message, cb) => {
                 result.message = "This user is already your contact";
                 cb(result);
             } else {
-                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_REQUEST, user.data.userProfile, (err, _result) => {
+                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_REQUEST, currentUser, (err, _result) => {
                     if (err) { result.message = err; }
                     else { result.status = SUCCESS; }
                     cb(result);

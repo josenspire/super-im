@@ -27,9 +27,9 @@ exports.createUser = (userID, nickname, avatar, callback) => {
 }
 
 // IM - send concact notification
-exports.sendContactNotification = async (currentUserID, contactID, message, operation, remark, callback) => {
+exports.sendContactNotification = async (currentUserID, contactID, message, operation, userProfile, callback) => {
     try {
-        await sendContactNotification(currentUserID.toString(), contactID, operation, message, remark);
+        await sendContactNotification(currentUserID.toString(), contactID, operation, message, userProfile);
         callback(null, 200)
     } catch (err) {
         callback(err, 400)
@@ -37,11 +37,11 @@ exports.sendContactNotification = async (currentUserID, contactID, message, oper
 }
 
 // IM - send group notification
-exports.sendGroupNotification = async (currentUserID, groupId, operation, remark) => {
+exports.sendGroupNotification = async (currentUserID, groupId, operation, userProfile) => {
     let groupNotificationMessage = {
         operatorUserId: currentUserID.toString(),
         operation: operation,
-        data: remark,
+        data: userProfile,
         message: ''
     };
     console.log('Sending GroupNotificationMessage: ', JSON.stringify(groupNotificationMessage));
@@ -141,7 +141,7 @@ exports.renameGroup = (groupId, name) => {
     })
 }
 
-var sendContactNotification = (userID, contactID, operation, message, remark) => {
+var sendContactNotification = (userID, contactID, operation, message, userProfile) => {
     let content = {
         operation: operation,
         sourceUserId: userID,
@@ -150,8 +150,7 @@ var sendContactNotification = (userID, contactID, operation, message, remark) =>
         extra: {
             sourceUserNickname: "System Notification",
             version: Date.now(),
-            nickname: remark ? remark.nickname : "",
-            avatar: remark ? remark.avatar : ""
+            userProfile: userProfile
         }
     };
     return new Promise((resolve, reject) => {

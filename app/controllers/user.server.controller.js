@@ -202,11 +202,14 @@ exports.uploadAvatarByBase64 = (req, res, next) => {
 /** User Contact Part */
 
 exports.requestAddContact = (req, res, next) => {
+    let currentUser = req.data.user;
     let input = req.data.input;
+
     let userID = input.userID;
     let contactID = input.contactID;
     let message = input.reason || "";
-    UserService.requestAddContact(userID, contactID, message, inviteResult => {
+
+    UserService.requestAddContact(currentUser, contactID, message, inviteResult => {
         req.data.output = inviteResult;
         next();
     })
