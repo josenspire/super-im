@@ -233,8 +233,8 @@ exports.acceptAddContact = async (userID, contactID, remarkName, cb) => {
         if (isCurrentUser) {
             result.message = 'You can\'t add yourself to a contact';
         } else {
-            let isUserExist = await queryByUserID(contactID);
-            if (!isUserExist) {
+            let user = await queryByUserID(contactID);
+            if (!user) {
                 result.message = 'This user is not exist';
             } else {
                 let isExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
@@ -242,6 +242,7 @@ exports.acceptAddContact = async (userID, contactID, remarkName, cb) => {
                     result.message = 'This user is already your contact';
                 } else {
                     await acceptAddContact(userID, contactID, remarkName);
+                    result.data.user = convertUserProfile(user);
                     result.status = SUCCESS;
                 }
             }

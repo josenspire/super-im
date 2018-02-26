@@ -1,4 +1,5 @@
 const UserDao = require('../dao/user.server.dao')
+const Constants= require("../utils/Constants");
 const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
 
 let IMProxie = require('../api/proxies/rongCloud.server.proxies')
@@ -6,11 +7,6 @@ let QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 
 const uuidv4 = require('uuid/v4');
 const mongoose = require('mongoose')
-
-const CONTACT_OPERATION_REQUEST = 'Request';
-const CONTACT_OPERATION_ACCEPT = 'Accept';
-const CONTACT_OPERATION_REJECT = 'Reject';
-const CONTACT_OPERATION_DELETE = "Delete";
 
 // create user
 exports.createUser = (user, cb) => {
@@ -30,7 +26,6 @@ exports.createUser = (user, cb) => {
             })
         }
     })
-
 }
 
 // user login
@@ -125,7 +120,7 @@ exports.requestAddContact = (currentUser, contactID, message, cb) => {
                 result.message = "This user is already your contact";
                 cb(result);
             } else {
-                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_REQUEST, currentUser, (err, _result) => {
+                IMProxie.sendContactNotification(currentUser, contactID, message, Constants.CONTACT_OPERATION_REQUEST, currentUser, (err, _result) => {
                     if (err) { result.message = err; }
                     else { result.status = SUCCESS; }
                     cb(result);
@@ -137,12 +132,13 @@ exports.requestAddContact = (currentUser, contactID, message, cb) => {
     })
 }
 
-exports.acceptAddContact = (userID, contactID, remarkName, cb) => {
+exports.acceptAddContact = (currentUser, contactID, remarkName, cb) => {
+    let userID = currentUser.userID.toString();
     UserDao.acceptAddContact(userID, contactID, remarkName || '', result => {
         if (result.status === SUCCESS) {
             try {
                 const message = "You've added him to be a contact";
-                IMProxie.sendContactNotification(userID, contactID, message, CONTACT_OPERATION_ACCEPT, null);
+                IMProxie.sendContactNotification(currentUser, contactID, message, Constants.CONTACT_OPERATION_ACCEPT, result.data.user);
             } catch (err) {
                 result.status = FAIL;
                 result.data = {};
@@ -153,9 +149,10 @@ exports.acceptAddContact = (userID, contactID, remarkName, cb) => {
     });
 }
 
-exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
+exports.rejectAddContact = (currentUser, rejectUserID, rejectReason, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
 
+    let userID = currentUser.userID.toString();
     UserDao.queryByUserID(rejectUserID, async user => {
         if (user.status === SUCCESS) {
             let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, rejectUserID);
@@ -163,7 +160,7 @@ exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
                 result.message = "Error operating, this user is already your contact";
                 return cb(result);
             }
-            IMProxie.sendContactNotification(userID, rejectUserID, rejectReason, CONTACT_OPERATION_REJECT, user.data.userProfile);
+            IMProxie.sendContactNotification(currentUser, rejectUserID, rejectReason, Constants.CONTACT_OPERATION_REJECT, user.data.userProfile);
             cb({
                 status: SUCCESS,
                 data: {},
@@ -175,9 +172,11 @@ exports.rejectAddContact = (userID, rejectUserID, rejectReason, cb) => {
     })
 }
 
-exports.deleteContact = (userID, contactID, cb) => {
+exports.deleteContact = (currentUser, contactID, cb) => {
+    let userID = currentUser.userID.toString();
+    
     UserDao.deleteContact(userID, contactID, result => {
-        IMProxie.sendContactNotification(userID, contactID, "", CONTACT_OPERATION_DELETE, null);
+        IMProxie.sendContactNotification(currentUser, contactID, "", Constants.CONTACT_OPERATION_DELETE, null);
         cb(result);
     });
 }

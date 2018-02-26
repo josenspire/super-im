@@ -26,10 +26,19 @@ exports.createUser = (userID, nickname, avatar, callback) => {
     });
 }
 
-// IM - send concact notification
-exports.sendContactNotification = async (currentUserID, contactID, message, operation, userProfile, callback) => {
+/**
+ * IM - send concact notification
+ * 
+ * @param {*} currentUser 
+ * @param {*} contactID 
+ * @param {*} message 
+ * @param {*} operation 
+ * @param {*} userProfile 
+ * @param {*} callback 
+ */
+exports.sendContactNotification = async (currentUser, contactID, message, operation, userProfile, callback) => {
     try {
-        await sendContactNotification(currentUserID.toString(), contactID, operation, message, userProfile);
+        await sendContactNotification(currentUser, contactID, operation, message, userProfile);
         callback(null, 200)
     } catch (err) {
         callback(err, 400)
@@ -141,7 +150,8 @@ exports.renameGroup = (groupId, name) => {
     })
 }
 
-var sendContactNotification = (userID, contactID, operation, message, userProfile) => {
+var sendContactNotification = (currentUser, contactID, operation, message, userProfile) => {
+    let userID = currentUser.userID.toString();
     let content = {
         operation: operation,
         sourceUserId: userID,

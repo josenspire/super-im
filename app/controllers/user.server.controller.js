@@ -216,35 +216,40 @@ exports.requestAddContact = (req, res, next) => {
 }
 
 exports.acceptAddContact = (req, res, next) => {
+    let currentUser = req.data.user;
     let input = req.data.input;
+
     let userID = input.userID;
     let contactID = input.contactID;
     let remarkName = input.remarkName;
 
-    UserService.acceptAddContact(userID, contactID, remarkName, contactList => {
+    UserService.acceptAddContact(currentUser, contactID, remarkName, contactList => {
         req.data.output = contactList;
         next();
     })
 }
 
 exports.rejectAddContact = (req, res, next) => {
+    let currentUser = req.data.user;
     let input = req.data.input;
+    
     let userID = input.userID;
     let rejectUserID = input.rejectUserID;
     let rejectReason = input.reason || "";
 
-    UserService.rejectAddContact(userID, rejectUserID, rejectReason, contactList => {
+    UserService.rejectAddContact(currentUser, rejectUserID, rejectReason, contactList => {
         req.data.output = contactList;
         next();
     })
 }
 
 exports.deleteContact = (req, res, next) => {
+    let currentUser = req.data.user;
     let input = req.data.input;
 
     let userID = input.userID;
     let contactID = input.contactID;
-    UserService.deleteContact(userID, contactID, deleteResult => {
+    UserService.deleteContact(currentUser, contactID, deleteResult => {
         req.data.output = deleteResult;
         next();
     })

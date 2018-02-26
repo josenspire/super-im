@@ -13,6 +13,11 @@ const constants = {
 
     SKIP_VERIFY: 'SKIP_VERIFY',
 
+    CONTACT_OPERATION_REQUEST: 'Request',
+    CONTACT_OPERATION_ACCEPT: 'Accept',
+    CONTACT_OPERATION_REJECT: 'Reject',
+    CONTACT_OPERATION_DELETE: "Delete",
+
     QN_DEFAULT_EXTERNAL_LINK: "http://ozjhae6uc.bkt.clouddn.com/",
 
     DEFAULT_MAX_GROUP_MEMBER_COUNT: 500,
