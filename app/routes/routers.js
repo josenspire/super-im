@@ -1,6 +1,7 @@
 const Index = require('../controllers/index')
 const AsceptControl = require('../controllers/aspect.server.controller');
 const UserControl = require('../controllers/user.server.controller');
+const TempUserControl = require('../controllers/tempUser.server.controller');
 const SMSControl = require('../controllers/sms.server.controller');
 const GroupControl = require('../controllers/group.server.controller');
 const CommunityControl = require('../controllers/community.server.controller');
@@ -27,6 +28,9 @@ let routers = app => {
     app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, UserControl.getUserProfile, AESAscept.encryptParam);
     app.post('/v1/api/user/updateUserProfile', AESAscept.decryptParam, UserControl.updateUserProfile, AESAscept.encryptParam);
     app.post('/v1/api/user/searchUser', AESAscept.decryptParam, UserControl.searchUserByTelephoneOrNickname, AESAscept.encryptParam);
+
+    app.post('/v1/api/user/getTempUserID', AESAscept.decryptParam, TempUserControl.getTempUserID, AESAscept.encryptParam);
+    app.post('/v1/api/user/getUserProfileByTempUserID', AESAscept.decryptParam, TempUserControl.getUserProfileByTempUserID, AESAscept.encryptParam);
 
     // TODO special api handle
     app.post('/v1/api/user/uploadAvatar', UserControl.uploadAvatar);
