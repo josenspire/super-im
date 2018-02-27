@@ -1,39 +1,29 @@
 const mongoose = require('mongoose');
-const DateUtils = require('../utils/DateUtils');
 
 let Schema = mongoose.Schema;
 let ObjectId = Schema.Types.ObjectId;
 
-let GroupSchema = new mongoose.Schema({
+let MemberSchema = new mongoose.Schema({
 
-    createBy: {
+    groupID: {
+        type: ObjectId,
+        ref: "Group"
+    },
+    userID: {
         type: ObjectId,
         ref: "User"
     },
-
-    owner: {
-        type: ObjectId,
-        ref: "User"
-    },
-
-    name: {
-        type: String,
-        default: "Undefined Group Name"
-    },
-
-    notice: {
+    alias: {
         type: String,
         default: ""
     },
-
-    avatar: {
-        type: String,
-        default: null
+    role: {
+        type: Number,
+        default: 0
     },
-
     status: {
-        type: Boolean,
-        default: true
+        type: Number,
+        default: 0
     }
 }, {
         versionKey: false,
@@ -41,4 +31,4 @@ let GroupSchema = new mongoose.Schema({
     }
 )
 
-module.exports = GroupSchema
+module.exports = MemberSchema
