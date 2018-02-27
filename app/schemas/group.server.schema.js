@@ -43,7 +43,7 @@ let GroupSchema = new mongoose.Schema({
         },
         alias: {
             type: String,
-            default: "Anonymous User"
+            default: ""
         },
         role: {
             type: Number,
