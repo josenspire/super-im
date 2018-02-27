@@ -56,6 +56,7 @@ let routers = app => {
     app.post('/v1/api/group/rename', AESAscept.decryptParam, GroupControl.renameGroup, AESAscept.encryptParam);
     app.post('/v1/api/group/updateNotice', AESAscept.decryptParam, GroupControl.updateGroupNotice, AESAscept.encryptParam);
     app.post('/v1/api/group/updateAlias', AESAscept.decryptParam, GroupControl.updateGroupMemberAlias, AESAscept.encryptParam);
+    app.post('/v1/api/group/getGroupList', AESAscept.decryptParam, GroupControl.getGroupList, AESAscept.encryptParam);
     
     // community
     app.post('/v1/api/community/getUserCommunity', AESAscept.decryptParam, CommunityControl.getUserCommunity, AESAscept.encryptParam);

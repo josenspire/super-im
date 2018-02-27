@@ -227,6 +227,12 @@ exports.updateGroupMemberAlias = (currentUser, groupID, alias, cb) => {
     });
 }
 
+exports.getGroupList = (userID, cb) => {
+    GroupDao.queryGroupList(userID, result => {
+        cb(result);
+    });
+}
+
 var convertMembers = members => {
     let _members = _.cloneDeep(members);
     return _members.map(member => {

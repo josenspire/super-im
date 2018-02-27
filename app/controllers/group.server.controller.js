@@ -111,3 +111,11 @@ exports.updateGroupMemberAlias = (req, res, next) => {
         return res.json(result);
     });
 }
+
+exports.getGroupList = (req, res, next) => {
+    let input = req.data.input || {};
+
+    GroupService.getGroupList(input.userID, result => {
+        return res.json(result);
+    });
+}

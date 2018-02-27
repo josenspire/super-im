@@ -183,6 +183,18 @@ exports.updateGroupMemberAlias = async (groupID, userID, alias, cb) => {
     cb(result);
 }
 
+exports.queryGroupList = async (userID, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    try {
+        let groups = await queryGroupList(userID);
+        result.data.groups = convertGroupList(groups);
+        result.status = SUCCESS;
+    } catch (err) {
+        result.message = `Server error, ${err}`;
+    }
+    cb(result);
+}
+
 var updateGroupProfile = (groupID, opts) => {
     return new Promise((resolve, reject) => {
         GroupModel.findOneAndUpdate({ _id: groupID, status: true }, { $set: opts }, async (err, group) => {
@@ -216,6 +228,35 @@ var updateGroupMemberAlias = (groupID, userID, alias) => {
             }
             if (!isModified) return reject("You are not in current group");
         })
+    })
+}
+
+var queryGroupList = userID => {
+    return new Promise((resolve, reject) => {
+        MemberModel.find({ userID: userID, status: 0 })
+            .populate('groupID')
+            .select('groupID')
+            .exec((err, groups) => {
+                if (err) {
+                    reject(`Server error, query user's group fail: ${err.message}`);
+                } else {
+                    resolve(groups);
+                }
+            })
+        // MemberModel.aggregate([
+        //     {
+        //         $group: {
+        //             _id: { userID: "$userID" }
+        //         },
+        //     },
+        //     // { $match: { userID: userID } }
+        // ]).exec((err, groups) => {
+        //     if (err) {
+        //         reject(`Server error, Query user's group fail: ${err.message}`);
+        //     } else {
+        //         resolve(groups);
+        //     }
+        // })
     })
 }
 
@@ -437,4 +478,22 @@ var convertGourpMembers = members => {
 
         return member;
     })
+}
+
+var convertGroupList = groups => {
+    let _groups = JSON.parse(JSON.stringify(groups));
+    return _groups.map(group => {
+        group = convertGroupData(group.groupID);
+        return group;
+    });
+}
+
+var convertGroupData = group => {
+    let _group = JSON.parse(JSON.stringify(group));
+    _group.groupID = group._id;
+
+    delete _group._id;
+    delete _group.updateTime;
+
+    return _group;
 }

@@ -10,10 +10,11 @@ const _ = require('lodash');
 
 exports.getTempUserID = async (userID, cb) => {
     let result = { status: FAIL, data: {}, message: '' };
+    let newTempUserID = uuidv4();
     try {
-        let tempUser = await queryTempUserByUserID(userID);
+        let tempUser = await updateTempUserByUserID(userID, newTempUserID);
         if (tempUser) {
-            result.data.tempUserID = tempUser.tempUserID;
+            result.data.tempUserID = newTempUserID;
         } else {
             let createResult = await createTempUser(userID);
             result.data.tempUserID = createResult.tempUserID;
@@ -39,6 +40,20 @@ exports.getUserProfileByTempUserID = async (tempUserID, cb) => {
         result.message = err;
     }
     cb(result);
+}
+
+var updateTempUserByUserID = (userID, newTempUserID) => {
+    return new Promise((resolve, reject) => {
+        TempUserModel.findOneAndUpdate({ user: userID }, { $set: { tempUserID:  newTempUserID} })
+            .populate("user")
+            .exec((err, tempUser) => {
+                if (err) {
+                    return reject(`Server error, query temp userID fail: ${err.message}`);
+                }
+                // tempUser.tempUserID = newTempUserID;
+                resolve(tempUser);
+            })
+    })
 }
 
 var queryTempUserByUserID = userID => {
@@ -89,6 +104,6 @@ var convertUserProfile = userProfile => {
     delete user.token;
     delete user.status;
     delete user.role;
-   
+
     return user;
 }
