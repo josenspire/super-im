@@ -187,7 +187,15 @@ exports.queryGroupList = async (userID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     try {
         let groups = await queryGroupList(userID);
-        result.data.groups = convertGroupList(groups);
+
+        let promises = groups.map(group => {
+            return queryGroupMembers(group.groupID);
+        });
+
+        let members = await Promise.all(promises);
+
+        result.data.groups = members;
+        // result.data.groups = convertGroupList(groups);
         result.status = SUCCESS;
     } catch (err) {
         result.message = `Server error, ${err}`;
@@ -257,6 +265,18 @@ var queryGroupList = userID => {
         //         resolve(groups);
         //     }
         // })
+    })
+}
+
+var queryGroupMembers = groupID => {
+    return new Promise((resolve, reject) => {
+        MemberModel.find({ groupID: groupID })
+            .populate("userID", "-_id")
+            .select('userID -_id')
+            .exec((err, members) => {
+                if (err) return reject(`Server error, query group data fail: ${err.message}`);
+                resolve(members);
+            })
     })
 }
 
