@@ -20,8 +20,8 @@ exports.createGroup = async (currentUser, groupInfo, cb) => {
             let members = generateMembersObject(groupID, groupInfo.members, currentUser);
 
             let _group = JSON.parse(JSON.stringify(await saveGroup(group)));
-            let _members = JSON.parse(JSON.stringify(await saveMembers(members)));
-            _group.members = _members;
+            await saveMembers(members);
+            _group.members = await queryMembersByGroupID(groupID);
 
             result.data.group = convertGroup(_group);
             result.status = SUCCESS;
@@ -36,7 +36,6 @@ exports.createGroup = async (currentUser, groupInfo, cb) => {
 exports.addGroupMembers = async (groupID, members, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     try {
-        let group = await queryGroupByID(groupID);
         let groupMembers = await queryMembersByGroupID(groupID);
 
         if ((groupMembers.length + members.length) > Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT) {
@@ -44,8 +43,10 @@ exports.addGroupMembers = async (groupID, members, cb) => {
             result.status = FAIL;
         } else {
             let membersObject = generateMembersObject(groupID, members);
-            let _members = await addMemberToGroup(groupID, membersObject);
-            result.data.group = convertGroup(_members);
+            await addMemberToGroup(groupID, membersObject);
+
+            let group = await queryGroupDataByGroupID(groupID);
+            result.data.group = convertGroup(group);
             result.status = SUCCESS;
         }
     } catch (err) {
@@ -58,15 +59,18 @@ exports.addGroupMembers = async (groupID, members, cb) => {
 exports.joinGroup = async (member, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     try {
-        let group = await queryGroupByID(groupID);
-        if (isMemberExistedGroup(group, member.userID)) {
+        let groupMembers = await queryMembersByGroupID(groupID);
+
+        if (isMemberExistedGroup(groupMembers, member.userID)) {
             result.message = "You are currently group member, please do not repeat";
         } else {
-            if (group && (group.members.length >= Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT)) {
+            if ((groupMembers.length >= Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT)) {
                 result.message = `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`;
             } else {
-                let _group = await joinToGroup(groupID, member);
-                result.data.group = convertGroup(_group);
+                await joinToGroup(groupID, member);
+
+                let group = await queryGroupDataByGroupID(groupID);
+                result.data.group = convertGroup(group);
                 result.status = SUCCESS;
             }
         }
@@ -183,24 +187,55 @@ exports.updateGroupMemberAlias = async (groupID, userID, alias, cb) => {
     cb(result);
 }
 
-exports.queryGroupList = async (userID, cb) => {
+exports.queryGroupList = (userID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
-    try {
-        let groups = await queryGroupList(userID);
 
-        let promises = groups.map(group => {
-            return queryGroupMembers(group.groupID);
-        });
+    queryUserAllGroupListData(userID)
+        .then(data => {
+            result.data.groups = data;
+            result.status = SUCCESS;
+            cb(result);
+        })
+        .catch(err => {
+            result.message = err;
+            cb(result);
+        })
+}
 
-        let members = await Promise.all(promises);
+var queryUserAllGroupListData = userID => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let groups = await queryGroupList(userID);
 
-        result.data.groups = members;
-        // result.data.groups = convertGroupList(groups);
-        result.status = SUCCESS;
-    } catch (err) {
-        result.message = `Server error, ${err}`;
-    }
-    cb(result);
+            let groupsPromises = groups.map(group => {
+                return queryGroupByID(group.groupID);
+            });
+            let membersPromises = groups.map(group => {
+                return queryGroupMembers(group.groupID);
+            });
+
+            let groupsData = await Promise.all(groupsPromises);
+            let membersData = await Promise.all(membersPromises);
+            let _data = convertGroupList(convertGroupListData(groupsData), convertMemberList(membersData));
+            resolve(_data);
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+var queryGroupDataByGroupID = groupID => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let result = await Promise.all([queryGroupByID(groupID), queryGroupMembers(groupID)]);
+            let group = {};
+            group = JSON.parse(JSON.stringify(result[0]));
+            group.members = result[1];
+            resolve(group);
+        } catch (err) {
+            reject(err.message);
+        }
+    })
 }
 
 var updateGroupProfile = (groupID, opts) => {
@@ -242,7 +277,7 @@ var updateGroupMemberAlias = (groupID, userID, alias) => {
 var queryGroupList = userID => {
     return new Promise((resolve, reject) => {
         MemberModel.find({ userID: userID, status: 0 })
-            .populate('groupID')
+            // .populate('groupID')
             .select('groupID')
             .exec((err, groups) => {
                 if (err) {
@@ -271,8 +306,9 @@ var queryGroupList = userID => {
 var queryGroupMembers = groupID => {
     return new Promise((resolve, reject) => {
         MemberModel.find({ groupID: groupID })
-            .populate("userID", "-_id")
-            .select('userID -_id')
+            // .populate("groupID")
+            .populate("userID")
+            .select('-_id')
             .exec((err, members) => {
                 if (err) return reject(`Server error, query group data fail: ${err.message}`);
                 resolve(members);
@@ -317,15 +353,17 @@ var queryGroupByID = groupID => {
 
 var queryMembersByGroupID = groupID => {
     return new Promise((resolve, reject) => {
-        MemberModel.find({ groupID: groupID, status: true }, (err, members) => {
-            if (err) {
-                reject(err.message);
-            } else if (!members) {
-                reject("The group is not exist, please check your group id");
-            } else {
-                resolve(members);
-            }
-        })
+        MemberModel.find({ groupID: groupID, status: 0 })
+            .populate("userID")
+            .exec((err, members) => {
+                if (err) {
+                    reject(err.message);
+                } else if (!members) {
+                    reject("The group is not exist, please check your group id");
+                } else {
+                    resolve(members.filter(member => { return member.userID != null }));
+                }
+            });
     })
 }
 
@@ -333,9 +371,9 @@ var isGroupOwnerOrAdmin = (group, userID) => {
     return (group.owner.toString() === userID.toString()) ? true : false;
 }
 
-var isMemberExistedGroup = (group, targetUserID) => {
-    let members = group.members;
-    let index = _.findIndex(members, o => { return o.userID.toString() === targetUserID.toString(); });
+var isMemberExistedGroup = (groupMembers, targetUserID) => {
+    console.log(groupMembers)
+    let index = _.findIndex(groupMembers, o => { return o.userID.toString() === targetUserID.toString(); });
 
     return (index > -1);
 }
@@ -400,19 +438,10 @@ var addMemberToGroup = (groupID, members) => {
         MemberModel.create(members, (err, result) => {
             if (err) {
                 reject(`Server error, join group fail, ${err.message}`);
-            } else if (!group) {
+            } else if (!result) {
                 reject('Current group is not exist, join group fail');
             } else {
-                resolve(result);
-                // removeDuplicate(group.members, members);
-                // group.markModified('members');
-                // group.save((err, newGroup) => {
-                //     if (err) {
-                //         console.log(err.message)
-                //         reject('Server unknow error, join group fail');
-                //     }
-                //     else resolve(newGroup);
-                // });
+                resolve();
             }
         });
     })
@@ -420,14 +449,10 @@ var addMemberToGroup = (groupID, members) => {
 
 var joinToGroup = (groupID, member) => {
     return new Promise((resolve, reject) => {
-        GroupModel.findOneAndUpdate({ _id: groupID, status: true }, { $addToSet: { members: member } }, (err, result) => {
-            if (err) {
-                reject('Server unknow error, add contact fail');
-            } else if (result) {
-                resolve(result);
-            } else {
-                reject('Current user is not exist, add contact fail');
-            }
+        let memberModel = new MemberModel(member);
+        memberModel.save((err, result) => {
+            if (err) return reject('Server unknow error, add contact fail');
+            resolve();
         })
     })
 }
@@ -490,22 +515,43 @@ var convertGroup = group => {
 }
 
 var convertGourpMembers = members => {
-    return members.map(member => {
+    return members.filter(member => {
+        return member.userID != null;
+    }).map(member => {
         delete member._id;
         delete member.updateTime;
         delete member.createTime;
         delete member.groupID;
+        member.userProfile = convertUser(member.userID);
+        delete member.userID;
 
         return member;
     })
 }
 
-var convertGroupList = groups => {
-    let _groups = JSON.parse(JSON.stringify(groups));
-    return _groups.map(group => {
-        group = convertGroupData(group.groupID);
-        return group;
+var convertMemberList = members => {
+    let _members = members.map(member => {
+        return member.filter(m => {
+            return m.userID;
+        })
     });
+    return _members.map(member => {
+        return member.map(m => {
+            return convertUser(m.userID);
+        })
+    });
+}
+
+var convertGroupList = (groups, members) => {
+    let _groups = [];
+    for (let i = 0; i < groups.length; i++) {
+        let group = {};
+        group.group = groups[i];
+        group.members = members[i];
+
+        _groups.push(group);
+    }
+    return _groups;
 }
 
 var convertGroupData = group => {
@@ -516,4 +562,24 @@ var convertGroupData = group => {
     delete _group.updateTime;
 
     return _group;
+}
+
+var convertGroupListData = groups => {
+    return groups.map(group => {
+        return convertGroupData(group);
+    })
+}
+
+
+var convertUser = user => {
+    let _user = JSON.parse(JSON.stringify(user)) || {};
+    _user.userID = user._id;
+    delete _user._id;
+    delete _user.token;
+    delete _user.status;
+    delete _user.role;
+    delete _user.meta;
+    delete _user.password;
+    delete _user.deviceID;
+    return _user;
 }
