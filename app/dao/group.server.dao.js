@@ -37,14 +37,16 @@ exports.addGroupMembers = async (groupID, members, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     try {
         let groupMembers = await queryMembersByGroupID(groupID);
-
+        // TODO 
+        // need to check group is existed ?
         if ((groupMembers.length + members.length) > Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT) {
             result.message = `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`;
             result.status = FAIL;
         } else {
             let membersObject = generateMembersObject(groupID, members);
             await addMemberToGroup(groupID, membersObject);
-
+            // TODO
+            // need to check and remove dulplicate members
             let group = await queryGroupDataByGroupID(groupID);
             result.data.group = convertGroup(group);
             result.status = SUCCESS;
@@ -59,8 +61,9 @@ exports.addGroupMembers = async (groupID, members, cb) => {
 exports.joinGroup = async (member, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     try {
+        // TODO 
+        // need to check group is existed ?
         let groupMembers = await queryMembersByGroupID(groupID);
-
         if (isMemberExistedGroup(groupMembers, member.userID)) {
             result.message = "You are currently group member, please do not repeat";
         } else {
@@ -69,8 +72,8 @@ exports.joinGroup = async (member, groupID, cb) => {
             } else {
                 await joinToGroup(groupID, member);
 
-                let group = await queryGroupDataByGroupID(groupID);
-                result.data.group = convertGroup(group);
+                let currentGroupData = await queryGroupDataByGroupID(groupID);
+                result.data.group = convertGroup(currentGroupData);
                 result.status = SUCCESS;
             }
         }
@@ -85,16 +88,19 @@ exports.kickGroupMember = async (currentUser, groupID, targetUserID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     try {
         let group = await queryGroupByID(groupID);
+        let groupMembers = await queryMembersByGroupID(groupID);
         if (checkTargetUserIsCurrentUser(targetUserID, group.owner)) {
             result.message = "You can't kick your self as a member";
         } else if (!isGroupOwnerOrAdmin(group, currentUser.userID)) {
             result.message = "You do not have the right to do this";
         } else {
-            if (!isMemberExistedGroup(group, targetUserID)) {
+            if (!isMemberExistedGroup(groupMembers, targetUserID)) {
                 result.message = "This user is not in current group";
             } else {
-                let _group = await removeGroupMember(groupID, targetUserID);
-                result.data.group = convertGroup(_group);
+                await removeGroupMember(groupID, targetUserID);
+
+                let currentGroupData = await queryGroupDataByGroupID(groupID);
+                result.data.group = convertGroup(currentGroupData);
                 result.status = SUCCESS;
             }
         }
@@ -105,20 +111,26 @@ exports.kickGroupMember = async (currentUser, groupID, targetUserID, cb) => {
     cb(result);
 }
 
-exports.quitGroup = async (userID, groupID, cb) => {
+exports.quitGroup = async (currentUserID, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     try {
         let group = await queryGroupByID(groupID);
+        let groupMembers = await queryMembersByGroupID(groupID);
 
-        if (!isMemberExistedGroup(group, userID)) {
+        if (!isMemberExistedGroup(groupMembers, currentUserID)) {
             result.message = "You are not in current group";
         } else {
-            let _group = await removeGroupMember(groupID, userID);
-            if (checkTargetUserIsCurrentUser(userID, group.owner)) {
-                // Default make secondly members as owner
-                updateGroupOwner(groupID, group.members[1].userID);
+            if (groupMembers.length <= 3) {
+                // If members less than 3, group will dismiss
+                await dismissGroup(groupID);
+                result.message = "Group member less than 3, this group is dismissed";
+            } else {
+                await removeGroupMember(groupID, currentUserID);
+                if (isGroupOwnerOrAdmin(group, currentUserID)) {
+                    // Default make secondly members as owner
+                    updateGroupOwner(groupID, groupMembers[1].userID._id);
+                }
             }
-            result.data.group = convertGroup(_group);
             result.status = SUCCESS;
         }
     } catch (err) {
@@ -136,8 +148,7 @@ exports.dismissGroup = async (userID, groupID, cb) => {
         if (!isGroupOwnerOrAdmin(group, userID)) {
             result.message = "You do not have the right to do this";
         } else {
-            let _group = await dismissGroup(groupID);
-            result.data.group = convertGroup(_group);
+            await dismissGroup(groupID);
             result.status = SUCCESS;
         }
     } catch (err) {
@@ -153,7 +164,7 @@ exports.renameGroup = async (groupID, name, cb) => {
         let opts = { name: name };
         await updateGroupProfile(groupID, opts);
         let group = await queryGroupByID(groupID);
-        result.data = convertGroup(group);
+        result.data = convertGroupData(group);
         result.status = SUCCESS;
     } catch (err) {
         result.message = err;
@@ -167,7 +178,7 @@ exports.updateGroupNotice = async (groupID, notice, cb) => {
         let opts = { notice: notice };
         await updateGroupProfile(groupID, opts);
         let group = await queryGroupByID(groupID);
-        result.data = convertGroup(group);
+        result.data = convertGroupData(group);
         result.status = SUCCESS;
     } catch (err) {
         result.message = err;
@@ -178,8 +189,7 @@ exports.updateGroupNotice = async (groupID, notice, cb) => {
 exports.updateGroupMemberAlias = async (groupID, userID, alias, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     try {
-        let group = await updateGroupMemberAlias(groupID, userID, alias);
-        result.data.group = convertGroup(group);
+        await updateGroupMemberAlias(groupID, userID, alias);
         result.status = SUCCESS;
     } catch (err) {
         result.message = err;
@@ -216,7 +226,8 @@ var queryUserAllGroupListData = userID => {
 
             let groupsData = await Promise.all(groupsPromises);
             let membersData = await Promise.all(membersPromises);
-            let _data = convertGroupList(convertGroupListData(groupsData), convertMemberList(membersData));
+
+            let _data = convertGroupList(convertGroupListData(groupsData), convertGroupMembersList(membersData));
             resolve(_data);
         } catch (err) {
             reject(err);
@@ -251,25 +262,10 @@ var updateGroupProfile = (groupID, opts) => {
 
 var updateGroupMemberAlias = (groupID, userID, alias) => {
     return new Promise(async (resolve, reject) => {
-        GroupModel.findOne({ _id: groupID }, (err, group) => {
+        MemberModel.findOneAndUpdate({ groupID: groupID, userID: userID }, { $set: { alias: alias } }, (err, member) => {
             if (err) return reject(err.message);
-            if (!group) return reject(`Current group is not exist, update group profile fail`);
-
-            let isModified = false;
-            let members = group.members;
-            for (let i = 0; i < members.length; i++) {
-                if (members[i].userID.toString() === userID.toString()) {
-                    isModified = true;
-                    members[i].alias = alias;
-                    group.markModified('alias');
-                    group.save((err, newGroup) => {
-                        if (err) return reject("Server unknow error, update alias fail")
-                        resolve(newGroup);
-                    });
-                    break;
-                }
-            }
-            if (!isModified) return reject("You are not in current group");
+            if (!member) return reject("Sorry, this member is not exist or group is dismiss");
+            resolve();
         })
     })
 }
@@ -372,8 +368,7 @@ var isGroupOwnerOrAdmin = (group, userID) => {
 }
 
 var isMemberExistedGroup = (groupMembers, targetUserID) => {
-    console.log(groupMembers)
-    let index = _.findIndex(groupMembers, o => { return o.userID.toString() === targetUserID.toString(); });
+    let index = _.findIndex(groupMembers, o => { return o.userID._id.toString() === targetUserID.toString(); });
 
     return (index > -1);
 }
@@ -449,7 +444,7 @@ var addMemberToGroup = (groupID, members) => {
 
 var joinToGroup = (groupID, member) => {
     return new Promise((resolve, reject) => {
-        let memberModel = new MemberModel(member);
+        let memberModel = new MemberModel({ groupID: groupID, userID: member.userID });
         memberModel.save((err, result) => {
             if (err) return reject('Server unknow error, add contact fail');
             resolve();
@@ -459,9 +454,21 @@ var joinToGroup = (groupID, member) => {
 
 var removeGroupMember = (groupID, targetUserID) => {
     return new Promise((resolve, reject) => {
-        GroupModel.findOneAndUpdate({ _id: groupID, status: true }, { $pull: { members: { userID: targetUserID } } }, (err, result) => {
+        MemberModel.remove({ groupID: groupID, userID: targetUserID }, (err, result) => {
             if (err) {
                 reject('Server unknow error, delete contact fail');
+            } else {
+                resolve();
+            }
+        })
+    })
+}
+
+var removeGroupMembers = groupID => {
+    return new Promise((resolve, reject) => {
+        MemberModel.remove({ groupID: groupID }, (err, result) => {
+            if (err) {
+                reject('Server unknow error, dismiss group fail');
             } else {
                 resolve(result);
             }
@@ -481,7 +488,12 @@ var updateGroupOwner = (groupID, ownerUserID) => {
     })
 }
 
-var dismissGroup = groupID => {
+var dismissGroup = async groupID => {
+    await removeGroup(groupID);
+    await removeGroupMembers(groupID);
+}
+
+var removeGroup = groupID => {
     return new Promise((resolve, reject) => {
         GroupModel.findOneAndUpdate({ _id: groupID, status: true }, { $set: { status: false } }, (err, result) => {
             if (err) {
@@ -510,11 +522,11 @@ var convertGroup = group => {
     delete _group._id;
     delete _group.updateTime;
 
-    convertGourpMembers(_group.members);
+    convertGroupMembers(_group.members);
     return _group;
 }
 
-var convertGourpMembers = members => {
+var convertGroupMembers = members => {
     return members.filter(member => {
         return member.userID != null;
     }).map(member => {
@@ -529,16 +541,10 @@ var convertGourpMembers = members => {
     })
 }
 
-var convertMemberList = members => {
-    let _members = members.map(member => {
-        return member.filter(m => {
-            return m.userID;
-        })
-    });
-    return _members.map(member => {
-        return member.map(m => {
-            return convertUser(m.userID);
-        })
+var convertGroupMembersList = members => {
+    return members.map(member => {
+        let _member = convertGroupMembers(JSON.parse(JSON.stringify(member)));
+        return _member;
     });
 }
 

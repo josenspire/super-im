@@ -60,7 +60,7 @@ exports.joinGroup = (currentUser, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     let member = {
         userID: currentUser.userID,
-        alias: currentUser.alias
+        alias: currentUser.nickname
     };
     GroupDao.joinGroup(member, groupID, async _result => {
         result = _.cloneDeep(_result);
@@ -77,7 +77,6 @@ exports.joinGroup = (currentUser, groupID, cb) => {
                 timestamp: Date.now()
             };
             await IMProxie.sendGroupNotification(currentUser.userID.toString(), groupID, Constants.GROUP_OPERATION_ADD, content);
-            result.data = {};
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -104,7 +103,6 @@ exports.kickGroupMember = (currentUser, groupID, targetUserID, cb) => {
                 timestamp: Date.now()
             };
             IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_KICKED, content);
-            result.data = {};
         } catch (err) {
             result.status = FAIL;
             result.data = {};
