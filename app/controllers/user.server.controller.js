@@ -1,4 +1,5 @@
 const UserService = require('../services/user.server.service')
+const GroupService = require('../services/group.server.service')
 const SMSService = require('../services/sms.server.service')
 const RSAUtil = require('../utils/RSAUtil')
 const { SUCCESS, FAIL } = require("../utils/CodeConstants");
@@ -232,7 +233,7 @@ exports.acceptAddContact = (req, res, next) => {
 exports.rejectAddContact = (req, res, next) => {
     let currentUser = req.data.user;
     let input = req.data.input;
-    
+
     let userID = input.userID;
     let rejectUserID = input.rejectUserID;
     let rejectReason = input.reason || "";
@@ -271,8 +272,15 @@ exports.updateRemark = (req, res, next) => {
 exports.getUserContacts = (req, res, next) => {
     let userID = req.data.input.userID;
     UserService.getUserContacts(userID, userList => {
-        req.data.output = userList;
-        next();
+        if (userList.status != 200) {
+            req.data.output = userList;
+            return next();
+        }
+        GroupService.getGroupList(userID, groupList => {
+            userList.data.groups = groupList.data.groups;
+            req.data.output = userList;
+            next();
+        });
     })
 }
 

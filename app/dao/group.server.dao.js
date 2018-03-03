@@ -552,9 +552,9 @@ var convertGroupList = (groups, members) => {
     let _groups = [];
     for (let i = 0; i < groups.length; i++) {
         let group = {};
-        group.group = groups[i];
+        group = groups[i];
         group.members = members[i];
-
+        
         _groups.push(group);
     }
     return _groups;
