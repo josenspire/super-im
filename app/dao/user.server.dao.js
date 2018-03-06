@@ -27,7 +27,7 @@ exports.createUser = async (user, token, cb) => {
         await initContactList(user._id);
 
         result.status = SUCCESS;
-        result.data.user = convertUser(_user);
+        result.data.userProfile = convertUser(_user);
         result.data.token = _token.token;
         result.data.secretKey = Constants.AES_SECRET;
     } catch (err) {
@@ -46,7 +46,7 @@ exports.queryUserByTelephoneAndPassword = async (telephone, password, cb) => {
             let _user = convertUser(data.user);
             await updateToken(data.user.token);
             result.data.token = data.user.token.token;
-            result.data.user = _user;
+            result.data.userProfile = _user;
             result.data.secretKey = Constants.AES_SECRET;
             result.status = SUCCESS;
         } else {
@@ -157,7 +157,7 @@ exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
             let token = data.user.token.token;
             let _user = await updateDeviceID(telephone, deviceID);
             delete _user.deviceID;
-            result.data.user = convertUser(_user);
+            result.data.userProfile = convertUser(_user);
             result.data.secretKey = Constants.AES_SECRET;
             result.data.token = token;
             result.status = SUCCESS;
@@ -184,6 +184,7 @@ exports.tokenVerify = (token, cb) => {
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
                 result.status = SUCCESS;
+                result.data.token = token.token;
                 result.data.userProfile = convertTokenInfo(token);
                 result.data.secretKey = Constants.AES_SECRET;
             }
@@ -702,7 +703,7 @@ var convertTokenInfo = tokenInfo => {
     delete userProfile.meta;
     delete userProfile.deviceID;
     delete userProfile.password;
-    // delete userProfile.token;
+    delete userProfile.token;
 
     return userProfile;
 }

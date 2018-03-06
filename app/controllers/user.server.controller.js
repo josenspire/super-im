@@ -91,8 +91,8 @@ exports.register = (req, res, next) => {
 }
 
 exports.tokenVerifyLogin = (req, res, next) => {
-    let data = JSON.parse(req.body);
-    // let data = req.body;
+    // let data = JSON.parse(req.body);
+    let data = req.body;
     let token = data.token;
     console.log('[--TOKEN AUTH--]', token);
 

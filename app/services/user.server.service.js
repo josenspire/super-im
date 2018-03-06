@@ -11,21 +11,18 @@ const mongoose = require('mongoose')
 
 // create user
 exports.createUser = (user, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
     let userID = mongoose.Types.ObjectId();
     IMProxie.createUser(userID, user.nickname, null, response => {
-        if (!response.error) {
-            user._id = userID;
-            UserDao.createUser(user, response.data, createCallback => {
-                cb(createCallback)
-            })
-        } else {
+        if (response.error) {
             console.log('---[IM CRETEUSER FAIL]---', response.error)
-            cb({
-                status: FAIL,
-                data: {},
-                message: response.error
-            })
+            result.message = response.error;
+            return cb(result);
         }
+        user._id = userID;
+        DaoManager.createUserAndGetAllInfo(user, response.data, _result => {
+            cb(_result);
+        })
     })
 }
 
@@ -33,8 +30,8 @@ exports.createUser = (user, cb) => {
 exports.queryUserByTelephoneAndPassword = (telephone, password, deviceID, cb) => {
     UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
         if (_user.status === SUCCESS) {
-            if (_user.data.user.deviceID != deviceID) {
-                _user.data.user = {};
+            if (_user.data.userProfile.deviceID != deviceID) {
+                _user.data.userProfile = {};
                 _user.data.verifyTelephone = true;
             } else {
                 _user.data.verifyTelephone = false;
@@ -46,9 +43,12 @@ exports.queryUserByTelephoneAndPassword = (telephone, password, deviceID, cb) =>
 
 // user login
 exports.queryUserWithoutVerify = (telephone, password, cb) => {
-    UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
-        cb(_user)
-    })
+    DaoManager.getUserProfileAndContactsAndGroupsByUserInfo(telephone, password, data => {
+        cb(data);
+    });
+    // UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
+    //     cb(_user)
+    // })
 }
 
 exports.tokenVerify = (token, cb) => {
@@ -175,7 +175,7 @@ exports.rejectAddContact = (currentUser, rejectUserID, rejectReason, cb) => {
 
 exports.deleteContact = (currentUser, contactID, cb) => {
     let userID = currentUser.userID.toString();
-    
+
     UserDao.deleteContact(userID, contactID, result => {
         IMProxie.sendContactNotification(currentUser, contactID, "", Constants.CONTACT_OPERATION_DELETE, null);
         cb(result);
