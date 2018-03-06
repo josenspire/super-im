@@ -46,9 +46,6 @@ exports.queryUserWithoutVerify = (telephone, password, cb) => {
     DaoManager.getUserProfileAndContactsAndGroupsByUserInfo(telephone, password, data => {
         cb(data);
     });
-    // UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
-    //     cb(_user)
-    // })
 }
 
 exports.tokenVerify = (token, cb) => {
@@ -77,8 +74,8 @@ exports.resetPassword = (telephone, cb) => {
 }
 
 exports.updateDeviceID = (telephone, password, deviceID, cb) => {
-    UserDao.updateDeviceID(telephone, password, deviceID, callback => {
-        cb(callback)
+    DaoManager.updateDeviceIDAndGetUserInfo(telephone, password, deviceID, result => {
+        cb(result);
     })
 }
 

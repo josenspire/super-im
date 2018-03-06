@@ -26,7 +26,18 @@ exports.getUserProfileAndContactsAndGroupsByUserInfo = (telephone, password, cb)
 exports.createUserAndGetAllInfo = (user, token, cb) => {
     UserDao.createUser(user, token, userData => {
         if (userData.status != 200) return cb(userData);
-        
+
+        let userID = userData.data.userProfile.userID;
+        queryContactsAndGroups(userID, userData, result => {
+            return cb(result)
+        });
+    })
+}
+
+exports.updateDeviceIDAndGetUserInfo = (telephone, password, deviceID, cb) => {
+    UserDao.updateDeviceID(telephone, password, deviceID, userData => {
+        if (userData.status != 200) return cb(userData);
+
         let userID = userData.data.userProfile.userID;
         queryContactsAndGroups(userID, userData, result => {
             return cb(result)
