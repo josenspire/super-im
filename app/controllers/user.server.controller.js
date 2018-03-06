@@ -30,7 +30,6 @@ exports.login = (req, res, next) => {
     user.password = data.password;
     user.deviceID = data.deviceID;
 
-    console.log('[--LOGIN--]: ', data)
     if (verifyCode === "") {
         UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
             req.data.output = callback;
@@ -91,13 +90,13 @@ exports.register = (req, res, next) => {
     })
 }
 
-exports.tokenVerify = (req, res, next) => {
+exports.tokenVerifyLogin = (req, res, next) => {
     let data = JSON.parse(req.body);
     // let data = req.body;
     let token = data.token;
     console.log('[--TOKEN AUTH--]', token);
 
-    UserService.tokenVerify(token, callback => {
+    UserService.tokenVerifyLogin(token, callback => {
         return res.json(callback);
     })
 }
@@ -271,16 +270,9 @@ exports.updateRemark = (req, res, next) => {
 
 exports.getUserContacts = (req, res, next) => {
     let userID = req.data.input.userID;
-    UserService.getUserContacts(userID, userList => {
-        if (userList.status != 200) {
-            req.data.output = userList;
-            return next();
-        }
-        GroupService.getGroupList(userID, groupList => {
-            userList.data.groups = groupList.data.groups;
-            req.data.output = userList;
-            next();
-        });
+    UserService.getUserContacts(userID, data => {
+        req.data.output = data;
+        next();
     })
 }
 

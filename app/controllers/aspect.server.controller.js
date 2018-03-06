@@ -32,36 +32,10 @@ exports.RSA = {
 }
 
 exports.AES = {
-    decryptParam2: (req, res, next) => {
-        let params = req.body.params;
-        console.log('---[INPUT DATA]---', params, typeof params)
-        AESUtil.decipher(params, data => {
-            console.log('--[', req.path, ']--')
-            console.log('--[REQUEST DATA]--', data)
-            req.body.input = data;
-            UserService.isTokenValid(data.token, isValid => {
-                if (isValid.status != 200) {
-                    return res.json(isValid)
-                } else {
-                    req.body.input.telephone = isValid.data.telephone;
-                    next();
-                }
-            })
-        })
-    },
-
-    encryptParam2: (req, res) => {
-        let output = req.body.output;
-        console.log('--[RESPONSE DATA]--', output)
-        AESUtil.cipher(output, params => {
-            return res.json(params);
-        })
-    },
-
     decryptParam: (req, res, next) => {
         let data = JSON.parse(req.body);      //  special for text/plain type
         // let data = req.body;
-        
+
         console.log('---[REQUEST DATA]---', data, typeof data)
         if (!data.token) {
             return res.json({
@@ -75,7 +49,7 @@ exports.AES = {
             if (isValid.status != 200) {
                 return res.json(isValid);
             } else {
-                let user = isValid.data.user;
+                let user = isValid.data.userProfile;
                 data.params.userID = user.userID;
                 req.data.input = data.params;
                 req.data.user = user;

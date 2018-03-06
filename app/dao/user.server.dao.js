@@ -172,23 +172,6 @@ exports.updateDeviceID = async (telephone, password, deviceID, cb) => {
     cb(result)
 }
 
-exports.isTokenValid = (token, cb) => {
-    let result = { status: FAIL, data: {}, message: '' };
-    TokenModel.findOne({ token: token })
-        .exec((err, token) => {
-            if (err) {
-                result.status = SERVER_UNKNOW_ERROR;
-                result.message = 'Sorry, server unknow error';
-            } else if (!token) {
-                result.message = 'This token is invalid, please login again';
-            } else if (token) {
-                result.status = SUCCESS;
-                result.data.userID = token.user;
-            }
-            cb(result)
-        })
-}
-
 exports.tokenVerify = (token, cb) => {
     let result = { status: FAIL, data: {}, message: '' };
     TokenModel.findOne({ token: token })
@@ -201,7 +184,8 @@ exports.tokenVerify = (token, cb) => {
                 result.message = 'This token is invalid, please login again';
             } else if (token) {
                 result.status = SUCCESS;
-                result.data.user = convertTokenInfo(token);
+                result.data.userProfile = convertTokenInfo(token);
+                result.data.secretKey = Constants.AES_SECRET;
             }
             cb(result)
         })
@@ -718,7 +702,7 @@ var convertTokenInfo = tokenInfo => {
     delete userProfile.meta;
     delete userProfile.deviceID;
     delete userProfile.password;
-    delete userProfile.token;
+    // delete userProfile.token;
 
     return userProfile;
 }

@@ -1,5 +1,6 @@
 const UserDao = require('../dao/user.server.dao');
-const Constants= require("../utils/Constants");
+const DaoManager = require('../daoManager/dao.server.manager');
+const Constants = require("../utils/Constants");
 const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
 
 let IMProxie = require('../api/proxies/rongCloud.server.proxies')
@@ -50,14 +51,14 @@ exports.queryUserWithoutVerify = (telephone, password, cb) => {
     })
 }
 
-exports.isTokenValid = (token, cb) => {
-    UserDao.isTokenValid(token, callback => {
+exports.tokenVerify = (token, cb) => {
+    UserDao.tokenVerify(token, callback => {
         cb(callback);
     })
 }
 
-exports.tokenVerify = (token, cb) => {
-    UserDao.tokenVerify(token, callback => {
+exports.tokenVerifyLogin = (token, cb) => {
+    DaoManager.getUserProfileAndContactsAndGroups(token, callback => {
         cb(callback);
     })
 }

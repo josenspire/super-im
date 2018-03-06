@@ -19,7 +19,7 @@ let routers = app => {
     app.post('/v1/api/auth/register', RSAAscept.decryptParam, UserControl.register, RSAAscept.encryptParam);
     app.post('/v1/api/auth/login', RSAAscept.decryptParam, UserControl.login, RSAAscept.encryptParam);
     app.post('/v1/api/auth/logout', RSAAscept.decryptParam, UserControl.logout, RSAAscept.encryptParam);
-    app.post('/v1/api/auth/tokenVerify', UserControl.tokenVerify);
+    app.post('/v1/api/auth/tokenVerify', UserControl.tokenVerifyLogin);
     // sms
     app.post('/v1/api/auth/obtainSMSCode', RSAAscept.decryptParam, SMSControl.sendSMS, RSAAscept.encryptParam);
     app.post('/v1/api/auth/verifySMSCode', RSAAscept.decryptParam, SMSControl.verifyCode, RSAAscept.encryptParam);
@@ -44,7 +44,7 @@ let routers = app => {
     app.post('/v1/api/contact/rejectContact', AESAscept.decryptParam, UserControl.rejectAddContact, AESAscept.encryptParam);
     app.post('/v1/api/contact/deleteContact', AESAscept.decryptParam, UserControl.deleteContact, AESAscept.encryptParam);
     app.post('/v1/api/contact/updateRemark', AESAscept.decryptParam, UserControl.updateRemark, AESAscept.encryptParam);
-    app.post('/v1/api/contact/getUserContacts', AESAscept.decryptParam, UserControl.getUserContacts, AESAscept.encryptParam);
+    app.post('/v1/api/contact/getContacts', AESAscept.decryptParam, UserControl.getUserContacts, AESAscept.encryptParam);
 
     // group
     app.post('/v1/api/group/create', AESAscept.decryptParam, GroupControl.createGroup, AESAscept.encryptParam);
@@ -56,7 +56,7 @@ let routers = app => {
     app.post('/v1/api/group/rename', AESAscept.decryptParam, GroupControl.renameGroup, AESAscept.encryptParam);
     app.post('/v1/api/group/updateNotice', AESAscept.decryptParam, GroupControl.updateGroupNotice, AESAscept.encryptParam);
     app.post('/v1/api/group/updateAlias', AESAscept.decryptParam, GroupControl.updateGroupMemberAlias, AESAscept.encryptParam);
-    app.post('/v1/api/group/getGroupList', AESAscept.decryptParam, GroupControl.getGroupList, AESAscept.encryptParam);
+    app.post('/v1/api/group/getGroups', AESAscept.decryptParam, GroupControl.getGroupList, AESAscept.encryptParam);
     
     // community
     app.post('/v1/api/community/getUserCommunity', AESAscept.decryptParam, CommunityControl.getUserCommunity, AESAscept.encryptParam);
