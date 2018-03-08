@@ -150,7 +150,6 @@ exports.updateUserProfile = (req, res, next) => {
 /** User avatar upload */
 exports.uploadAvatar = (req, res, next) => {
     let result = { status: FAIL, data: {}, message: "" };
-
     atavarUpload.single('uploadAvatar')(req, res, async err => {
         if (err) {
             console.error("---[Upload avatar error]---", err)
@@ -159,6 +158,36 @@ exports.uploadAvatar = (req, res, next) => {
             let file = req.file;
             let data = req.body;
             console.log("===[REQUEST DATA]===", data)
+
+            let fileName = file.filename;
+            try {
+                let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
+                result.status = SUCCESS;
+                result.data = {
+                    avatarUrl: Constants.QN_DEFAULT_EXTERNAL_LINK + uploadAvatarResult.key,
+                    width: "200",
+                    height: "200"
+                };
+            } catch (err) {
+                result.message = err;
+            }
+        } else {
+            result.message = "Parameters is incompleteness";
+        }
+        return res.json(result);
+    })
+}
+
+exports.uploadAvatars = (req, res, next) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    atavarUpload.array('uploadAvatar', 2)(req, res, async err => {
+        if (err) {
+            console.error("---[Upload avatar error]---", err)
+            result.message = err;
+        } else if (req.files.length) {
+            let files = req.files;
+            let data = req.body;
+            console.log("===[REQUEST DATA]===", files)
 
             let fileName = file.filename;
             try {

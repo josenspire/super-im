@@ -19,11 +19,12 @@ let upload = multer({
     limits: {
         fileSize: bytes('2MB') // 限制文件大小
     },
-    fileFilter: function (req, files, callback) {
+    fileFilter: (req, files, callback) => {
         // 只允许上传 jpg|png|jpeg|gif|svg 格式的文件
         var type = '|' + files.mimetype.slice(files.mimetype.lastIndexOf('/') + 1) + '|';
-        var fileTypeValid = '|jpg|png|jpeg|gif|svg'.indexOf(type) !== -1;
-        callback(null, !!fileTypeValid);
+        // var fileTypeValid = '|jpg|png|jpeg|gif|svg'.indexOf(type) !== -1;
+        // callback(null, !!fileTypeValid);
+        callback(null, true);
     }
 });
 
