@@ -4,7 +4,7 @@
   "author": "James.Y.Yang",
   "private": true,
   "scripts": {
-    "start": "supervisor ./bin/www",
+    "start": "supervisor ./bin/server",
     "mocha-test": "mocha --recursive --timeout 10000 test --bail --grow"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "jsencrypt": "^2.3.1",
     "jwt-simple": "^0.5.1",
     "lodash": "^4.17.4",
+    "log4js": "^2.5.3",
     "moment": "^2.21.0",
     "mongoose": "^4.11.9",
     "morgan": "~1.8.1",
