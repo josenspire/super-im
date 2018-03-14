@@ -120,10 +120,10 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
         if (!isMemberExistedGroup(groupMembers, currentUserID)) {
             result.message = "You are not in current group";
         } else {
-            if (groupMembers.length <= 3) {
-                // If members less than 3, group will dismiss
+            if (groupMembers.length <= 1) {
+                // If members less than 1, group will dismiss
                 await dismissGroup(groupID);
-                result.message = "Group member less than 3, this group is dismissed";
+                result.message = "Group member less than 1, this group is dismissed";
             } else {
                 await removeGroupMember(groupID, currentUserID);
                 if (isGroupOwnerOrAdmin(group, currentUserID)) {

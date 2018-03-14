@@ -10,7 +10,7 @@ exports.createGroup = (req, res, next) => {
     let name = StringUtil.stringSubstr(input.name, Constants.GROUP_NAME_MAX_LENGTH);
     let members = input.members;
 
-    if (members.length < 2) {
+    if (members.length < 1) {
         return res.json({
             status: FAIL,
             data: {},
