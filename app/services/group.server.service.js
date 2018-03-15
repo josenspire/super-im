@@ -234,6 +234,6 @@ exports.getGroupList = (userID, cb) => {
 var convertMembers = members => {
     let _members = _.cloneDeep(members);
     return _members.map(member => {
-        return member.userID;
+        return member.userProfile.userID;
     });
 }
