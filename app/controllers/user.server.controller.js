@@ -150,16 +150,23 @@ exports.updateUserProfile = (req, res, next) => {
 /** User avatar upload */
 exports.uploadAvatar = (req, res, next) => {
     let result = { status: FAIL, data: {}, message: "" };
-    atavarUpload.single('uploadAvatar')(req, res, async err => {
+    atavarUpload.single('uploadAvatar')(req, res, err => {
         if (err) {
             console.error("---[Upload avatar error]---", err)
             result.message = err;
-        } else if (req.file) {
-            let file = req.file;
-            let data = req.body;
-            console.log("===[REQUEST DATA]===", data)
+            return res.json(result);
+        } else if (!req.file) {
+            result.message = "Parameters is incompleteness";
+            return res.json(result);
+        }
+        let file = req.file;
+        let data = JSON.parse(req.body.params);
+        let fileName = file.filename;
+        console.log("===[REQUEST DATA]===", data);
 
-            let fileName = file.filename;
+        UserService.tokenVerify(data.token, async tokenValid => {
+            if (tokenValid.status != 200) return res.json(tokenValid);
+            let user = tokenValid.data.userProfile;
             try {
                 let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
                 result.status = SUCCESS;
@@ -171,11 +178,9 @@ exports.uploadAvatar = (req, res, next) => {
             } catch (err) {
                 result.message = err;
             }
-        } else {
-            result.message = "Parameters is incompleteness";
-        }
-        return res.json(result);
-    })
+            return res.json(result);
+        });
+    });
 }
 
 exports.uploadAvatars = (req, res, next) => {
