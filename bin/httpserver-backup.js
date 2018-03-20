@@ -7,6 +7,7 @@
 var app = require('../lib/express');
 var debug = require('debug')('weather:server');
 var http = require('http');
+var chalk = require('chalk'),
 
 /**
  * Get port from environment and store in Express.
