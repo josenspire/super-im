@@ -91,6 +91,10 @@ exports.updateUserProfile = (userID, userProfile, cb) => {
     })
 }
 
+exports.updateUserAvatar = (userID, avatarUrl) => {
+    return UserDao.updateUserAvatar(userID, avatarUrl);
+}
+
 exports.uploadAvatar = (telephone, cb) => {
     let fileName = telephone + '-' + uuidv4() + '.jpg';
     QiniuProxie.uploadAvatar(fileName, '/avatar/avatar.jpg')

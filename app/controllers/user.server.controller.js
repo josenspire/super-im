@@ -163,15 +163,16 @@ exports.uploadAvatar = (req, res, next) => {
         let data = JSON.parse(req.body.params);
         let fileName = file.filename;
         console.log("===[REQUEST DATA]===", data);
-
         UserService.tokenVerify(data.token, async tokenValid => {
             if (tokenValid.status != 200) return res.json(tokenValid);
             let user = tokenValid.data.userProfile;
             try {
                 let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
-                result.status = SUCCESS;
+                let avatarUrl = `${Constants.QN_DEFAULT_EXTERNAL_LINK}${uploadAvatarResult.key}`;
+                let updateResult = await UserService.updateUserAvatar(user.userID, avatarUrl);
+                result.status = updateResult.status;
                 result.data = {
-                    avatarUrl: Constants.QN_DEFAULT_EXTERNAL_LINK + uploadAvatarResult.key,
+                    avatarUrl: avatarUrl,
                     width: "200",
                     height: "200"
                 };

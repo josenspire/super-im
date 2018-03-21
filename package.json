@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "set NODE_ENV=development&& supervisor ./bin/dev-server",
-    "build": "set NODE_ENV=production&& supervisor ./bin/dev-",
+    "build": "set NODE_ENV=production&& supervisor ./bin/dev-server",
     "mocha-test": "mocha --recursive --timeout 10000 test --bail --grow"
   },
   "dependencies": {

@@ -125,6 +125,20 @@ exports.updateUserProfile = async (userID, userProfile, cb) => {
     cb(result)
 }
 
+exports.updateUserAvatar = (userID, avatarUrl) => {
+    let result = { status: FAIL, data: {}, message: '' };
+    return new Promise((resolve, reject) => {
+        UserModel.update({ _id: userID }, { $set: { avatar: avatarUrl } }, err => {
+            if (err) {
+                result.message = err.message;
+                return reject(result);
+            }
+            result.status = SUCCESS;
+            resolve(result);
+        });
+    });
+}
+
 exports.queryUserListByTelephone = async (telephoneList, cb) => {
     let result = { status: FAIL, data: {}, message: '' };
     let promiseList = telephoneList.map(telephone => {
