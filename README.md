@@ -8,6 +8,46 @@
 
 [Online View](http://houly.cn)
 
+## Project
+
+``` bash
+
+D:.                   
+├───.vscode           -- vscode config
+├───app               
+│   ├───api           -- proxy api / call webservice
+│   │   ├───client    
+│   │   ├───commons   
+│   │   ├───proxies   
+│   │   └───resources 
+│   │
+│   ├───controllers   -- input control
+│   ├───dao           -- db operation
+│   ├───daoManager    -- decoupling - between service and dao
+│   ├───models        -- models
+│   ├───routes        -- url routes
+│   ├───schemas       -- db schemas
+│   ├───services      -- service, business/logic operation
+│   ├───utils         -- tools
+│   └───views         -- ejs view
+├───bin               -- entry
+├───configs           -- env config
+│   └───env           
+├───doc               -- doc
+│          
+│            
+├───lib               -- express, mongoose etc..
+├───logs              -- log4js log files
+├───public            -- public static resource
+│   │
+│   └───stylesheets   
+└───test              -- unit test
+    ├───dao           
+    ├───service       
+    └───utils         
+
+```
+
 ## Environment Constrol
 
 ``` bash
