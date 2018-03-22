@@ -2,6 +2,7 @@ const Index = require('../controllers/index')
 const AsceptControl = require('../controllers/aspect.server.controller');
 const UserControl = require('../controllers/user.server.controller');
 const TempUserControl = require('../controllers/tempUser.server.controller');
+const TempGroupControl = require('../controllers/tempGroup.server.controller');
 const SMSControl = require('../controllers/sms.server.controller');
 const GroupControl = require('../controllers/group.server.controller');
 const CommunityControl = require('../controllers/community.server.controller');
@@ -24,18 +25,19 @@ let routers = app => {
     app.post('/v1/api/auth/obtainSMSCode', RSAAscept.decryptParam, SMSControl.sendSMS, RSAAscept.encryptParam);
     app.post('/v1/api/auth/verifySMSCode', RSAAscept.decryptParam, SMSControl.verifyCode, RSAAscept.encryptParam);
 
-    // user profile
+    // user
     app.post('/v1/api/user/getUserProfile', AESAscept.decryptParam, UserControl.getUserProfile, AESAscept.encryptParam);
     app.post('/v1/api/user/updateUserProfile', AESAscept.decryptParam, UserControl.updateUserProfile, AESAscept.encryptParam);
     app.post('/v1/api/user/searchUser', AESAscept.decryptParam, UserControl.searchUserByTelephoneOrNickname, AESAscept.encryptParam);
-
+    // temp user
     app.post('/v1/api/user/getTempUserID', AESAscept.decryptParam, TempUserControl.getTempUserID, AESAscept.encryptParam);
     app.post('/v1/api/user/getUserProfileByTempUserID', AESAscept.decryptParam, TempUserControl.getUserProfileByTempUserID, AESAscept.encryptParam);
 
-    // TODO special api handle
+    // avatar upload
     app.post('/v1/api/user/uploadAvatar', UserControl.uploadAvatar);
     app.post('/v1/api/user/uploadAvatarByBase64', UserControl.uploadAvatarByBase64);
     
+    // TODO
     app.post('/v1/api/contact/getBlackList', AESAscept.decryptParam, UserControl.getBlackList, AESAscept.encryptParam);
 
     // contacts
@@ -57,7 +59,10 @@ let routers = app => {
     app.post('/v1/api/group/updateNotice', AESAscept.decryptParam, GroupControl.updateGroupNotice, AESAscept.encryptParam);
     app.post('/v1/api/group/updateAlias', AESAscept.decryptParam, GroupControl.updateGroupMemberAlias, AESAscept.encryptParam);
     app.post('/v1/api/group/getGroups', AESAscept.decryptParam, GroupControl.getGroupList, AESAscept.encryptParam);
-    
+    // temp group
+    app.post('/v1/api/group/getTempGroupID', AESAscept.decryptParam, TempGroupControl.getTempGroupID, AESAscept.encryptParam);
+    app.post('/v1/api/group/getGroupProfileByTempUserID', AESAscept.decryptParam, TempGroupControl.getGroupProfileByTempGroupID, AESAscept.encryptParam);
+
     // community
     app.post('/v1/api/community/getUserCommunity', AESAscept.decryptParam, CommunityControl.getUserCommunity, AESAscept.encryptParam);
 }

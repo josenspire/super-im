@@ -199,7 +199,6 @@ exports.updateGroupMemberAlias = async (groupID, userID, alias, cb) => {
 
 exports.queryGroupList = (userID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
-
     queryUserAllGroupListData(userID)
         .then(data => {
             result.data.groups = data;

@@ -19,7 +19,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceFolder}\\bin\\server"
+            "program": "${workspaceFolder}\\bin\\dev-server"
         }
     ]
 }

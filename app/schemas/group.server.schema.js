@@ -28,7 +28,7 @@ let GroupSchema = new mongoose.Schema({
 
     avatar: {
         type: String,
-        default: null
+        default: ""
     },
 
     status: {
