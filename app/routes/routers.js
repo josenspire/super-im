@@ -61,8 +61,8 @@ let routers = app => {
     app.post('/v1/api/group/getGroups', AESAscept.decryptParam, GroupControl.getGroupList, AESAscept.encryptParam);
     // temp group
     app.post('/v1/api/group/getTempGroupID', AESAscept.decryptParam, TempGroupControl.getTempGroupID, AESAscept.encryptParam);
-    app.post('/v1/api/group/getGroupProfileByTempUserID', AESAscept.decryptParam, TempGroupControl.getGroupProfileByTempGroupID, AESAscept.encryptParam);
-
+    app.post('/v1/api/group/getGroupByTempGroupID', AESAscept.decryptParam, TempGroupControl.getGroupProfileByTempGroupID, AESAscept.encryptParam);
+    
     // community
     app.post('/v1/api/community/getUserCommunity', AESAscept.decryptParam, CommunityControl.getUserCommunity, AESAscept.encryptParam);
 }
