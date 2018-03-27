@@ -86,7 +86,7 @@ let UserSchema = new mongoose.Schema({
 
     birthday: {
         type: Date,
-        default: 0
+        default: ""
     },
 
     signature: {
@@ -97,7 +97,7 @@ let UserSchema = new mongoose.Schema({
     // geographical location
     location: {
         type: String,
-        default: null
+        default: ""
     },
 
     token: {

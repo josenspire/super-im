@@ -58,7 +58,7 @@ exports.register = (req, res, next) => {
     user.password = data.password;
     user.nickname = data.nickname;
     user.sex = data.sex || 0;
-    user.birthday = data.birthday || 0;
+    user.birthday = data.birthday || '';
     user.location = data.location || '';
     user.signature = data.signature || '';
     user.countryCode = data.countryCode || '';
