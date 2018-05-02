@@ -6,6 +6,8 @@ const AsceptControl = require('../controllers/aspect.server.controller');
 
 let RSAAscept = AsceptControl.RSA;
 
+router.get('/getSecretKey', UserControl.getPublicKey);
+
 router.post('/register', RSAAscept.decryptParam, UserControl.register, RSAAscept.encryptParam);
 router.post('/login', RSAAscept.decryptParam, UserControl.login, RSAAscept.encryptParam);
 router.post('/logout', RSAAscept.decryptParam, UserControl.logout, RSAAscept.encryptParam);
