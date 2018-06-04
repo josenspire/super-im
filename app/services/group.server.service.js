@@ -11,16 +11,16 @@ exports.createGroup = (currentUser, groupInfo, cb) => {
         result = _.cloneDeep(_result);
         if (result.status != SUCCESS) return cb(result);
 
-        let group = result.data.group;
-        let members = convertMembers(group.members);
+        const group = result.data.group;
+        const members = convertMembers(group.members);
         try {
             await IMProxie.createGroup(group.groupID.toString(), group.name, members);
-            let content = {
+            const content = {
                 operatorNickname: currentUser.nickname,
                 targetGroupName: group.name,
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID.toString(), group.groupID.toString(), Constants.GROUP_OPERATION_CREATE, content, (err, code) => { });
+            IMProxie.sendGroupNotification(currentUser.userID.toString(), Constants.GROUP_OPERATION_CREATE, content, group);
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -37,16 +37,16 @@ exports.addGroupMembers = (currentUser, groupID, members, cb) => {
         try {
             if (result.status != SUCCESS) return cb(result);
 
-            let group = result.data.group;
+            const group = result.data.group;
             await IMProxie.joinGroup(groupID, group.name, members);
 
-            let content = {
+            const content = {
                 operatorNickname: currentUser.nickname,
                 targetUserIds: members,
                 targetUserDisplayNames: members.alias || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID.toString(), groupID, Constants.GROUP_OPERATION_ADD, content);
+            IMProxie.sendGroupNotification(currentUser.userID.toString(), Constants.GROUP_OPERATION_ADD, content, group, group.members);
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -76,7 +76,7 @@ exports.joinGroup = (currentUser, groupID, cb) => {
                 targetUserDisplayNames: member.alias || "",
                 timestamp: Date.now()
             };
-            await IMProxie.sendGroupNotification(currentUser.userID.toString(), groupID, Constants.GROUP_OPERATION_ADD, content);
+            await IMProxie.sendGroupNotification(currentUser.userID.toString(), Constants.GROUP_OPERATION_ADD, content, group);
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -102,7 +102,7 @@ exports.kickGroupMember = (currentUser, groupID, targetUserID, cb) => {
                 targetUserDisplayNames: targetUserID || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_KICKED, content);
+            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_KICKED, content, group);
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -118,16 +118,16 @@ exports.quitGroup = (currentUser, groupID, cb) => {
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) return cb(result);
-            let group = result.data.group;
+            const group = result.data.group;
             await IMProxie.quitGroup(groupID, currentUser.userID);
 
-            let content = {
+            const content = {
                 operatorNickname: currentUser.nickname,
                 targetUserIds: currentUser.userID,
                 targetUserDisplayNames: currentUser.nickname || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_QUIT, content);
+            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_QUIT, content, group, null, currentUser.userID);
             result.data = {};
         } catch (err) {
             result.status = FAIL;
@@ -154,7 +154,7 @@ exports.dismissGroup = (currentUser, groupID, cb) => {
                 targetUserDisplayNames: currentUser.nickname || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_DISMISS, content);
+            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_DISMISS, content, group);
             result.data = {};
         } catch (err) {
             result.status = FAIL;
@@ -181,7 +181,7 @@ exports.renameGroup = (currentUser, groupID, name, cb) => {
                 targetUserDisplayNames: currentUser.nickname || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_RENAME, content);
+            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_RENAME, content, group);
             result.data = {};
         } catch (err) {
             result.status = FAIL;
@@ -208,7 +208,7 @@ exports.updateGroupNotice = (currentUser, groupID, notice, cb) => {
                 targetUserDisplayNames: currentUser.nickname || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, groupID, Constants.GROUP_OPERATION_BULLETIN, content);
+            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_BULLETIN, content, group);
             result.data = {};
         } catch (err) {
             result.status = FAIL;

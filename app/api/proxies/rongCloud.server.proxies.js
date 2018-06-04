@@ -46,12 +46,20 @@ exports.sendContactNotification = async (currentUser, contactID, message, operat
 }
 
 // IM - send group notification
-exports.sendGroupNotification = async (currentUserID, groupId, operation, userProfile) => {
-    let groupNotificationMessage = {
+exports.sendGroupNotification = async (currentUserID, operation, userProfile, group, members, memberID) => {
+    const groupId = group.groupId.toString();
+    const groupNotificationMessage = {
         operatorUserId: currentUserID.toString(),
         operation: operation,
         data: userProfile,
-        message: ''
+        message: '',
+        extra: {
+            groupID: groupId,
+            version: Date.now(),
+            group: group || null,
+            members: members || null,
+            memberID: memberID || null
+        },
     };
     console.log('Sending GroupNotificationMessage: ', JSON.stringify(groupNotificationMessage));
     return new Promise((resolve, reject) => {
