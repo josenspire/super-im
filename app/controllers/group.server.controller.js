@@ -65,6 +65,7 @@ exports.quitGroup = (req, res, next) => {
     let currentUser = req.data.user;
 
     GroupService.quitGroup(currentUser, input.groupID, result => {
+        result.data = {};
         return res.json(result);
     });
 }
@@ -74,6 +75,7 @@ exports.dismissGroup = (req, res, next) => {
     let currentUser = req.data.user;
 
     GroupService.dismissGroup(currentUser, input.groupID, result => {
+        result.data = {};
         return res.json(result);
     });
 }

@@ -131,6 +131,8 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
                     updateGroupOwner(groupID, groupMembers[1].userID._id);
                 }
             }
+            let currentGroupData = await queryGroupDataByGroupID(groupID);
+            result.data.group = convertGroup(currentGroupData);
             result.status = SUCCESS;
         }
     } catch (err) {
@@ -149,6 +151,8 @@ exports.dismissGroup = async (userID, groupID, cb) => {
             result.message = "You do not have the right to do this";
         } else {
             await dismissGroup(groupID);
+            let currentGroupData = await queryGroupDataByGroupID(groupID);
+            result.data.group = convertGroup(currentGroupData);
             result.status = SUCCESS;
         }
     } catch (err) {
@@ -164,7 +168,7 @@ exports.renameGroup = async (groupID, name, cb) => {
         let opts = { name: name };
         await updateGroupProfile(groupID, opts);
         let group = await queryGroupByID(groupID);
-        result.data = convertGroupData(group);
+        result.data.group = convertGroupData(group);
         result.status = SUCCESS;
     } catch (err) {
         result.message = err;
