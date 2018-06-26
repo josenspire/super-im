@@ -1,4 +1,5 @@
 
+const _ = require('lodash');
 const rongCloud = require('rongcloud-sdk');
 const RongCloudConfig = require('../../../configs/config').RongCloudConfig;
 
@@ -12,7 +13,7 @@ var errorHandle = (err) => {
 
 // User
 exports.createUser = (userID, nickname, avatar, callback) => {
-    rongCloud.user.getToken(userID.toString(), nickname, avatar, (err, _result) => {
+    rongCloud.user.getToken(_.toString(userID), nickname, avatar, (err, _result) => {
         if (err) {
             callback({ error: errorHandle(err) });
         } else {
@@ -47,9 +48,9 @@ exports.sendContactNotification = async (currentUser, contactID, message, operat
 
 // IM - send group notification
 exports.sendGroupNotification = async (currentUserID, operation, userProfile, group, members, memberID) => {
-    const groupId = group.groupId.toString();
+    const groupId = _.toString(group.groupID);
     const groupNotificationMessage = {
-        operatorUserId: currentUserID.toString(),
+        operatorUserId: _.toString(currentUserID),
         operation: operation,
         data: userProfile,
         message: '',
@@ -63,7 +64,7 @@ exports.sendGroupNotification = async (currentUserID, operation, userProfile, gr
     };
     console.log('Sending GroupNotificationMessage: ', JSON.stringify(groupNotificationMessage));
     return new Promise((resolve, reject) => {
-        return rongCloud.message.group.publish(currentUserID.toString(), groupId, 'RC:GrpNtf', JSON.stringify(groupNotificationMessage), (err, resultText) => {
+        return rongCloud.message.group.publish(currentUserID, groupId, 'RC:GrpNtf', JSON.stringify(groupNotificationMessage), (err, resultText) => {
             if (err) return reject(`Error: send group notification failed: ${err}`);
 
             console.log('Sending group notification Success: ', resultText);
@@ -159,7 +160,7 @@ exports.renameGroup = (groupId, name) => {
 }
 
 var sendContactNotification = (currentUser, contactID, operation, message, userProfile) => {
-    let userID = currentUser.userID.toString();
+    let userID = _.toString(currentUser.userID);
     let content = {
         operation: operation,
         sourceUserId: userID,
