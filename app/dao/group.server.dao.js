@@ -131,8 +131,6 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
                     updateGroupOwner(groupID, groupMembers[1].userID._id);
                 }
             }
-            let currentGroupData = await queryGroupDataByGroupID(groupID);
-            result.data.group = convertGroup(currentGroupData);
             result.status = SUCCESS;
         }
     } catch (err) {
@@ -371,8 +369,9 @@ var isGroupOwnerOrAdmin = (group, userID) => {
 }
 
 var isMemberExistedGroup = (groupMembers, targetUserID) => {
-    let index = _.findIndex(groupMembers, o => { return o.userID._id.toString() === targetUserID.toString(); });
-
+    let index = _.findIndex(groupMembers, o => {
+        return _.toString(o.userID._id) === _.toString(targetUserID);
+    });
     return (index > -1);
 }
 
