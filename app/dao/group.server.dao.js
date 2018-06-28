@@ -396,7 +396,7 @@ var generateGroupObject = (currentUser, groupID, groupInfo) => {
 
 var generateMembersObject = (groupID, members, currentUser) => {
     let _members = members.map(member => {
-        return { groupID: groupID, userID: member.userID };
+        return { groupID: groupID, userID: member };
     });
     if (currentUser) _members.unshift({ groupID: groupID, userID: currentUser.userID });
 
