@@ -26,7 +26,7 @@ exports.RSA = {
 
         console.log('--[RESPONSE DATA]--', output)
         RSAUtil.publicEncryptObj(output, publicKey, params => {
-            return res.json(params);
+            return res.json(output);
         })
     }
 }

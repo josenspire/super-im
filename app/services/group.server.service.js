@@ -38,7 +38,12 @@ exports.addGroupMembers = (currentUser, groupID, members, cb) => {
             if (result.status != SUCCESS) return cb(result);
 
             const group = result.data.group;
-            await IMProxie.joinGroup(groupID, group.name, members);
+
+            const memberJoin = _.map(members, e => {
+                return IMProxie.joinGroup(groupID, e);
+            });
+
+            await Promise.all(memberJoin);
 
             const content = {
                 operatorNickname: currentUser.nickname,
@@ -68,7 +73,7 @@ exports.joinGroup = (currentUser, groupID, cb) => {
             if (result.status != SUCCESS) return cb(result);
 
             let group = result.data.group;
-            await IMProxie.joinGroup(groupID, group.name, [member]);
+            await IMProxie.joinGroup(groupID, member);
 
             let content = {
                 operatorNickname: currentUser.nickname,
@@ -119,7 +124,7 @@ exports.quitGroup = (currentUser, groupID, cb) => {
         try {
             if (result.status != SUCCESS) return cb(result);
             const group = result.data.group;
-            await IMProxie.quitGroup(groupID, currentUser.userID);
+            await IMProxie.quitGroup(groupID, currentUser);
 
             const content = {
                 operatorNickname: currentUser.nickname,
@@ -146,7 +151,7 @@ exports.dismissGroup = (currentUser, groupID, cb) => {
             if (result.status != SUCCESS) return cb(result);
 
             let group = result.data.group;
-            await IMProxie.dismissGroup(currentUser.userID, groupID);
+            await IMProxie.dismissGroup(groupID, currentUser);
 
             let content = {
                 operatorNickname: currentUser.nickname,
@@ -173,7 +178,7 @@ exports.renameGroup = (currentUser, groupID, name, cb) => {
             if (result.status != SUCCESS) return cb(result);
 
             let group = result.data.group;
-            await IMProxie.renameGroup(currentUser.userID, groupID);
+            await IMProxie.renameGroup(groupID, name);
 
             let content = {
                 operatorNickname: currentUser.nickname,
