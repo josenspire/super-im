@@ -131,6 +131,8 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
                     updateGroupOwner(groupID, groupMembers[1].userID._id);
                 }
             }
+            let currentGroupData = await queryGroupDataByGroupID(groupID);
+            result.data.group = convertGroup(currentGroupData);
             result.status = SUCCESS;
         }
     } catch (err) {
