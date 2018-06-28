@@ -5,18 +5,18 @@ const UserService = require('../services/user.server.service');
 
 exports.RSA = {
     decryptParam: (req, res, next) => {
-        // let params = req.body.params;
-        let params = req.body;          //  special for text/plain type
+        let params = req.body.params;
+        // let params = req.body;          //  special for text/plain type
         req.data = {};
-        console.log('---[INPUT DATA]---', params, typeof params)
-        RSAUtil.privateDecrypt(params, data => {
-            console.log('--[', req.path, ']--')
-            console.log('--[REQUEST DATA]--', data)
+        // console.log('---[INPUT DATA]---', params, typeof params)
+        // RSAUtil.privateDecrypt(params, data => {
+        //     console.log('--[', req.path, ']--')
+        //     console.log('--[REQUEST DATA]--', data)
 
-            req.data.input = data;
-            req.data.clientPublicKey = data.params.clientPublicKey;
-            next();
-        })
+        req.data.input = params;
+        // req.data.clientPublicKey = data.params.clientPublicKey;
+        next();
+        // })
     },
 
     encryptParam: (req, res) => {
@@ -24,10 +24,10 @@ exports.RSA = {
         let publicKey = input ? input.params.clientPublicKey : "";
         let output = req.data.output;
 
-        console.log('--[RESPONSE DATA]--', output)
-        RSAUtil.publicEncryptObj(output, publicKey, params => {
-            return res.json(params);
-        })
+        // console.log('--[RESPONSE DATA]--', output)
+        // RSAUtil.publicEncryptObj(output, publicKey, params => {
+        return res.json(output);
+        // })
     }
 }
 
