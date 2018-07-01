@@ -12,15 +12,14 @@ exports.createGroup = (currentUser, groupInfo, cb) => {
         if (result.status != SUCCESS) return cb(result);
 
         const group = result.data.group;
-        const members = convertMembers(group.members);
         try {
-            await IMProxie.createGroup(_.toString(group.groupID), group.name, members);
+            await IMProxie.createGroup(_.toString(group.groupID), group.name, convertMembers(groupInfo.members));
             const content = {
                 operatorNickname: currentUser.nickname,
                 targetGroupName: group.name,
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(_.toString(currentUser.userID), Constants.GROUP_OPERATION_CREATE, content, group);
+            await IMProxie.sendGroupNotification(_.toString(currentUser.userID), Constants.GROUP_OPERATION_CREATE, content, group);
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -40,7 +39,7 @@ exports.addGroupMembers = (currentUser, groupID, members, cb) => {
             const group = result.data.group;
 
             const memberJoin = _.map(members, e => {
-                return IMProxie.joinGroup(groupID, e);
+                return IMProxie.joinGroup(groupID, { id: e });
             });
 
             await Promise.all(memberJoin);
@@ -51,7 +50,7 @@ exports.addGroupMembers = (currentUser, groupID, members, cb) => {
                 targetUserDisplayNames: members.alias || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(_.toString(currentUser.userID), Constants.GROUP_OPERATION_ADD, content, group, group.members);
+            await IMProxie.sendGroupNotification(_.toString(currentUser.userID), Constants.GROUP_OPERATION_ADD, content, group, group.members);
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -73,7 +72,7 @@ exports.joinGroup = (currentUser, groupID, cb) => {
             if (result.status != SUCCESS) return cb(result);
 
             let group = result.data.group;
-            await IMProxie.joinGroup(groupID, member);
+            await IMProxie.joinGroup(groupID, { id: member.userID });
 
             let content = {
                 operatorNickname: currentUser.nickname,
@@ -99,7 +98,7 @@ exports.kickGroupMember = (currentUser, groupID, targetUserID, cb) => {
             if (result.status != SUCCESS) return cb(result);
 
             let group = result.data.group;
-            await IMProxie.quitGroup(groupID, targetUserID);
+            await IMProxie.quitGroup(groupID, { id: targetUserID });
 
             let content = {
                 operatorNickname: currentUser.nickname,
@@ -107,7 +106,7 @@ exports.kickGroupMember = (currentUser, groupID, targetUserID, cb) => {
                 targetUserDisplayNames: targetUserID || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_KICKED, content, group);
+            await IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_KICKED, content, group);
         } catch (err) {
             result.status = FAIL;
             result.data = {};
@@ -124,7 +123,7 @@ exports.quitGroup = (currentUser, groupID, cb) => {
         try {
             if (result.status != SUCCESS) return cb(result);
             const group = result.data.group;
-            await IMProxie.quitGroup(groupID, currentUser);
+            await IMProxie.quitGroup(groupID, { id: currentUser.userID });
 
             const content = {
                 operatorNickname: currentUser.nickname,
@@ -132,7 +131,7 @@ exports.quitGroup = (currentUser, groupID, cb) => {
                 targetUserDisplayNames: currentUser.nickname || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_QUIT, content, group, null, currentUser.userID);
+            await IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_QUIT, content, group, null, currentUser.userID);
             result.data = {};
         } catch (err) {
             result.status = FAIL;
@@ -151,7 +150,7 @@ exports.dismissGroup = (currentUser, groupID, cb) => {
             if (result.status != SUCCESS) return cb(result);
 
             let group = result.data.group;
-            await IMProxie.dismissGroup(groupID, currentUser);
+            await IMProxie.dismissGroup(groupID, { id: currentUser.userID });
 
             let content = {
                 operatorNickname: currentUser.nickname,
@@ -159,7 +158,7 @@ exports.dismissGroup = (currentUser, groupID, cb) => {
                 targetUserDisplayNames: currentUser.nickname || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_DISMISS, content, group);
+            await IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_DISMISS, content, group);
             result.data = {};
         } catch (err) {
             result.status = FAIL;
@@ -186,7 +185,7 @@ exports.renameGroup = (currentUser, groupID, name, cb) => {
                 targetUserDisplayNames: currentUser.nickname || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_RENAME, content, group);
+            await IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_RENAME, content, group);
             result.data = {};
         } catch (err) {
             result.status = FAIL;
@@ -213,7 +212,7 @@ exports.updateGroupNotice = (currentUser, groupID, notice, cb) => {
                 targetUserDisplayNames: currentUser.nickname || "",
                 timestamp: Date.now()
             };
-            IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_BULLETIN, content, group);
+            await IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_BULLETIN, content, group);
             result.data = {};
         } catch (err) {
             result.status = FAIL;
@@ -237,8 +236,9 @@ exports.getGroupList = (userID, cb) => {
 }
 
 var convertMembers = members => {
-    let _members = _.cloneDeep(members);
-    return _members.map(member => {
-        return member.userProfile.userID;
+    return _.map(members, e => {
+        let item = {};
+        item.id = e;
+        return item;
     });
-}
+};

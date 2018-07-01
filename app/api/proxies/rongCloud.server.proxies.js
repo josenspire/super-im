@@ -54,13 +54,14 @@ exports.sendContactNotification = async (currentUser, contactID, message, operat
                 userProfile: userProfile
             }
         },
+        isIncludeSender: 1,
     };
-    Private.send(notificationMessage).then(result => {
-        callback(null, 200)
-    }).catch(err => {
-        console.log(`Send notification fail, ${err}`);
+    const result = await Private.send(notificationMessage).catch(err => {
+        console.log(`Error: send group notification failed: ${err}`);
         callback(err, 400)
     });
+    console.log('Sending private notification Success: ', result);
+    callback(null, 200)
 }
 
 // IM - send group notification
@@ -81,7 +82,8 @@ exports.sendGroupNotification = async (currentUserID, operation, userProfile, gr
                 members: members || null,
                 memberID: memberID || null
             },
-        }
+        },
+        isIncludeSender: 1,
     };
     console.log('Sending GroupNotificationMessage: ', JSON.stringify(groupNotificationMessage));
 
@@ -134,7 +136,7 @@ exports.quitGroup = async (groupId, member) => {
         id: _.toString(groupId),
         member: member,
     };
-    const reuslt = await Group.quit(group).catch(err => {
+    const result = await Group.quit(group).catch(err => {
         throw new Error(`Error: quit group failed on IM server, error: ${err} `);
     });
     if (result.code === 200) {
