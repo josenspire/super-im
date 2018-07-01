@@ -85,7 +85,7 @@ exports.sendGroupNotification = async (currentUserID, operation, userProfile, gr
     };
     console.log('Sending GroupNotificationMessage: ', JSON.stringify(groupNotificationMessage));
 
-    const result = await Group.send(groupNotificationMessage).catch(err => {
+    const result = await GroupMessage.send(groupNotificationMessage).catch(err => {
         console.log(`Error: send group notification failed: ${err}`);
     });
 
