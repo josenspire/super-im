@@ -65,22 +65,21 @@ exports.sendContactNotification = async (currentUser, contactID, message, operat
 }
 
 // IM - send group notification
-exports.sendGroupNotification = async (currentUserID, operation, userProfile, group, members, memberID) => {
+exports.sendGroupNotification = async ({ currentUserID, operation, group, memberID, membersID, member, bulletin = null }) => {
     const groupId = _.toString(group.groupID);
     let groupNotificationMessage = {
-        senderId: _.toString(currentUserID),
+        senderId: currentUserID,
         targetId: groupId,
         objectName: 'RC:GrpNtf',
         content: {
-            // message: remark,
             operation: operation,
-            data: userProfile,
             extra: {
-                groupID: groupId,
-                version: Date.now(),
-                group: group || null,
-                members: members || null,
-                memberID: memberID || null
+                operatorUserID: currentUserID,
+                group: group,
+                memberID: memberID,
+                membersID: membersID || [],
+                member: member,
+                bulletin: bulletin,
             },
         },
         isIncludeSender: 1,

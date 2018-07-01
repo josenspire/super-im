@@ -215,6 +215,20 @@ exports.queryGroupList = (userID, cb) => {
         })
 }
 
+exports.queryMemberByGroupIDAndMemberID = async (groupID, memberID) => {
+    try {
+        const member = await MemberModel.findOne({ groupID: groupID, userID: memberID });
+        let _member = JSON.parse(JSON.stringify(member));
+        delete _member._id;
+        delete _member.updateTime;
+        delete _member.createTime;
+        // delete _member.groupID;
+        return _member;
+    } catch (err) {
+        console.log(`Server Error, ${err}`);
+    }
+};
+
 var queryUserAllGroupListData = userID => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -558,7 +572,7 @@ var convertGroupList = (groups, members) => {
         let group = {};
         group = groups[i];
         group.members = members[i];
-        
+
         _groups.push(group);
     }
     return _groups;

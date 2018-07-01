@@ -21,6 +21,7 @@ exports.getTempUserID = async (userID, cb) => {
         }
         result.status = SUCCESS;
     } catch (err) {
+        console.log(err);
         result.message = err;
     }
     cb(result);
