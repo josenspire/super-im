@@ -29,6 +29,7 @@ exports.createGroup = (req, res, next) => {
         members: members
     };
     GroupService.createGroup(currentUser, groupInfo, result => {
+        result.data = {};
         return res.json(result)
     });
 }
@@ -38,6 +39,7 @@ exports.addGroupMembers = (req, res, next) => {
     let currentUser = req.data.user;
 
     GroupService.addGroupMembers(currentUser, input.groupID, input.members, result => {
+        result.data = {};
         return res.json(result);
     });
 }
@@ -47,6 +49,7 @@ exports.joinGroup = (req, res, next) => {
     let currentUser = req.data.user;
 
     GroupService.joinGroup(currentUser, input.groupID, result => {
+        result.data = {};
         return res.json(result);
     });
 }
@@ -56,6 +59,7 @@ exports.kickGroupMember = (req, res, next) => {
     let currentUser = req.data.user;
 
     GroupService.kickGroupMember(currentUser, input.groupID, input.targetUserID, result => {
+        result.data = {};
         return res.json(result);
     });
 }
@@ -85,6 +89,7 @@ exports.renameGroup = (req, res, next) => {
     let currentUser = req.data.user;
 
     GroupService.renameGroup(currentUser, input.groupID, input.name, result => {
+        result.data = {};
         return res.json(result);
     });
 }
@@ -101,6 +106,7 @@ exports.updateGroupNotice = (req, res, next) => {
         })
     }
     GroupService.updateGroupNotice(currentUser, input.groupID, input.notice, result => {
+        result.data = {};
         return res.json(result);
     });
 }
@@ -110,6 +116,7 @@ exports.updateGroupMemberAlias = (req, res, next) => {
     let currentUser = req.data.user;
 
     GroupService.updateGroupMemberAlias(currentUser, input.groupID, input.alias, result => {
+        result.data = {};
         return res.json(result);
     });
 }

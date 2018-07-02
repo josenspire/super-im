@@ -115,6 +115,7 @@ exports.kickGroupMember = (currentUser, groupID, targetUserID, cb) => {
 exports.quitGroup = (currentUser, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     const currentUserID = _.toString(currentUser.userID);
+    const member = await GroupDao.queryMemberByGroupIDAndMemberID({ groupID, memberID: currentUserID });
     GroupDao.quitGroup(currentUserID, groupID, async _result => {
         result = _.cloneDeep(_result);
         try {
@@ -122,7 +123,6 @@ exports.quitGroup = (currentUser, groupID, cb) => {
             const group = result.data.group;
             await IMProxie.quitGroup(groupID, { id: currentUserID });
 
-            const member = await GroupDao.queryMemberByGroupIDAndMemberID({ groupID, memberID: currentUserID });
             await IMProxie.sendGroupNotification({
                 currentUserID: currentUserID,
                 operation: Constants.GROUP_OPERATION_QUIT,
