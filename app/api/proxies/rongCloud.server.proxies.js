@@ -39,7 +39,7 @@ exports.createUser = (userID, nickname, avatar, callback) => {
  * @param {*} userProfile 
  * @param {*} callback 
  */
-exports.sendContactNotification = async (currentUser, contactID, message, operation, userProfile, callback) => {
+exports.sendContactNotification = async (currentUser = '', contactID = '', message = '', operation = '', userProfile = {}, callback) => {
     const userID = _.toString(currentUser.userID);
     const notificationMessage = {
         senderId: userID,
@@ -54,7 +54,6 @@ exports.sendContactNotification = async (currentUser, contactID, message, operat
                 userProfile: userProfile
             }
         },
-        isIncludeSender: 1,
     };
     const result = await Private.send(notificationMessage).catch(err => {
         console.log(`Error: send group notification failed: ${err}`);
@@ -65,7 +64,7 @@ exports.sendContactNotification = async (currentUser, contactID, message, operat
 }
 
 // IM - send group notification
-exports.sendGroupNotification = async ({ currentUserID, operation, group, memberID, membersID, member, bulletin = null }) => {
+exports.sendGroupNotification = async ({ currentUserID = '', operation = '', group = {}, memberID = null, membersID = [], member = {}, bulletin = null }) => {
     const groupId = _.toString(group.groupID);
     let groupNotificationMessage = {
         senderId: currentUserID,
