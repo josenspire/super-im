@@ -22,7 +22,7 @@ exports.createGroup = (currentUser, groupInfo, cb) => {
         } catch (err) {
             result.status = FAIL;
             result.data = {};
-            result.message = err;
+            result.message = err.message;
         }
         cb(result);
     });
@@ -50,7 +50,7 @@ exports.addGroupMembers = (currentUser, groupID, members, cb) => {
         } catch (err) {
             result.status = FAIL;
             result.data = {};
-            result.message = err;
+            result.message = err.message;
         }
         cb(result);
     })
@@ -80,7 +80,7 @@ exports.joinGroup = (currentUser, groupID, cb) => {
         } catch (err) {
             result.status = FAIL;
             result.data = {};
-            result.message = err;
+            result.message = err.message;
         }
         cb(result);
     })
@@ -106,16 +106,16 @@ exports.kickGroupMember = (currentUser, groupID, targetUserID, cb) => {
         } catch (err) {
             result.status = FAIL;
             result.data = {};
-            result.message = err;
+            result.message = err.message;
         }
         cb(result);
     });
 }
 
-exports.quitGroup = (currentUser, groupID, cb) => {
+exports.quitGroup = async (currentUser, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     const currentUserID = _.toString(currentUser.userID);
-    const member = await GroupDao.queryMemberByGroupIDAndMemberID({ groupID, memberID: currentUserID });
+    const member = await GroupDao.queryMemberByGroupIDAndMemberID({ groupID, memberID: currentUser.userID });
     GroupDao.quitGroup(currentUserID, groupID, async _result => {
         result = _.cloneDeep(_result);
         try {
@@ -133,15 +133,17 @@ exports.quitGroup = (currentUser, groupID, cb) => {
         } catch (err) {
             result.status = FAIL;
             result.data = {};
-            result.message = err;
+            result.message = err.message;
         }
         cb(result);
     });
 }
 
-exports.dismissGroup = (currentUser, groupID, cb) => {
+exports.dismissGroup = async (currentUser, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     const currentUserID = _.toString(currentUser.userID);
+
+    const member = await GroupDao.queryMemberByGroupIDAndMemberID({ groupID, memberID: currentUser.userID });
     GroupDao.dismissGroup(currentUserID, groupID, async _result => {
         result = _.cloneDeep(_result);
         try {
@@ -150,7 +152,6 @@ exports.dismissGroup = (currentUser, groupID, cb) => {
             let group = result.data.group;
             await IMProxie.dismissGroup(groupID, { id: currentUserID });
 
-            const member = await GroupDao.queryMemberByGroupIDAndMemberID({ groupID, memberID: currentUserID });
             await IMProxie.sendGroupNotification({
                 currentUserID: currentUserID,
                 operation: Constants.GROUP_OPERATION_QUIT,
@@ -161,7 +162,7 @@ exports.dismissGroup = (currentUser, groupID, cb) => {
         } catch (err) {
             result.status = FAIL;
             result.data = {};
-            result.message = err;
+            result.message = err.message;
         }
         cb(result);
     });
@@ -187,7 +188,7 @@ exports.renameGroup = (currentUser, groupID, name, cb) => {
         } catch (err) {
             result.status = FAIL;
             result.data = {};
-            result.message = err;
+            result.message = err.message;
         }
         cb(result);
     });
@@ -203,23 +204,16 @@ exports.updateGroupNotice = (currentUser, groupID, notice, cb) => {
             let group = result.data.group;
             await IMProxie.renameGroup(currentUser.userID, groupID);
 
-            let content = {
-                operatorNickname: currentUser.nickname,
-                targetUserIds: currentUser.userID,
-                targetUserDisplayNames: currentUser.nickname || "",
-                timestamp: Date.now()
-            };
             await IMProxie.sendGroupNotification({
                 currentUserID: currentUser.userID,
                 operation: Constants.GROUP_OPERATION_BULLETIN,
                 group: group,
-                bulletin: notice,
             });
             result.data = {};
         } catch (err) {
             result.status = FAIL;
             result.data = {};
-            result.message = err;
+            result.message = err.message;
         }
         cb(result);
     });

@@ -64,7 +64,7 @@ exports.sendContactNotification = async (currentUser = '', contactID = '', messa
 }
 
 // IM - send group notification
-exports.sendGroupNotification = async ({ currentUserID = '', operation = '', group = {}, memberID = null, membersID = [], member = {}, bulletin = null }) => {
+exports.sendGroupNotification = async ({ currentUserID = '', operation = '', group = {}, memberID = null, membersID = [], member = {} }) => {
     const groupId = _.toString(group.groupID);
     let groupNotificationMessage = {
         senderId: currentUserID,
@@ -74,11 +74,11 @@ exports.sendGroupNotification = async ({ currentUserID = '', operation = '', gro
             operation: operation,
             extra: {
                 operatorUserID: currentUserID,
+
                 group: group,
                 memberID: memberID,
                 membersID: membersID || [],
                 member: member,
-                bulletin: bulletin,
             },
         },
         isIncludeSender: 1,
@@ -151,12 +151,12 @@ exports.quitGroup = async (groupId, member) => {
  * @param {string} groupId  // group id
  * @param {object} member // 群主或群管理
  */
-exports.dismissGroup = (groupId, member) => {
+exports.dismissGroup = async (groupId, member) => {
     const group = {
         id: groupId,
         member: member,
     };
-    const result = Group.dismiss(group).catch(err => {
+    const result = await Group.dismiss(group).catch(err => {
         throw new Error(`Error: dismiss group failed on IM server, error: ${err} `);
     });
     if (result.code === 200) {
@@ -168,12 +168,12 @@ exports.dismissGroup = (groupId, member) => {
     }
 }
 
-exports.renameGroup = (groupId, name) => {
+exports.renameGroup = async (groupId, name) => {
     const group = {
         id: groupId,
         name: name,
     };
-    Group.update(group).catch(err => {
+    const result = await Group.update(group).catch(err => {
         throw new Error(`Error: refresh group info failed on IM server, error: ${err} `);
     });
     if (result.code === 200) {

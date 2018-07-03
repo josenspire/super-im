@@ -167,8 +167,8 @@ exports.renameGroup = async (groupID, name, cb) => {
     try {
         let opts = { name: name };
         await updateGroupProfile(groupID, opts);
-        let group = await queryGroupByID(groupID);
-        result.data.group = convertGroupData(group);
+        let currentGroupData = await queryGroupDataByGroupID(groupID);
+        result.data.group = convertGroup(currentGroupData);
         result.status = SUCCESS;
     } catch (err) {
         result.message = err;
@@ -181,8 +181,8 @@ exports.updateGroupNotice = async (groupID, notice, cb) => {
     try {
         let opts = { notice: notice };
         await updateGroupProfile(groupID, opts);
-        let group = await queryGroupByID(groupID);
-        result.data = convertGroupData(group);
+        let currentGroupData = await queryGroupDataByGroupID(groupID);
+        result.data.group = convertGroup(currentGroupData);
         result.status = SUCCESS;
     } catch (err) {
         result.message = err;
@@ -215,10 +215,10 @@ exports.queryGroupList = (userID, cb) => {
         })
 }
 
-exports.queryMemberByGroupIDAndMemberID = async (groupID, memberID) => {
+exports.queryMemberByGroupIDAndMemberID = async ({ groupID, memberID }) => {
     try {
-        const member = await MemberModel.findOne({ groupID: groupID, userID: memberID });
-        let _member = JSON.parse(JSON.stringify(member));
+        const member = await MemberModel.find({ groupID, userID: memberID });
+        let _member = JSON.parse(JSON.stringify(member[0]));
         delete _member._id;
         delete _member.updateTime;
         delete _member.createTime;
