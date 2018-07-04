@@ -1,5 +1,6 @@
 const IMProxie = require('../api/proxies/rongCloud.server.proxies')
 const GroupDao = require("../dao/group.server.dao");
+const TempGroupDao = require('../dao/tempGroup.server.dao');
 const StringUtil = require("../utils/StringUtil");
 const Constants = require("../utils/Constants");
 const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
@@ -56,7 +57,43 @@ exports.addGroupMembers = (currentUser, groupID, members, cb) => {
     })
 }
 
-exports.joinGroup = (currentUser, groupID, cb) => {
+exports.joinGroup = async (currentUser, groupID, joinType, cb) => {
+    let result = { status: FAIL, data: {}, message: "" };
+    let member = {
+        userID: currentUser.userID,
+        alias: currentUser.nickname
+    };
+    let _groupID = groupID;
+    if (joinType === 'QrCode') {
+        const group = await TempGroupDao.getGroupProfileByTempGroupID(groupID);
+        _groupID = group.groupID;
+        console.log(groupID, '------------------', _groupID);
+    }
+    GroupDao.joinGroup(member, _groupID, async _result => {
+        result = _.cloneDeep(_result);
+        try {
+            if (result.status != SUCCESS) return cb(result);
+
+            let group = result.data.group;
+            await IMProxie.joinGroup(_groupID, { id: member.userID });
+
+            const currentUserID = _.toString(currentUser.userID);
+            await IMProxie.sendGroupNotification({
+                currentUserID: currentUserID,
+                operation: Constants.GROUP_OPERATION_ADD,
+                group: group,
+                memberID: currentUserID,
+            });
+        } catch (err) {
+            result.status = FAIL;
+            result.data = {};
+            result.message = err.message;
+        }
+        cb(result);
+    })
+}
+
+exports.joinGroupByTempGroupID = (currentUser, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     let member = {
         userID: currentUser.userID,
