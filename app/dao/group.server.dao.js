@@ -216,17 +216,22 @@ exports.queryGroupList = (userID, cb) => {
 }
 
 exports.queryMemberByGroupIDAndMemberID = async ({ groupID, memberID }) => {
-    try {
-        const member = await MemberModel.find({ groupID, userID: memberID });
-        let _member = JSON.parse(JSON.stringify(member[0]));
-        delete _member._id;
-        delete _member.updateTime;
-        delete _member.createTime;
-        // delete _member.groupID;
-        return _member;
-    } catch (err) {
-        console.log(`Server Error, ${err}`);
-    }
+    return new Promise((resolve, reject) => {
+        MemberModel.findOne({ groupID, userID: memberID })
+            .populate("userID")
+            .select('-_id')
+            .exec((err, member) => {
+                if (err) return reject(`Server error, query member data fail: ${err.message}`);
+                let _member = JSON.parse(JSON.stringify(member));
+                delete _member._id;
+                delete _member.updateTime;
+                delete _member.createTime;
+                delete _member.groupID;
+                _member.userProfile = convertUser(_member.userID);
+                delete _member.userID;
+                resolve(_member);
+            });
+    });
 };
 
 var queryUserAllGroupListData = userID => {
