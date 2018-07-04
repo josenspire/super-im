@@ -67,7 +67,6 @@ exports.joinGroup = async (currentUser, groupID, joinType, cb) => {
     if (joinType === 'QrCode') {
         const groupResult = await TempGroupDao.getGroupProfileByTempGroupID(groupID);
         if (groupResult.status === SUCCESS) {
-            console.log(groupID, '------------------', groupResult.data.group.groupID);
             _groupID = groupResult.data.group.groupID;
         } else {
             return cb(groupResult);
