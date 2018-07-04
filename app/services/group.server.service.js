@@ -65,13 +65,15 @@ exports.joinGroup = async (currentUser, groupID, joinType, cb) => {
     };
     let _groupID = groupID;
     if (joinType === 'QrCode') {
-        const group = await TempGroupDao.getGroupProfileByTempGroupID(groupID);
-        console.log(groupID, '------------------', group);
-        _groupID = group.groupID;
+        const groupResult = await TempGroupDao.getGroupProfileByTempGroupID(groupID);
+        if (groupResult.status === SUCCESS) {
+            console.log(groupID, '------------------', groupResult.data.group.groupID);
+            _groupID = groupResult.data.group.groupID;
+        } else {
+            return cb(groupResult);
+        }
     }
     GroupDao.joinGroup(member, _groupID, async _result => {
-
-        
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) return cb(result);
