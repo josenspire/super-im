@@ -38,6 +38,7 @@ exports.getGroupProfileByTempGroupID = async tempGroupID => {
       result.message = "This ID is expired, please reacquire";
     }
   } catch (err) {
+    console.log('[QUERY TEMP GROUP ERROR]: ', err.message);
     result.message = err.message;
   }
   return result;

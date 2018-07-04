@@ -66,10 +66,12 @@ exports.joinGroup = async (currentUser, groupID, joinType, cb) => {
     let _groupID = groupID;
     if (joinType === 'QrCode') {
         const group = await TempGroupDao.getGroupProfileByTempGroupID(groupID);
+        console.log(groupID, '------------------', group);
         _groupID = group.groupID;
-        console.log(groupID, '------------------', _groupID);
     }
     GroupDao.joinGroup(member, _groupID, async _result => {
+
+        
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) return cb(result);

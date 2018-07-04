@@ -48,7 +48,7 @@ exports.joinGroup = (req, res, next) => {
     let input = req.data.input || {};
     let currentUser = req.data.user;
 
-    const { joinType, groupID } = input.type;
+    const { joinType, groupID } = input;
     GroupService.joinGroup(currentUser, groupID, joinType, result => {
         result.data = {};
         return res.json(result);
