@@ -37,7 +37,6 @@ exports.createUser = (userID, nickname, avatar, callback) => {
  * @param {*} message 
  * @param {*} operation 
  * @param {*} userProfile 
- * @param {*} callback 
  */
 exports.sendContactNotification = async ({ currentUser = '', contactID = '', message = '', operation = '', userProfile = {} }) => {
     const userID = _.toString(currentUser.userID);

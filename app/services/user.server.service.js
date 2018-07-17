@@ -123,6 +123,7 @@ exports.requestAddContact = (currentUser, contactID, message, cb) => {
                     result.message = "This user is already your contact";
                     cb(result);
                 } else {
+                    result.status = SUCCESS;
                     await IMProxie.sendContactNotification({
                         currentUser: currentUser,
                         contactID: contactID,
