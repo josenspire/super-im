@@ -152,7 +152,7 @@ exports.acceptAddContact = (currentUser, contactID, remarkName, cb) => {
                     contactID: contactID,
                     message: message,
                     operation: Constants.CONTACT_OPERATION_ACCEPT,
-                    userProfile: result.data.user
+                    userProfile: currentUser
                 });
             } catch (err) {
                 result.status = FAIL;
@@ -170,7 +170,6 @@ exports.rejectAddContact = async (currentUser, rejectUserID, rejectReason, cb) =
     let userID = currentUser.userID.toString();
 
     let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, rejectUserID);
-    let contactUser = await UserDao.queryByUserID(rejectUserID);
     if (isContact) {
         result.message = "Error operating, this user is already your contact";
         return cb(result);
@@ -180,7 +179,7 @@ exports.rejectAddContact = async (currentUser, rejectUserID, rejectReason, cb) =
         contactID: rejectUserID,
         message: rejectReason,
         operation: Constants.CONTACT_OPERATION_REJECT,
-        userProfile: contactUser.data.userProfile,
+        userProfile: currentUser,
     });
     cb({ status: SUCCESS, data: {}, message: "" });
 }
@@ -194,7 +193,7 @@ exports.deleteContact = (currentUser, contactID, cb) => {
             contactID: contactID,
             message: null,
             operation: Constants.CONTACT_OPERATION_DELETE,
-            userProfile: result.data.contactUser,
+            userProfile: currentUser,
         });
         cb(result);
     });
