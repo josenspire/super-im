@@ -117,17 +117,24 @@ exports.requestAddContact = (currentUser, contactID, message, cb) => {
     }
     UserDao.queryByUserID(contactID, async user => {
         if (user.status === SUCCESS) {
-            let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
-            if (isContact) {
-                result.message = "This user is already your contact";
-                cb(result);
-            } else {
-                IMProxie.sendContactNotification(currentUser, contactID, message, Constants.CONTACT_OPERATION_REQUEST, currentUser, (err, _result) => {
-                    if (err) { result.message = err; }
-                    else { result.status = SUCCESS; }
+            try {
+                let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
+                if (isContact) {
+                    result.message = "This user is already your contact";
                     cb(result);
-                })
-            }
+                } else {
+                    await IMProxie.sendContactNotification({
+                        currentUser: currentUser,
+                        contactID: contactID,
+                        message: message,
+                        operation: Constants.CONTACT_OPERATION_REQUEST,
+                        userProfile: currentUser
+                    });
+                    cb(result);
+                }
+            } catch(err) {
+                console.log(err);
+            };
         } else {
             cb(user);
         }
@@ -136,11 +143,17 @@ exports.requestAddContact = (currentUser, contactID, message, cb) => {
 
 exports.acceptAddContact = (currentUser, contactID, remarkName, cb) => {
     let userID = currentUser.userID.toString();
-    UserDao.acceptAddContact(userID, contactID, remarkName || '', result => {
+    UserDao.acceptAddContact(userID, contactID, remarkName || '', async result => {
         if (result.status === SUCCESS) {
             try {
                 const message = "You've added him to be a contact";
-                IMProxie.sendContactNotification(currentUser, contactID, message, Constants.CONTACT_OPERATION_ACCEPT, result.data.user);
+                await IMProxie.sendContactNotification({
+                    currentUser: currentUser,
+                    contactID: contactID,
+                    message: message,
+                    operation: Constants.CONTACT_OPERATION_ACCEPT,
+                    userProfile: result.data.user
+                });
             } catch (err) {
                 result.status = FAIL;
                 result.data = {};
@@ -155,30 +168,34 @@ exports.rejectAddContact = (currentUser, rejectUserID, rejectReason, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
 
     let userID = currentUser.userID.toString();
-    UserDao.queryByUserID(rejectUserID, async user => {
-        if (user.status === SUCCESS) {
-            let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, rejectUserID);
-            if (isContact) {
-                result.message = "Error operating, this user is already your contact";
-                return cb(result);
-            }
-            IMProxie.sendContactNotification(currentUser, rejectUserID, rejectReason, Constants.CONTACT_OPERATION_REJECT, user.data.userProfile);
-            cb({
-                status: SUCCESS,
-                data: {},
-                message: ""
-            })
-        } else {
-            cb(user);
-        }
-    })
+
+    let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, rejectUserID);
+    let contactUser = await UserDao.queryByUserID(rejectUserID);
+    if (isContact) {
+        result.message = "Error operating, this user is already your contact";
+        return cb(result);
+    }
+    await IMProxie.sendContactNotification({
+        currentUser: currentUser,
+        contactID: rejectUserID,
+        message: rejectReason,
+        operation: Constants.CONTACT_OPERATION_REJECT,
+        userProfile: contactUser.data.userProfile,
+    });
+    cb({ status: SUCCESS, data: {}, message: "" });
 }
 
 exports.deleteContact = (currentUser, contactID, cb) => {
     let userID = currentUser.userID.toString();
 
     UserDao.deleteContact(userID, contactID, result => {
-        IMProxie.sendContactNotification(currentUser, contactID, "", Constants.CONTACT_OPERATION_DELETE, null);
+        IMProxie.sendContactNotification({
+            currentUser: currentUser,
+            contactID: contactID,
+            message: null,
+            operation: Constants.CONTACT_OPERATION_DELETE,
+            userProfile: result.data.contactUser,
+        });
         cb(result);
     });
 }

@@ -39,7 +39,7 @@ exports.createUser = (userID, nickname, avatar, callback) => {
  * @param {*} userProfile 
  * @param {*} callback 
  */
-exports.sendContactNotification = async (currentUser = '', contactID = '', message = '', operation = '', userProfile = {}, callback) => {
+exports.sendContactNotification = async ({ currentUser = '', contactID = '', message = '', operation = '', userProfile = {} }) => {
     const userID = _.toString(currentUser.userID);
     const notificationMessage = {
         senderId: userID,
@@ -55,12 +55,13 @@ exports.sendContactNotification = async (currentUser = '', contactID = '', messa
             }
         },
     };
+    console.log('Sending Contact Notification Message Success', JSON.stringify(notificationMessage));
+
     const result = await Private.send(notificationMessage).catch(err => {
         console.log(`Error: send group notification failed: ${err}`);
-        callback(err, 400)
     });
     console.log('Sending private notification Success: ', result);
-    callback(null, 200)
+    return result.code;
 }
 
 // IM - send group notification

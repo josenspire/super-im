@@ -92,7 +92,7 @@ exports.queryByUserID = async (userID, cb) => {
     try {
         let user = await queryByUserID(userID);
         if (!user) {
-            result.message = 'This user is not exist'
+            result.message = 'This user is not exist, Please check your operation';
         } else {
             result.data.userProfile = convertUserProfile(user);
             result.status = SUCCESS;
@@ -261,8 +261,8 @@ exports.deleteContact = async (userID, contactID, cb) => {
         if (isCurrentUser) {
             result.message = 'You can\'t delete yourself as a contact';
         } else {
-            let isUserExist = await queryByUserID(contactID);
-            if (!isUserExist) {
+            let contactUser = await queryByUserID(contactID);
+            if (!contactUser) {
                 result.message = 'This user is not exist';
             } else {
                 let isContactExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
@@ -271,6 +271,7 @@ exports.deleteContact = async (userID, contactID, cb) => {
                 } else {
                     let deleteResult = await deleteContact(userID, contactID);
                     result.status = SUCCESS;
+                    result.data.contactUser = convertUserProfile(contactUser);
                 }
             }
         }
