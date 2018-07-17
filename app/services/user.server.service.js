@@ -164,7 +164,7 @@ exports.acceptAddContact = (currentUser, contactID, remarkName, cb) => {
     });
 }
 
-exports.rejectAddContact = (currentUser, rejectUserID, rejectReason, cb) => {
+exports.rejectAddContact = async (currentUser, rejectUserID, rejectReason, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
 
     let userID = currentUser.userID.toString();
