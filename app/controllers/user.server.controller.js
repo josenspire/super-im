@@ -153,7 +153,7 @@ exports.uploadAvatar = (req, res, next) => {
     atavarUpload.single('uploadAvatar')(req, res, err => {
         if (err) {
             console.error("---[Upload avatar error]---", err)
-            result.message = err;
+            result.message = err.message;
             return res.json(result);
         } else if (!req.file) {
             result.message = "Parameters is incompleteness";
@@ -177,7 +177,7 @@ exports.uploadAvatar = (req, res, next) => {
                     height: "200"
                 };
             } catch (err) {
-                result.message = err;
+                result.message = err.message;
             }
             return res.json(result);
         });
@@ -189,7 +189,7 @@ exports.uploadAvatars = (req, res, next) => {
     atavarUpload.array('uploadAvatar', 2)(req, res, async err => {
         if (err) {
             console.error("---[Upload avatar error]---", err)
-            result.message = err;
+            result.message = err.message;
         } else if (req.files.length) {
             let files = req.files;
             let data = req.body;
@@ -205,7 +205,7 @@ exports.uploadAvatars = (req, res, next) => {
                     height: "200"
                 };
             } catch (err) {
-                result.message = err;
+                result.message = err.message;
             }
         } else {
             result.message = "Parameters is incompleteness";
