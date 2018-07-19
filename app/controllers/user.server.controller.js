@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const UserService = require('../services/user.server.service')
 const GroupService = require('../services/group.server.service')
 const SMSService = require('../services/sms.server.service')
@@ -162,6 +163,10 @@ exports.uploadAvatar = (req, res, next) => {
         let file = req.file;
         let data = JSON.parse(req.body.params);
         let fileName = file.filename;
+        if (_.isEmpty(data) || _.isEmpty(data.token)) {
+            result.message = "Parameters is incompleteness";
+            return res.json(result);
+        }
         console.log("===[REQUEST DATA]===", data);
         UserService.tokenVerify(data.token, async tokenValid => {
             if (tokenValid.status != 200) return res.json(tokenValid);

@@ -175,21 +175,24 @@ exports.rejectAddContact = async (currentUser, rejectUserID, rejectReason, cb) =
         result.message = "Error operating, this user is already your contact";
         return cb(result);
     }
-    await IMProxie.sendContactNotification({
+    const rejectResult = await IMProxie.sendContactNotification({
         currentUser: currentUser,
         contactID: rejectUserID,
         message: rejectReason,
         operation: Constants.CONTACT_OPERATION_REJECT,
         userProfile: currentUser,
     });
-    cb({ status: SUCCESS, data: {}, message: "" });
+    if (rejectResult === 200) {
+        result.status = SUCCESS;
+    }
+    cb(result);
 }
 
 exports.deleteContact = (currentUser, contactID, cb) => {
     let userID = currentUser.userID.toString();
 
-    UserDao.deleteContact(userID, contactID, result => {
-        IMProxie.sendContactNotification({
+    UserDao.deleteContact(userID, contactID, async result => {
+        await IMProxie.sendContactNotification({
             currentUser: currentUser,
             contactID: contactID,
             message: null,
