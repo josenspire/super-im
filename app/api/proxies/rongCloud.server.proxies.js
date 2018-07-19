@@ -54,7 +54,7 @@ exports.sendContactNotification = async ({ currentUser = '', contactID = '', mes
             }
         },
     };
-    console.log('Sending Contact Notification Message Success', JSON.stringify(notificationMessage));
+    console.log('Sending Contact Notification Message', JSON.stringify(notificationMessage));
 
     const result = await Private.send(notificationMessage).catch(err => {
         console.log(`Error: send group notification failed: ${err}`);
