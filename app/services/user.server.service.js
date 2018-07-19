@@ -6,6 +6,7 @@ const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants")
 let IMProxie = require('../api/proxies/rongCloud.server.proxies')
 let QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 
+const _ = require('lodash');
 const uuidv4 = require('uuid/v4');
 const mongoose = require('mongoose')
 
@@ -184,6 +185,9 @@ exports.rejectAddContact = async (currentUser, rejectUserID, rejectReason, cb) =
     });
     if (rejectResult === 200) {
         result.status = SUCCESS;
+    } else {
+        console.log(rejectResult);
+        result.message = `Server Busy, Please checking your options and try again later`;
     }
     cb(result);
 }
