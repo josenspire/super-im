@@ -154,7 +154,9 @@ exports.acceptAddContact = (currentUser, contactID, remarkName, cb) => {
                     contactID: contactID,
                     message: message,
                     operation: Constants.CONTACT_OPERATION_ACCEPT,
-                    userProfile: currentUser
+                    userProfile: currentUser,
+                    objectName: 'RC:ContactNtf',
+                    isIncludeSender: 1,
                 });
             } catch (err) {
                 result.status = FAIL;

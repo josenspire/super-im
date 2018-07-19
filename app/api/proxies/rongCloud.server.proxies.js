@@ -38,12 +38,12 @@ exports.createUser = (userID, nickname, avatar, callback) => {
  * @param {*} operation 
  * @param {*} userProfile 
  */
-exports.sendContactNotification = async ({ currentUser = '', contactID = '', message = '', operation = '', userProfile = {} }) => {
+exports.sendContactNotification = async ({ currentUser = '', contactID = '', message = '', operation = '', userProfile = {}, objectName = 'Custom:ContactNtf', isIncludeSender = 0 }) => {
     const userID = _.toString(currentUser.userID);
     const notificationMessage = {
         senderId: userID,
         targetId: contactID,
-        objectName: 'RC:ContactNtf',
+        objectName: objectName,
         content: {
             operation: operation,
             message: message,
@@ -53,6 +53,7 @@ exports.sendContactNotification = async ({ currentUser = '', contactID = '', mes
                 userProfile: userProfile
             }
         },
+        isIncludeSender: isIncludeSender,
     };
     console.log('Sending Contact Notification Message', JSON.stringify(notificationMessage));
 
