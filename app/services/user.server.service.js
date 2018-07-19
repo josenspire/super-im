@@ -168,23 +168,25 @@ exports.acceptAddContact = (currentUser, contactID, remarkName, cb) => {
     });
 }
 
-exports.rejectAddContact = async (currentUser, rejectUserID, rejectReason, cb) => {
+exports.rejectAddContact = async (currentUser, contactID, rejectReason, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
 
     let userID = currentUser.userID.toString();
 
-    let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, rejectUserID);
+    let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
     if (isContact) {
         result.message = "Error operating, this user is already your contact";
         return cb(result);
     }
+
     const rejectResult = await IMProxie.sendContactNotification({
         currentUser: currentUser,
-        contactID: rejectUserID,
+        contactID: contactID,
         message: rejectReason,
         operation: Constants.CONTACT_OPERATION_REJECT,
         userProfile: currentUser,
     });
+
     if (rejectResult === 200) {
         result.status = SUCCESS;
     } else {

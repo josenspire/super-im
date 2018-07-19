@@ -273,11 +273,10 @@ exports.rejectAddContact = (req, res, next) => {
     let currentUser = req.data.user;
     let input = req.data.input;
 
-    let userID = input.userID;
-    let rejectUserID = input.rejectUserID;
+    let contactID = input.contactID;
     let rejectReason = input.reason || "";
 
-    UserService.rejectAddContact(currentUser, rejectUserID, rejectReason, contactList => {
+    UserService.rejectAddContact(currentUser, contactID, rejectReason, contactList => {
         req.data.output = contactList;
         next();
     })
