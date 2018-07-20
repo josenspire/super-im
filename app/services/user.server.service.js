@@ -175,7 +175,7 @@ exports.rejectAddContact = async (currentUser, contactID, rejectReason, cb) => {
 
     let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
     if (isContact) {
-        result.message = "Error operating, this user is already your contact";
+        result.message = "Error operating, this user is not your contact";
         return cb(result);
     }
 
