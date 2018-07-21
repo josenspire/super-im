@@ -121,6 +121,7 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
             result.message = "You are not in current group";
         } else {
             if (groupMembers.length <= 1) {
+                console.log("Group member less than 1, this group is dismissed");
                 // If members less than 1, group will dismiss
                 await dismissGroup(groupID);
                 result.message = "Group member less than 1, this group is dismissed";
@@ -137,7 +138,9 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
         }
     } catch (err) {
         console.log("---[QUIT GROUP ERROR]---", err)
-        result.message = err;
+        result.status = FAIL;
+        result.message = err.message;
+        result.data = {};
     }
     cb(result);
 }
@@ -222,6 +225,7 @@ exports.queryMemberByGroupIDAndMemberID = async ({ groupID, memberID }) => {
             .select('-_id')
             .exec((err, member) => {
                 if (err) return reject(`Server error, query member data fail: ${err.message}`);
+                if (!member) return resolve(null);
                 let _member = JSON.parse(JSON.stringify(member));
                 delete _member._id;
                 delete _member.updateTime;
@@ -375,7 +379,8 @@ var queryMembersByGroupID = groupID => {
             .populate("userID")
             .exec((err, members) => {
                 if (err) {
-                    reject(err.message);
+                    console.log('--QUERY MEMBERS ERROR--', err);
+                    reject(err);
                 } else if (!members) {
                     reject("The group is not exist, please check your group id");
                 } else {
@@ -479,7 +484,7 @@ var removeGroupMember = (groupID, targetUserID) => {
     return new Promise((resolve, reject) => {
         MemberModel.remove({ groupID: groupID, userID: targetUserID }, (err, result) => {
             if (err) {
-                reject('Server unknow error, delete contact fail');
+                reject(err);
             } else {
                 resolve();
             }

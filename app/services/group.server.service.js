@@ -156,6 +156,10 @@ exports.quitGroup = async (currentUser, groupID, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
     const currentUserID = _.toString(currentUser.userID);
     const member = await GroupDao.queryMemberByGroupIDAndMemberID({ groupID, memberID: currentUser.userID });
+    if (!member) {
+        result.message = 'Invalid operation, your have not join into this group'
+        return cb(result);
+    }
     GroupDao.quitGroup(currentUserID, groupID, async _result => {
         result = _.cloneDeep(_result);
         try {

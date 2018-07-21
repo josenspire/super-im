@@ -75,7 +75,6 @@ exports.sendGroupNotification = async ({ currentUserID = '', operation = '', gro
             operation: operation,
             extra: {
                 operatorUserID: currentUserID,
-
                 group: group,
                 memberID: memberID,
                 membersID: membersID || [],
