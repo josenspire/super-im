@@ -121,10 +121,8 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
             result.message = "You are not in current group";
         } else {
             if (groupMembers.length <= 1) {
-                console.log("Group member less than 1, this group is dismissed");
                 // If members less than 1, group will dismiss
                 await dismissGroup(groupID);
-                result.message = "Group member less than 1, this group is dismissed";
                 result.data = {
                     isDismiss: true,
                 };
