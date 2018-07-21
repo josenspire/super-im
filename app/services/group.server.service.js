@@ -177,7 +177,7 @@ exports.quitGroup = async (currentUser, groupID, cb) => {
                     isIncludeSender: 0,
                 });
             }
-            result.data.group = {};
+            delete result.data.group;
         } catch (err) {
             result.status = FAIL;
             result.data = {};
