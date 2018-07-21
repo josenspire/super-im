@@ -126,7 +126,7 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
                 await dismissGroup(groupID);
                 result.message = "Group member less than 1, this group is dismissed";
                 result.data = {
-                    isDismiss = true,
+                    isDismiss: true,
                 };
             } else {
                 await removeGroupMember(groupID, currentUserID);
