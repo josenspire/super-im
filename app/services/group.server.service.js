@@ -8,15 +8,18 @@ const _ = require("lodash");
 
 exports.createGroup = (currentUser, groupInfo, cb) => {
     let result = { status: FAIL, data: {}, message: "" };
+    const currentUserID = _.toString(currentUser.userID);
+    let members = _.cloneDeep(groupInfo.members);
+    members.push(currentUserID);
     GroupDao.createGroup(currentUser, groupInfo, async _result => {
         result = _.cloneDeep(_result);
         if (result.status != SUCCESS) return cb(result);
 
         const group = result.data.group;
         try {
-            await IMProxie.createGroup(_.toString(group.groupID), group.name, convertMembers(groupInfo.members));
+            await IMProxie.createGroup(_.toString(group.groupID), group.name, convertMembers(members));
             await IMProxie.sendGroupNotification({
-                currentUserID: _.toString(currentUser.userID),
+                currentUserID: currentUserID,
                 operation: Constants.GROUP_OPERATION_CREATE,
                 group: group,
             });
