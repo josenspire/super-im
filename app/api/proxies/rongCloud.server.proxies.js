@@ -65,7 +65,7 @@ exports.sendContactNotification = async ({ currentUser = '', contactID = '', mes
 }
 
 // IM - send group notification
-exports.sendGroupNotification = async ({ currentUserID = '', operation = '', group = {}, memberID = null, membersID = [], member = {} }) => {
+exports.sendGroupNotification = async ({ currentUserID = '', operation = '', group = {}, memberID = null, membersID = [], member = {}, isIncludeSender = 1 }) => {
     const groupId = _.toString(group.groupID);
     let groupNotificationMessage = {
         senderId: currentUserID,
@@ -81,7 +81,7 @@ exports.sendGroupNotification = async ({ currentUserID = '', operation = '', gro
                 member: member,
             },
         },
-        isIncludeSender: 1,
+        isIncludeSender: isIncludeSender,
     };
     console.log('Sending GroupNotificationMessage: ', JSON.stringify(groupNotificationMessage));
 
@@ -100,6 +100,7 @@ exports.createGroup = async (groupId, name, members) => {
         name: name,
         members: members,
     };
+    console.log('---CREATE GROUP---: ', group);
     const result = await Group.create(group).catch(err => {
         throw new Error(`Error: create group failed on IM server, error: ${err}`);
     });

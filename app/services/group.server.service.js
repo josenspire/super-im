@@ -174,6 +174,7 @@ exports.quitGroup = async (currentUser, groupID, cb) => {
                     operation: Constants.GROUP_OPERATION_QUIT,
                     group: group,
                     member: member,
+                    isIncludeSender: 0,
                 });
             }
             result.data.group = {};
