@@ -164,16 +164,19 @@ exports.quitGroup = async (currentUser, groupID, cb) => {
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) return cb(result);
-            const group = result.data.group;
             await IMProxie.quitGroup(groupID, { id: currentUserID });
-
-            await IMProxie.sendGroupNotification({
-                currentUserID: currentUserID,
-                operation: Constants.GROUP_OPERATION_QUIT,
-                group: group,
-                member: member,
-            });
-            result.data = {};
+            if (result.data.isDismiss) {
+                return cb(result);
+            } else {
+                const group = result.data.group;
+                await IMProxie.sendGroupNotification({
+                    currentUserID: currentUserID,
+                    operation: Constants.GROUP_OPERATION_QUIT,
+                    group: group,
+                    member: member,
+                });
+            }
+            result.data.group = {};
         } catch (err) {
             result.status = FAIL;
             result.data = {};

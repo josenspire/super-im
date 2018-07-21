@@ -125,21 +125,27 @@ exports.quitGroup = async (currentUserID, groupID, cb) => {
                 // If members less than 1, group will dismiss
                 await dismissGroup(groupID);
                 result.message = "Group member less than 1, this group is dismissed";
+                result.data = {
+                    isDismiss = true,
+                };
             } else {
                 await removeGroupMember(groupID, currentUserID);
                 if (isGroupOwnerOrAdmin(group, currentUserID)) {
                     // Default make secondly members as owner
                     updateGroupOwner(groupID, groupMembers[1].userID._id);
                 }
+                let currentGroupData = await queryGroupDataByGroupID(groupID);
+                result.data = {
+                    group: convertGroup(currentGroupData),
+                    isDismiss: false,
+                };
             }
-            let currentGroupData = await queryGroupDataByGroupID(groupID);
-            result.data.group = convertGroup(currentGroupData);
             result.status = SUCCESS;
         }
     } catch (err) {
         console.log("---[QUIT GROUP ERROR]---", err)
         result.status = FAIL;
-        result.message = err.message;
+        result.message = err;
         result.data = {};
     }
     cb(result);
@@ -270,7 +276,8 @@ var queryGroupDataByGroupID = groupID => {
             group.members = result[1];
             resolve(group);
         } catch (err) {
-            reject(err.message);
+            console.log(err);
+            reject(err);
         }
     })
 }
@@ -496,7 +503,7 @@ var removeGroupMembers = groupID => {
     return new Promise((resolve, reject) => {
         MemberModel.remove({ groupID: groupID }, (err, result) => {
             if (err) {
-                reject('Server unknow error, dismiss group fail');
+                reject(err);
             } else {
                 resolve(result);
             }
@@ -517,15 +524,21 @@ var updateGroupOwner = (groupID, ownerUserID) => {
 }
 
 var dismissGroup = async groupID => {
-    await removeGroup(groupID);
-    await removeGroupMembers(groupID);
+    try {
+        await removeGroup(groupID);
+        await removeGroupMembers(groupID);
+    } catch (err) {
+        console.log(err);
+        throw new Error(err);
+    }
 }
 
 var removeGroup = groupID => {
     return new Promise((resolve, reject) => {
         GroupModel.findOneAndUpdate({ _id: groupID, status: true }, { $set: { status: false } }, (err, result) => {
             if (err) {
-                reject('Server unknow error, dismiss group fail');
+                console.log(err);
+                reject(err);
             } else {
                 resolve(result);
             }
