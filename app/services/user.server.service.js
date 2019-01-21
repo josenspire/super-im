@@ -1,7 +1,7 @@
 const UserDao = require('../dao/user.server.dao');
 const DaoManager = require('../daoManager/dao.server.manager');
 const Constants = require("../utils/Constants");
-const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
+const { SUCCESS, FAIL } = require("../utils/CodeConstants");
 
 let IMProxie = require('../api/proxies/rongCloud.server.proxies')
 let QiniuProxie = require('../api/proxies/qiniu.server.proxies')

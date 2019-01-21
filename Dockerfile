@@ -1,16 +1,20 @@
-FROM node:8.10.0-alpine
+FROM node:10.15.0-alpine
+
+MAINTAINER josenspire@gomail.com
 
 # Create app directory
-RUN mkdir -p /app
-WORKDIR /app
+RUN mkdir -p /superIM
+WORKDIR /superIM/
 
 # Install app dependencies
-COPY package.json /app/
+COPY . /superIM/
 
-RUN rm package-lock.json \
-    ; rm -rf .idea \
-    ; rm -rf node_modules \
+RUN rm -rf .idea \
+    ; rm -rf .vscode \
     ; npm config set registry "https://registry.npm.taobao.org/" \
     && npm install
 
-CMD ["/bin/bash"];
+EXPOSE 3001
+
+# CMD ["/bin/bash"];
+CMD npm run prod

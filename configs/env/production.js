@@ -1,9 +1,10 @@
 module.exports = {
   db: {
-    uri: "mongodb://47.95.250.204:27017/super-im",
-    // url: 'mongodb://superim:Password520@47.95.250.204:27017/super-im',
+    uri: "mongodb://127.0.0.1:27017/superIm",
+    // uri: "mongodb://jamesy:Password1!@127.0.0.1:27017/superIm",
+    username: "jamesy",
+    password: "Password1!",
     options: {
-      useMongoClient: true,
     }
   },
   port: 3000,
