@@ -1,29 +1,60 @@
 const crypto = require('crypto')
 const Constants = require('../utils/Constants')
-let fs = require('fs')
+const fs = require('fs')
+const path = require('path');
 
-exports.generateKeys = cb => {
-    // Generate James's keys...
-    const james = crypto.createDiffieHellman(1024);
-    const jamesKey = james.generateKeys('base64');
+exports.generateKeyPair = () => {
+    const {
+        publicKey,
+        privateKey
+    } = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+        publicKeyEncoding: {
+            type: 'pkcs1',
+            format: 'pem'
+        },
+        privateKeyEncoding: {
+            type: 'pkcs1',
+            format: 'pem',
+        }
+    });
 
-    let privateKey = james.getPrivateKey('utf8');
-    let publicKey = james.getPublicKey('utf8');
-
-    fs.writeFileSync('../configs/rsa_priv2.pem', privateKey, err => {
+    const dirPath = path.join(__dirname, '../../configs');
+    fs.writeFileSync(`${dirPath}/rsa_priv2.pem`, privateKey, err => {
         if (err) console.log('--[CREATE_PRIV_KEY]--', err)
     })
 
-    fs.writeFileSync('../configs/rsa_pub2.pem', publicKey, err => {
+    fs.writeFileSync(`${dirPath}/rsa_pub2.pem`, publicKey, err => {
+        if (err) console.log('--[CREATE_PUB_KEY]--', err)
+    })
+    return {
+        publicKey,
+        privateKey
+    };
+};
+
+exports.generateKeys = () => {
+    const dh = crypto.createDiffieHellman(1024);
+    dh.generateKeys('base64');
+
+    let privateKey = dh.getPrivateKey('base64');
+    let publicKey = dh.getPublicKey('base64');
+
+    const dirPath = path.join(__dirname, '../../configs');
+    fs.writeFileSync(`${dirPath}/rsa_priv2.pem`, privateKey, err => {
+        if (err) console.log('--[CREATE_PRIV_KEY]--', err)
+    })
+
+    fs.writeFileSync(`${dirPath}/rsa_pub2.pem`, publicKey, err => {
         if (err) console.log('--[CREATE_PUB_KEY]--', err)
     })
 
     global.privateKey = privateKey;
     global.publicKey = publicKey;
-    cb({
-        'Private Key': privateKey,
-        'Publick Key': publicKey
-    })
+    return {
+        'publicKey': publicKey,
+        'privateKey': privateKey,
+    };
 }
 
 exports.getPrivateKey = () => {
@@ -70,7 +101,10 @@ exports.privateEncryptObj = (jsonObj, cb) => {
         } else {
             tempBuff = plainBuff.slice(offSet, plainLength);
         }
-        result = crypto.privateEncrypt({ key: this.getPrivateKey(), padding: crypto.constants.RSA_PKCS1_PADDING }, tempBuff);
+        result = crypto.privateEncrypt({
+            key: this.getPrivateKey(),
+            padding: crypto.constants.RSA_PKCS1_PADDING
+        }, tempBuff);
         if (!encryptBuff) {
             encryptBuff = result;
             totalLength = result.length;
@@ -85,7 +119,10 @@ exports.privateEncryptObj = (jsonObj, cb) => {
 
 // encrypt plainText by public key
 exports.publicEncrypt = (plainText, cb) => {
-    let encryptBuff = crypto.publicEncrypt({ key: this.getPublicKey(), padding: crypto.constants.RSA_PKCS1_PADDING }, Buffer.from(plainText))
+    let encryptBuff = crypto.publicEncrypt({
+        key: this.getPublicKey(),
+        padding: crypto.constants.RSA_PKCS1_PADDING
+    }, Buffer.from(plainText))
     cb(encryptBuff.toString('base64'))
 }
 
@@ -109,7 +146,10 @@ exports.publicEncryptObj = (data, publicKey, cb) => {
             tempBuff = plainBuff.slice(offSet, plainLength);
         }
         // result = crypto.publicEncrypt(this.getPublicKey(), tempBuff);
-        result = crypto.publicEncrypt({ key: publicKey, padding: crypto.constants.RSA_PKCS1_PADDING }, tempBuff);
+        result = crypto.publicEncrypt({
+            key: publicKey,
+            padding: crypto.constants.RSA_PKCS1_PADDING
+        }, tempBuff);
         if (!encryptBuff) {
             encryptBuff = result;
             totalLength = result.length;
@@ -139,7 +179,10 @@ exports.privateDecrypt = (encryptText, cb) => {
             } else {
                 tempBuff = encryptBuff.slice(offSet, encryptLength);
             }
-            result = crypto.privateDecrypt({ key: this.getPrivateKey(), padding: crypto.constants.RSA_PKCS1_PADDING }, tempBuff);
+            result = crypto.privateDecrypt({
+                key: this.getPrivateKey(),
+                padding: crypto.constants.RSA_PKCS1_PADDING
+            }, tempBuff);
             // result = crypto.privateDecrypt(this.getPrivateKey(), tempBuff);
 
             if (!decryptBuff) {
@@ -187,15 +230,30 @@ exports.publicDecrypt = (encryptText, cb) => {
     cb(JSON.parse(decryptBuff.toString()))
 }
 
-// using private key sign passphrase
-exports.signature = (plainText, cb) => {
+/**
+ * @param   encryptText     string      desc: 加密体
+ * 
+ * @returns String    desc: 签名
+ */
+exports.signature = encryptText => {
     let sign = crypto.createSign('SHA256');
     try {
-        sign.update(plainText);
-        let privateKey = this.getPrivateKey();
-        let result = sign.sign(privateKey, 'base64');
-        cb(result)
+        sign.update(encryptText);
+        return sign.sign(this.getPrivateKey(), 'base64');
     } catch (err) {
         console.log(err)
+        throw new Error(err.message);
     }
-}
+};
+
+/**
+ * @param   encryptText     string      desc: 加密体
+ * @param   signature   string      desc: 签名
+ * 
+ * @returns Boolean     desc: 验签结果
+ */
+exports.verifySignature = (encryptText, signature) => {
+    const verify = crypto.createVerify('SHA256');
+    verify.update(encryptText);
+    return verify.verify(this.getPublicKey(), signature);
+};

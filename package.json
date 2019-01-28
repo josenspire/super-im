@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@alicloud/sms-sdk": "^1.0.2",
+    "bcrypto": "^3.0.2",
     "bluebird": "^3.5.1",
     "body-parser": "^1.18.3",
     "chai": "^4.1.2",
@@ -28,6 +29,7 @@
     "glob": "^7.1.2",
     "graceful": "^1.0.1",
     "jsencrypt": "^2.3.1",
+    "jsrsasign": "^8.0.12",
     "jwt-simple": "^0.5.1",
     "lodash": "^4.17.4",
     "log4js": "^2.5.3",
@@ -47,7 +49,9 @@
     "uuid": "^3.1.0"
   },
   "devDependencies": {
+    "ava": "^1.2.0",
     "cross-env": "^5.2.0",
-    "nodemon": "^1.18.9"
+    "nodemon": "^1.18.9",
+    "sinon": "^7.2.3"
   }
 }
