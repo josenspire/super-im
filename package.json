@@ -5,9 +5,9 @@
   "description": "Super IM server.",
   "private": true,
   "scripts": {
-    "start": "cross-env NODE_ENV=development&& nodemon ./bin/dev-server",
-    "build": "cross-env NODE_ENV=production&& nodemon ./bin/dev-server",
-    "prod": "cross-env NODE_ENV=production&& nodemon ./bin/dev-server",
+    "start": "cross-env NODE_ENV=development nodemon ./bin/dev-server",
+    "build": "cross-env NODE_ENV=production nodemon ./bin/dev-server",
+    "prod": "cross-env NODE_ENV=production nodemon ./bin/dev-server",
     "mocha-test": "mocha --recursive --timeout 10000 test --bail --grow"
   },
   "dependencies": {

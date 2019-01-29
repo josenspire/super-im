@@ -1,12 +1,13 @@
 module.exports = {
   db: {
-    uri: "mongodb://127.0.0.1:27017/superIm",
-    // url: 'mongodb://superim:Password520@127.0.0.1:27017/superIm',
-    username: "jamesy",
-    password: "Password1!",
+    // url: 'mongodb://superim:Password520@127.0.0.1:27017/superim',
+    username: "",
+    password: "",
+    host: "127.0.0.1",
+    port: "27017",
+    database: 'superIm',
     options: {
-      // user: '',
-      // pass: '',
+      useNewUrlParser: true,
       // keepAlive: true,
       // reconnectTries: 30
     }
