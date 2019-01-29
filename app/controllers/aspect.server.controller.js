@@ -1,5 +1,5 @@
 const RSAUtil = require('../utils/RSAUtil');
-const AESUtil = require('../utils/AESUtil');
+const AESUtil = require('../utils/AESHelper');
 
 const UserService = require('../services/user.server.service');
 
@@ -29,7 +29,7 @@ exports.RSA = {
             return res.json(params);
         })
     }
-}
+};
 
 exports.AES = {
     decryptParam: (req, res, next) => {
@@ -62,4 +62,4 @@ exports.AES = {
         console.log('---[RESPONSE DATA]---', output)
         return res.json(output);
     }
-}
+};

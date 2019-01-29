@@ -2,6 +2,7 @@
 module.exports = {
     SUCCESS: 200,
     FAIL: 400,
+    SIGNATURE_VERIFY_FAIL: 401,
     REQUEST_ERROR: 404,
     REQUEST_TIMEOUT_ERROR: 408,
 
