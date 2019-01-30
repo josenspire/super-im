@@ -7,7 +7,7 @@ const ecdhHelper = ECDHHelper.getInstance();
 class AspectControl {
     constructor() {};
 
-    decryptParam(req, res, next) {
+    async decryptParam(req, res, next) {
         const {data, secretKey, signature} = req.body;
         console.log('---[REQUEST DATA]---', data, secretKey, signature);
         try {
@@ -23,18 +23,18 @@ class AspectControl {
                 return res.json(buildResponseBody(requestResult, secret));
             }
             else {
+                // TODO handle verify logic after ECDH/AES opts
                 req.data = {};
-                UserService.tokenVerify(data.token, isValid => {
-                    if (isValid.status != 200) {
-                        return res.json(isValid);
-                    } else {
-                        let user = isValid.data.userProfile;
-                        data.params.userID = user.userID;
-                        req.data.input = data.params;
-                        req.data.user = user;
-                        next();
-                    }
-                });
+                const isValid = await UserService.tokenVerify(data.token)
+                if (isValid.status != 200) {
+                    return res.json(isValid);
+                } else {
+                    let user = isValid.data.userProfile;
+                    data.params.userID = user.userID;
+                    req.data.input = data.params;
+                    req.data.user = user;
+                    next();
+                }
             }
         }
         catch (err) {

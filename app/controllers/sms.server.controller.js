@@ -48,24 +48,22 @@ exports.verifyCode = (req, res, next) => {
 }
 
 var register = (telephone, verifyCode) => {
-    return new Promise((resolve, reject) => {
-        UserService.isTelephoneExist(telephone, isExist => {
-            if (isExist.status === false) {
-                SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_REGISTER, sms => {
-                    sms.data.skipVerify = false;
-                    // cb(sms);
-                    resolve(sms);
-                })
-            } else {
-                resolve({
-                    status: FAIL,
-                    data: {},
-                    message: isExist.message
-                });
-            }
-        })
-    })
-}
+    return new Promise(async (resolve, reject) => {
+        const isExist = await UserService.isTelephoneExist(telephone);
+        if (isExist.status === false) {
+            SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_REGISTER, sms => {
+                sms.data.skipVerify = false;
+                resolve(sms);
+            })
+        } else {
+            resolve({
+                status: FAIL,
+                data: {},
+                message: isExist.message
+            });
+        }
+    });
+};
 
 var login = (user, telephone, verifyCode) => {
     return new Promise((resolve, reject) => {

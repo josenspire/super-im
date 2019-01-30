@@ -1,74 +1,75 @@
 const _ = require('lodash');
-const UserService = require('../services/user.server.service')
-const GroupService = require('../services/group.server.service')
-const SMSService = require('../services/sms.server.service')
-const RSAUtil = require('../utils/RSAUtil')
-const { SUCCESS, FAIL } = require("../utils/CodeConstants");
+const fs = require('fs');
+const uuidv4 = require('uuid/v4');
+
+const UserService = require('../services/user.server.service');
+const GroupService = require('../services/group.server.service');
+const SMSService = require('../services/sms.server.service');
+const RSAUtil = require('../utils/RSAUtil');
+const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 const Constants = require('../utils/Constants');
 
-const fs = require('fs')
 const multiparty = require('multiparty');
-const uuidv4 = require('uuid/v4');
-const atavarUpload = require('../api/commons/upload.server.common')
-const QiniuProxie = require('../api/proxies/qiniu.server.proxies')
+const atavarUpload = require('../api/commons/upload.server.common');
+const QiniuProxie = require('../api/proxies/qiniu.server.proxies');
 
-exports.getPublicKey = (req, res, next) => {
-    return res.json({
-        status: SUCCESS,
-        data: {
-            secretKey: RSAUtil.getPublicKey()
-        },
-        message: ''
-    })
-}
+class UserController {
 
-exports.login = (req, res, next) => {
-    let data = req.data.input.params || {};
-
-    let verifyCode = data.verifyCode || "";
-    let user = {};
-    user.telephone = data.telephone;
-    user.password = data.password;
-    user.deviceID = data.deviceID;
-
-    if (verifyCode === "") {
-        UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
-            req.data.output = callback;
-            next();
+    getPublicKey(req, res, next) {
+        return res.json({
+            status: SUCCESS,
+            data: {
+                secretKey: RSAUtil.getPublicKey()
+            },
+            message: ''
         })
-    } else {
-        SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, validateCallback => {
-            if (validateCallback.status === SUCCESS) {
-                UserService.updateDeviceID(user.telephone, user.password, user.deviceID, callback => {
-                    req.data.output = callback;
-                    next();
-                })
-            } else {
-                req.data.output = validateCallback;
+    };
+
+    login(req, res, next) {
+        const data = req.data.input.params || {};
+
+        const verifyCode = data.verifyCode || "";
+        let user = {};
+        user.telephone = data.telephone;
+        user.password = data.password;
+        user.deviceID = data.deviceID;
+
+        if (_.isEmpty(verifyCode)) {
+            UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
+                req.data.output = callback;
                 next();
-            }
-        })
-    }
-}
+            })
+        } else {
+            SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, async validateCallback => {
+                if (validateCallback.status === SUCCESS) {
+                    req.data.output = await UserService.updateDeviceID(user.telephone, user.password, user.deviceID);
+                    next();
+                } else {
+                    req.data.output = validateCallback;
+                    next();
+                }
+            })
+        }
+    };
 
-exports.register = (req, res, next) => {
-    let data = req.data.input.params || {};
+    async register(req, res, next) {
+        let data = req.data.input.params || {};
 
-    let user = {};
-    user.telephone = data.telephone;
-    user.password = data.password;
-    user.nickname = data.nickname;
-    user.sex = data.sex || 0;
-    user.birthday = data.birthday || '';
-    user.location = data.location || '';
-    user.signature = data.signature || '';
-    user.countryCode = data.countryCode || '';
-    user.deviceID = data.deviceID;
+        let user = {};
+        user.telephone = data.telephone;
+        user.password = data.password;
+        user.nickname = data.nickname;
+        user.sex = data.sex || 0;
+        user.birthday = data.birthday || '';
+        user.location = data.location || '';
+        user.signature = data.signature || '';
+        user.countryCode = data.countryCode || '';
+        user.deviceID = data.deviceID;
 
-    let verifyCode = data.verifyCode || '';
+        let verifyCode = data.verifyCode || '';
 
-    console.log('[--REGISTER--]: ', data)
-    UserService.isTelephoneExist(user.telephone, isExist => {
+        console.log('[--REGISTER--]: ', data)
+        const isExist = await UserService.isTelephoneExist(user.telephone);
         if (isExist.status === false) {
             SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
                 if (_sms.status === SUCCESS) {
@@ -82,99 +83,93 @@ exports.register = (req, res, next) => {
                 }
             })
         } else {
-            let result = { data: {} };
+            let result = {data: {}};
             result.status = FAIL;
             result.message = isExist.message;
             req.data.output = result;
             next();
         }
-    })
-}
-
-exports.tokenVerifyLogin = (req, res, next) => {
-    let data = JSON.parse(req.body);
-    // let data = req.body;
-    let token = data.token;
-    console.log('[--TOKEN AUTH--]', token);
-
-    UserService.tokenVerifyLogin(token, callback => {
-        return res.json(callback);
-    })
-}
-
-exports.logout = (req, res, next) => {
-    req.data.output = {
-        status: SUCCESS,
-        data: {},
-        message: ""
     };
-    next();
-}
 
-/** User profile */
-exports.resetPassword = (req, res, next) => {
-    let data = req.data.input.params || {};
+    tokenVerifyLogin(req, res, next) {
+        let data = JSON.parse(req.body);
+        // let data = req.body;
+        let token = data.token;
+        console.log('[--TOKEN AUTH--]', token);
 
-    let telephone = data.telephone;
-    let verifyCode = data.verifyCode;
+        UserService.tokenVerifyLogin(token, callback => {
+            return res.json(callback);
+        })
+    }
 
-    UserService.resetPassword(telephone, callback => {
-        return res.json(callback);
-    })
-}
-
-exports.getUserProfile = (req, res, next) => {
-    let input = req.data.input;
-    let userID = input.targetUserID;
-    UserService.getUserProfile(userID, userProfile => {
-        req.data.output = userProfile;
+    logout(req, res, next) {
+        req.data.output = {
+            status: SUCCESS,
+            data: {},
+            message: ""
+        };
         next();
-    })
-}
+    }
 
-exports.updateUserProfile = (req, res, next) => {
-    let input = req.data.input;
-    let userID = input.userID;
-    let userProfile = {
-        nickname: input.nickname || "",
-        birthday: input.birthday || "",
-        signature: input.signature || "",
-        location: input.location || "",
-        sex: parseInt(input.sex) || 0,
-    };
-    UserService.updateUserProfile(userID, userProfile, updateResult => {
-        req.data.output = updateResult;
+    /** User profile */
+    async resetPassword(req, res, next) {
+        let data = req.data.input.params || {};
+
+        const telephone = data.telephone;
+
+        const result = await UserService.resetPassword(telephone);
+        return res.json(result);
+    }
+
+    async getUserProfile(req, res, next) {
+        const input = req.data.input;
+        const userID = input.targetUserID;
+        req.data.output = await UserService.getUserProfile(userID);
         next();
-    })
-}
+    }
 
-/** User avatar upload */
-exports.uploadAvatar = (req, res, next) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    atavarUpload.single('uploadAvatar')(req, res, err => {
-        if (err) {
-            console.error("---[Upload avatar error]---", err)
-            result.message = err.message;
-            return res.json(result);
-        } else if (!req.file) {
-            result.message = "Parameters is incompleteness";
-            return res.json(result);
-        }
-        let file = req.file;
-        let data = JSON.parse(req.body.params);
-        let fileName = file.filename;
-        if (_.isEmpty(data) || _.isEmpty(data.token)) {
-            result.message = "Parameters is incompleteness";
-            return res.json(result);
-        }
-        console.log("===[REQUEST DATA]===", data);
-        UserService.tokenVerify(data.token, async tokenValid => {
-            if (tokenValid.status != 200) return res.json(tokenValid);
-            let user = tokenValid.data.userProfile;
+    async updateUserProfile(req, res, next) {
+        const input = req.data.input;
+        const userID = input.userID;
+        const userProfile = {
+            nickname: input.nickname || "",
+            birthday: input.birthday || "",
+            signature: input.signature || "",
+            location: input.location || "",
+            sex: parseInt(input.sex) || 0,
+        };
+        req.data.output = await UserService.updateUserProfile(userID, userProfile);
+        next();
+    }
+
+    /** User avatar upload */
+    uploadAvatar(req, res, next) {
+        let result = {status: FAIL, data: {}, message: ""};
+        atavarUpload.single('uploadAvatar')(req, res, async err => {
+            if (err) {
+                console.error("---[Upload avatar error]---", err)
+                result.message = err.message;
+                return res.json(result);
+            } else if (!req.file) {
+                result.message = "Parameters is incompleteness";
+                return res.json(result);
+            }
+            let file = req.file;
+            let data = JSON.parse(req.body.params);
+            let fileName = file.filename;
+            if (_.isEmpty(data) || _.isEmpty(data.token)) {
+                result.message = "Parameters is incompleteness";
+                return res.json(result);
+            }
+            const tokenValid = await UserService.tokenVerify(data.token);
+            if (tokenValid.status != SUCCESS) {
+                return res.json(tokenValid);
+            }
+            const userProfile = tokenValid.data.userProfile;
             try {
                 let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
                 let avatarUrl = `${Constants.QN_DEFAULT_EXTERNAL_LINK}${uploadAvatarResult.key}`;
-                let updateResult = await UserService.updateUserAvatar(user.userID, avatarUrl);
+                let updateResult = await UserService.updateUserAvatar(userProfile.userID, avatarUrl);
                 result.status = updateResult.status;
                 result.data = {
                     avatarUrl: avatarUrl,
@@ -186,153 +181,144 @@ exports.uploadAvatar = (req, res, next) => {
             }
             return res.json(result);
         });
-    });
-}
+    }
 
-exports.uploadAvatars = (req, res, next) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    atavarUpload.array('uploadAvatar', 2)(req, res, async err => {
-        if (err) {
-            console.error("---[Upload avatar error]---", err)
-            result.message = err.message;
-        } else if (req.files.length) {
-            let files = req.files;
-            let data = req.body;
-            console.log("===[REQUEST DATA]===", files)
+    uploadAvatars(req, res, next) {
+        let result = {status: FAIL, data: {}, message: ""};
+        atavarUpload.array('uploadAvatar', 2)(req, res, async err => {
+            if (err) {
+                console.error("---[Upload avatar error]---", err)
+                result.message = err.message;
+            } else if (req.files.length) {
+                let files = req.files;
+                let data = req.body;
+                console.log("===[REQUEST DATA]===", files)
 
-            let fileName = file.filename;
+                let fileName = file.filename;
+                try {
+                    let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
+                    result.status = SUCCESS;
+                    result.data = {
+                        avatarUrl: Constants.QN_DEFAULT_EXTERNAL_LINK + uploadAvatarResult.key,
+                        width: "200",
+                        height: "200"
+                    };
+                } catch (err) {
+                    result.message = err.message;
+                }
+            } else {
+                result.message = "Parameters is incompleteness";
+            }
+            return res.json(result);
+        })
+    }
+
+    uploadAvatarByBase64(req, res, next) {
+        let form = new multiparty.Form();
+        form.parse(req, async (err, fields, files) => {
+            let avatarBase64 = fields.uploadAvatar[0].replace(/^data:image\/\w+;base64,/, '');
+            // let avatarBase64 = fields.uploadAvatar[0];
+            let userID = fields.userID[0];
+            let avatar = new Buffer(avatarBase64, 'base64');
+            // TODO
+            let fileName = userID + '-' + uuidv4() + '-' + file.filename;
+
             try {
                 let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
                 result.status = SUCCESS;
-                result.data = {
-                    avatarUrl: Constants.QN_DEFAULT_EXTERNAL_LINK + uploadAvatarResult.key,
-                    width: "200",
-                    height: "200"
-                };
+                result.data = {avatar: uploadAvatarResult.key};
             } catch (err) {
-                result.message = err.message;
+                result.message = err;
             }
-        } else {
-            result.message = "Parameters is incompleteness";
-        }
-        return res.json(result);
-    })
-}
+        });
+    }
 
-exports.uploadAvatarByBase64 = (req, res, next) => {
-    let form = new multiparty.Form();
-    form.parse(req, async (err, fields, files) => {
-        let avatarBase64 = fields.uploadAvatar[0].replace(/^data:image\/\w+;base64,/, '');
-        // let avatarBase64 = fields.uploadAvatar[0];
-        let userID = fields.userID[0];
-        let avatar = new Buffer(avatarBase64, 'base64');
-        // TODO
-        let fileName = userID + '-' + uuidv4() + '-' + file.filename;
+    /** User Contact Part */
 
-        try {
-            let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
-            result.status = SUCCESS;
-            result.data = { avatar: uploadAvatarResult.key };
-        } catch (err) {
-            result.message = err;
-        }
-    });
-}
+    requestAddContact(req, res, next) {
+        let currentUser = req.data.user;
+        let input = req.data.input;
 
-/** User Contact Part */
+        let contactID = input.contactID;
+        let message = input.reason || "";
 
-exports.requestAddContact = (req, res, next) => {
-    let currentUser = req.data.user;
-    let input = req.data.input;
+        UserService.requestAddContact(currentUser, contactID, message, inviteResult => {
+            req.data.output = inviteResult;
+            next();
+        })
+    }
 
-    let userID = input.userID;
-    let contactID = input.contactID;
-    let message = input.reason || "";
+    async acceptAddContact(req, res, next) {
+        let currentUser = req.data.user;
+        let input = req.data.input;
 
-    UserService.requestAddContact(currentUser, contactID, message, inviteResult => {
-        req.data.output = inviteResult;
+        let userID = input.userID;
+        let contactID = input.contactID;
+        let remarkName = input.remarkName;
+
+        req.data.output = await UserService.acceptAddContact(currentUser, contactID, remarkName);
         next();
-    })
-}
+    }
 
-exports.acceptAddContact = (req, res, next) => {
-    let currentUser = req.data.user;
-    let input = req.data.input;
+    rejectAddContact(req, res, next) {
+        let currentUser = req.data.user;
+        let input = req.data.input;
 
-    let userID = input.userID;
-    let contactID = input.contactID;
-    let remarkName = input.remarkName;
+        let contactID = input.contactID;
+        let rejectReason = input.reason || "";
 
-    UserService.acceptAddContact(currentUser, contactID, remarkName, contactList => {
-        req.data.output = contactList;
+        UserService.rejectAddContact(currentUser, contactID, rejectReason, contactList => {
+            req.data.output = contactList;
+            next();
+        })
+    }
+
+    async deleteContact(req, res, next) {
+        let currentUser = req.data.user;
+        let input = req.data.input;
+
+        let contactID = input.contactID;
+        req.data.output = await UserService.deleteContact(currentUser, contactID);
         next();
-    })
-}
+    }
 
-exports.rejectAddContact = (req, res, next) => {
-    let currentUser = req.data.user;
-    let input = req.data.input;
+    async updateRemark(req, res, next) {
+        let input = req.data.input;
 
-    let contactID = input.contactID;
-    let rejectReason = input.reason || "";
+        let userID = input.userID;
+        let contactID = input.contactID;
+        let remark = input.remark;
 
-    UserService.rejectAddContact(currentUser, contactID, rejectReason, contactList => {
-        req.data.output = contactList;
+        req.data.output = await UserService.updateRemark(userID, contactID, remark);
         next();
-    })
-}
+    }
 
-exports.deleteContact = (req, res, next) => {
-    let currentUser = req.data.user;
-    let input = req.data.input;
-
-    let userID = input.userID;
-    let contactID = input.contactID;
-    UserService.deleteContact(currentUser, contactID, deleteResult => {
-        req.data.output = deleteResult;
-        next();
-    })
-}
-
-exports.updateRemark = (req, res, next) => {
-    let input = req.data.input;
-
-    let userID = input.userID;
-    let contactID = input.contactID;
-    let remark = input.remark;
-
-    UserService.updateRemark(userID, contactID, remark, updateResult => {
-        req.data.output = updateResult;
-        next();
-    })
-}
-
-exports.getUserContacts = (req, res, next) => {
-    let userID = req.data.input.userID;
-    UserService.getUserContacts(userID, data => {
+    async getUserContacts(req, res, next) {
+        let userID = req.data.input.userID;
+        const data = await UserService.getUserContacts(userID);
         req.data.output = data;
         next();
-    })
-}
+    }
 
-exports.getBlackList = (req, res, next) => {
-    let input = req.data.input;
-    let userID = input.userID;
-    UserService.getBlackList(userID, userList => {
-        req.data.output = userList;
-        next();
-    })
-}
+    getBlackList(req, res, next) {
+        let input = req.data.input;
+        let userID = input.userID;
+        UserService.getBlackList(userID, userList => {
+            req.data.output = userList;
+            next();
+        })
+    }
 
-exports.searchUserByTelephoneOrNickname = (req, res, next) => {
-    let input = req.data.input;
-    let queryCondition = input.queryCondition || "";
-    let pageIndex = parseInt(input.pageIndex) || 0;
-    UserService.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
+    async searchUserByTelephoneOrNickname(req, res, next) {
+        const input = req.data.input;
+        const queryCondition = input.queryCondition || "";
+        const pageIndex = parseInt(input.pageIndex) || 0;
+        const searchResult = await UserService.searchUserByTelephoneOrNickname(queryCondition, pageIndex);
         req.data.output = searchResult;
         next();
-    })
-}
+    }
+
+};
 
 var saveFile = (filename, path, avatar) => {
     return new Promise((resolve, reject) => {
@@ -346,3 +332,5 @@ var saveFile = (filename, path, avatar) => {
         })
     })
 }
+
+module.exports = new UserController();

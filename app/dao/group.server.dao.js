@@ -208,18 +208,16 @@ exports.updateGroupMemberAlias = async (groupID, userID, alias, cb) => {
     cb(result);
 }
 
-exports.queryGroupList = (userID, cb) => {
+exports.queryGroupList = async userID => {
     let result = { status: FAIL, data: {}, message: "" };
-    queryUserAllGroupListData(userID)
-        .then(data => {
-            result.data.groups = data;
-            result.status = SUCCESS;
-            cb(result);
-        })
-        .catch(err => {
-            result.message = err;
-            cb(result);
-        })
+    try {
+        const groupData = await queryUserAllGroupListData(userID);
+        result.data.groups = groupData;
+        result.status = SUCCESS;
+    } catch (err) {
+        result.message = err.message;
+    }
+    return result;
 }
 
 exports.queryMemberByGroupIDAndMemberID = async ({ groupID, memberID }) => {

@@ -32,7 +32,7 @@ exports.RSA = {
 };
 
 exports.AES = {
-    decryptParam: (req, res, next) => {
+    decryptParam: async (req, res, next) => {
         let data = JSON.parse(req.body);      //  special for text/plain type
         // let data = req.body;
 
@@ -45,17 +45,18 @@ exports.AES = {
             })
         }
         req.data = {};
-        UserService.tokenVerify(data.token, isValid => {
-            if (isValid.status != 200) {
-                return res.json(isValid);
-            } else {
-                let user = isValid.data.userProfile;
-                data.params.userID = user.userID;
-                req.data.input = data.params;
-                req.data.user = user;
-                next();
-            }
-        })
+
+        const isValid = await UserService.tokenVerify(data.token);
+        if (isValid.status != 200) {
+            return res.json(isValid);
+        } else {
+            let user = isValid.data.userProfile;
+            data.params.userID = user.userID;
+            req.data.input = data.params;
+            req.data.user = user;
+            next();
+        }
+    
     },
     encryptParam: (req, res) => {
         let output = req.data.output;

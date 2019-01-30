@@ -1,7 +1,7 @@
 const UserDao = require('../dao/user.server.dao');
 const DaoManager = require('../daoManager/dao.server.manager');
 const Constants = require("../utils/Constants");
-const { SUCCESS, FAIL } = require("../utils/CodeConstants");
+const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 
 const IMProxie = require('../api/proxies/rongCloud.server.proxies')
 const QiniuProxie = require('../api/proxies/qiniu.server.proxies')
@@ -9,113 +9,100 @@ const QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 const uuidv4 = require('uuid/v4');
 const mongoose = require('mongoose')
 
-// create user
-exports.createUser = (user, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    let userID = mongoose.Types.ObjectId();
-    IMProxie.createUser(userID, user.nickname, null, response => {
-        if (response.error) {
-            console.log('---[IM CRETEUSER FAIL]---', response.error)
-            result.message = response.error;
-            return cb(result);
-        }
-        user._id = userID;
-        DaoManager.createUserAndGetAllInfo(user, response.data, _result => {
+class UserService {
+    // create user
+    createUser(user, cb) {
+        let result = {status: FAIL, data: {}, message: ""};
+        const userID = mongoose.Types.ObjectId();
+        IMProxie.createUser(userID, user.nickname, null, response => {
+            if (response.error) {
+                console.log('---[IM CRETEUSER FAIL]---', response.error)
+                result.message = response.error;
+                return cb(result);
+            }
+            user._id = userID;
+            const _result = await DaoManager.createUserAndGetAllInfo(user, response.data);
             cb(_result);
-        })
-    })
-}
+        });
+    };
 
-// user login
-exports.queryUserByTelephoneAndPassword = (telephone, password, deviceID, cb) => {
-    UserDao.queryUserByTelephoneAndPassword(telephone, password, _user => {
-        if (_user.status === SUCCESS) {
-            if (_user.data.userProfile.deviceID != deviceID) {
-                _user.data.userProfile = {};
-                _user.data.verifyTelephone = true;
+    // user login
+    async queryUserByTelephoneAndPassword(telephone, password, deviceID) {
+        const user = await UserDao.queryUserByTelephoneAndPassword(telephone, password);
+        if (user.status === SUCCESS) {
+            if (user.data.userProfile.deviceID != deviceID) {
+                user.data.userProfile = {};
+                user.data.verifyTelephone = true;
             } else {
-                _user.data.verifyTelephone = false;
+                user.data.verifyTelephone = false;
             }
         }
-        cb(_user)
-    })
-}
+        return user;
+    };
 
-// user login
-exports.queryUserWithoutVerify = (telephone, password, cb) => {
-    DaoManager.getUserProfileAndContactsAndGroupsByUserInfo(telephone, password, data => {
-        cb(data);
-    });
-}
+    // user login
+    queryUserWithoutVerify(telephone, password, cb) {
+        DaoManager.getUserProfileAndContactsAndGroupsByUserInfo(telephone, password, data => {
+            cb(data);
+        });
+    };
 
-exports.tokenVerify = (token, cb) => {
-    UserDao.tokenVerify(token, callback => {
-        cb(callback);
-    })
-}
+    tokenVerify(token) {
+        return UserDao.tokenVerify(token);
+    };
 
-exports.tokenVerifyLogin = (token, cb) => {
-    DaoManager.getUserProfileAndContactsAndGroups(token, callback => {
-        cb(callback);
-    })
-}
-
-exports.isTelephoneExist = (telephone, cb) => {
-    UserDao.isTelephoneExist(telephone, isExist => {
-        cb(isExist)
-    })
-}
-
-// reset user's password
-exports.resetPassword = (telephone, cb) => {
-    UserDao.resetPassword(telephone, newpwd, _result => {
-        cb(_result)
-    })
-}
-
-exports.updateDeviceID = (telephone, password, deviceID, cb) => {
-    DaoManager.updateDeviceIDAndGetUserInfo(telephone, password, deviceID, result => {
-        cb(result);
-    })
-}
-
-exports.getUserProfile = (userID, cb) => {
-    UserDao.queryByUserID(userID, callback => {
-        cb(callback)
-    })
-}
-
-exports.updateUserProfile = (userID, userProfile, cb) => {
-    UserDao.updateUserProfile(userID, userProfile, callback => {
-        cb(callback);
-    })
-}
-
-exports.updateUserAvatar = (userID, avatarUrl) => {
-    return UserDao.updateUserAvatar(userID, avatarUrl);
-}
-
-exports.uploadAvatar = (telephone, cb) => {
-    let fileName = telephone + '-' + uuidv4() + '.jpg';
-    QiniuProxie.uploadAvatar(fileName, '/avatar/avatar.jpg')
-        .then(result => {
-            cb(result);
+    tokenVerifyLogin(token, cb) {
+        DaoManager.getUserProfileAndContactsAndGroups(token, callback => {
+            cb(callback);
         })
-        .catch(err => {
-            cb(err);
-        })
-}
-
-/** User Contacts Part */
-
-exports.requestAddContact = (currentUser, contactID, message, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    let userID = currentUser.userID.toString();
-    if (userID === contactID) {
-        result.message = 'You can\'t add yourself to a contact';
-        return cb(result);
     }
-    UserDao.queryByUserID(contactID, async user => {
+
+    isTelephoneExist(telephone) {
+        return UserDao.isTelephoneExist(telephone);
+    }
+
+    // reset user's password
+    resetPassword(telephone) {
+        return UserDao.resetPassword(telephone, newpwd);
+    }
+
+    updateDeviceID(telephone, password, deviceID) {
+        return DaoManager.updateDeviceIDAndGetUserInfo(telephone, password, deviceID);
+    }
+
+    getUserProfile(userID) {
+        return UserDao.queryByUserID(userID);
+    }
+
+    updateUserProfile(userID, userProfile) {
+        return UserDao.updateUserProfile(userID, userProfile);
+    }
+
+    updateUserAvatar(userID, avatarUrl) {
+        return UserDao.updateUserAvatar(userID, avatarUrl);
+    }
+
+    uploadAvatar(telephone, cb) {
+        let fileName = telephone + '-' + uuidv4() + '.jpg';
+        QiniuProxie.uploadAvatar(fileName, '/avatar/avatar.jpg')
+            .then(result => {
+                cb(result);
+            })
+            .catch(err => {
+                cb(err);
+            })
+    }
+
+    /** User Contacts Part */
+
+    async requestAddContact(currentUser, contactID, message, cb) {
+        let result = {status: FAIL, data: {}, message: ""};
+        let userID = currentUser.userID.toString();
+        if (userID === contactID) {
+            result.message = 'You can\'t add yourself to a contact';
+            return cb(result);
+        }
+        const user = await UserDao.queryByUserID(contactID);
         if (user.status === SUCCESS) {
             try {
                 let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
@@ -133,18 +120,17 @@ exports.requestAddContact = (currentUser, contactID, message, cb) => {
                     });
                     cb(result);
                 }
-            } catch(err) {
+            } catch (err) {
                 console.log(err);
-            };
+            }
         } else {
             cb(user);
         }
-    })
-}
+    }
 
-exports.acceptAddContact = (currentUser, contactID, remarkName, cb) => {
-    let userID = currentUser.userID.toString();
-    UserDao.acceptAddContact(userID, contactID, remarkName || '', async result => {
+    async acceptAddContact(currentUser, contactID, remarkName) {
+        let userID = currentUser.userID.toString();
+        let result = await UserDao.acceptAddContact(userID, contactID, remarkName || '');
         if (result.status === SUCCESS) {
             try {
                 const message = "You've added him to be a contact";
@@ -163,42 +149,43 @@ exports.acceptAddContact = (currentUser, contactID, remarkName, cb) => {
                 result.message = err;
             }
         }
-        cb(result)
-    });
-}
-
-exports.rejectAddContact = async (currentUser, contactID, rejectReason, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-
-    let userID = currentUser.userID.toString();
-
-    let isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
-    if (isContact) {
-        result.message = "Error operating, this user is not your contact";
-        return cb(result);
+        return result;
     }
 
-    const rejectResult = await IMProxie.sendContactNotification({
-        currentUser: currentUser,
-        contactID: contactID,
-        message: rejectReason,
-        operation: Constants.CONTACT_OPERATION_REJECT,
-        userProfile: currentUser,
-    });
+    async rejectAddContact (currentUser, contactID, rejectReason, cb) {
+        let result = {status: FAIL, data: {}, message: ""};
 
-    if (rejectResult === 200) {
-        result.status = SUCCESS;
-    } else {
-        console.log(rejectResult);
-        result.message = `Server Busy, Please checking your options and try again later`;
+        let userID = currentUser.userID.toString();
+
+        let isContact = await
+        UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
+        if (isContact) {
+            result.message = "Error operating, this user is not your contact";
+            return cb(result);
+        }
+
+        const rejectResult = await
+        IMProxie.sendContactNotification({
+            currentUser: currentUser,
+            contactID: contactID,
+            message: rejectReason,
+            operation: Constants.CONTACT_OPERATION_REJECT,
+            userProfile: currentUser,
+        });
+
+        if (rejectResult === 200) {
+            result.status = SUCCESS;
+        } else {
+            console.log(rejectResult);
+            result.message = `Server Busy, Please checking your options and try again later`;
+        }
+        cb(result);
     }
-    cb(result);
-}
 
-exports.deleteContact = (currentUser, contactID, cb) => {
-    let userID = currentUser.userID.toString();
+    deleteContact(currentUser, contactID) {
+        let userID = currentUser.userID.toString();
 
-    UserDao.deleteContact(userID, contactID, async result => {
+        const result = await UserDao.deleteContact(userID, contactID);
         await IMProxie.sendContactNotification({
             currentUser: currentUser,
             contactID: contactID,
@@ -206,29 +193,25 @@ exports.deleteContact = (currentUser, contactID, cb) => {
             operation: Constants.CONTACT_OPERATION_DELETE,
             userProfile: currentUser,
         });
-        cb(result);
-    });
-}
+        return result;
+    }
 
-exports.updateRemark = (userID, contactID, remark, cb) => {
-    UserDao.updateRemark(userID, contactID, remark, updateResult => {
-        cb(updateResult);
-    })
-}
+    updateRemark(userID, contactID, remark, cb) {
+        return UserDao.updateRemark(userID, contactID, remark);
+    }
 
-exports.getUserContacts = (userID, cb) => {
-    UserDao.queryUserContactsByUserID(userID, userList => {
-        cb(userList);
-    })
-}
+    getUserContacts(userID) {
+        return UserDao.queryUserContactsByUserID(userID);
+    }
 
-exports.searchUserByTelephoneOrNickname = (queryCondition, pageIndex, cb) => {
-    UserDao.searchUserByTelephoneOrNickname(queryCondition, pageIndex, searchResult => {
-        cb(searchResult);
-    })
-}
+    searchUserByTelephoneOrNickname(queryCondition, pageIndex) {
+        return UserDao.searchUserByTelephoneOrNickname(queryCondition, pageIndex);
+    }
 
-exports.getBlackList = (telephone, cb) => {
-    // TODO
-    cb([])
-}
+    getBlackList(telephone, cb) {
+        // TODO
+        cb([])
+    }
+};
+
+module.exports = new UserService();

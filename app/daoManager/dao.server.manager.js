@@ -1,62 +1,62 @@
 const UserDao = require("../dao/user.server.dao");
 const GroupDao = require("../dao/group.server.dao");
+const {SUCCESS} = require("../utils/CodeConstants");
 
-exports.getUserProfileAndContactsAndGroups = (token, cb) => {
-    UserDao.tokenVerify(token, userData => {
-        if (userData.status != 200) return cb(userData);
+class DAOManager {
+    getUserProfileAndContactsAndGroups(token, cb) {
+        UserDao.tokenVerify(token, async userData => {
+            if (userData.status != SUCCESS) return cb(userData);
 
-        let userID = userData.data.userProfile.userID || "";
-        queryContactsAndGroups(userID, userData, result => {
-            return cb(result);
-        });
-    })
-}
-
-exports.getUserProfileAndContactsAndGroupsByUserInfo = (telephone, password, cb) => {
-    UserDao.queryUserByTelephoneAndPassword(telephone, password, userData => {
-        if (userData.status != 200) return cb(userData);
-
-        let userID = userData.data.userProfile.userID;
-        queryContactsAndGroups(userID, userData, result => {
-            return cb(result);
-        });
-    })
-}
-
-exports.createUserAndGetAllInfo = (user, token, cb) => {
-    UserDao.createUser(user, token, userData => {
-        if (userData.status != 200) return cb(userData);
-
-        let userID = userData.data.userProfile.userID;
-        queryContactsAndGroups(userID, userData, result => {
-            return cb(result)
-        });
-    })
-}
-
-exports.updateDeviceIDAndGetUserInfo = (telephone, password, deviceID, cb) => {
-    UserDao.updateDeviceID(telephone, password, deviceID, userData => {
-        if (userData.status != 200) return cb(userData);
-
-        let userID = userData.data.userProfile.userID;
-        queryContactsAndGroups(userID, userData, result => {
-            return cb(result)
-        });
-    })
-}
-
-var queryContactsAndGroups = (userID, userData, cb) => {
-    let result = JSON.parse(JSON.stringify(userData));
-
-    UserDao.queryUserContactsByUserID(userID, contactsData => {
-        if (contactsData.status != 200) return cb(contactsData);
-
-        result.data.contacts = contactsData.data.contacts;
-        GroupDao.queryGroupList(userID, groupsData => {
-            if (groupsData.status != 200) return cb(groupsData);
-            result.data.groups = groupsData.data.groups;
-
+            const userID = userData.data.userProfile.userID || "";
+            const result = await queryContactsAndGroups(userID, userData);
             cb(result);
-        });
-    })
-}
+        })
+    }
+
+    getUserProfileAndContactsAndGroupsByUserInfo(telephone, password, cb) {
+        UserDao.queryUserByTelephoneAndPassword(telephone, password, async userData => {
+            if (userData.status != SUCCESS) return cb(userData);
+
+            const userID = userData.data.userProfile.userID;
+            const result = await queryContactsAndGroups(userID, userData);
+            cb(result);
+        })
+    }
+
+    async createUserAndGetAllInfo(user, token) {
+        const createResult = await UserDao.createUser(user, token);
+        if (createResult.status != SUCCESS) {
+            return createResult;
+        }
+        const userID = createResult.data.userProfile.userID;
+        const result = await queryContactsAndGroups(userID, createResult);
+        return result;
+    }
+
+    async updateDeviceIDAndGetUserInfo(telephone, password, deviceID) {
+        const userData = await UserDao.updateDeviceID(telephone, password, deviceID);
+        if (userData.status != SUCCESS) {
+            return userData;   
+        }
+
+        const userID = userData.data.userProfile.userID;
+        const result = await queryContactsAndGroups(userID, userData);
+        return result;
+    };
+};
+
+var queryContactsAndGroups = (userID, userData) => {
+    let result = JSON.parse(JSON.stringify(userData));
+    const contactsData = await UserDao.queryUserContactsByUserID(userID);
+    if (contactsData.status != SUCCESS) return cb(contactsData);
+
+    result.data.contacts = contactsData.data.contacts;
+    const queryResult = await GroupDao.queryGroupList(userID);
+    if (queryResult.status != SUCCESS) {
+        return queryResult;
+    }
+    result.data.groups = queryResult.data.groups;
+    return result;
+};
+
+module.exports = new DAOManager();

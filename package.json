@@ -43,9 +43,10 @@
   },
   "devDependencies": {
     "ava": "^1.2.0",
+    "chai": "^4.1.2",
     "cross-env": "^5.2.0",
+    "mongodb-memory-server": "^3.0.0",
     "nodemon": "^1.18.9",
-    "sinon": "^7.2.3",
-    "chai": "^4.1.2"
+    "sinon": "^7.2.3"
   }
 }
