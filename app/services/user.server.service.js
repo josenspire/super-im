@@ -3,10 +3,9 @@ const DaoManager = require('../daoManager/dao.server.manager');
 const Constants = require("../utils/Constants");
 const { SUCCESS, FAIL } = require("../utils/CodeConstants");
 
-let IMProxie = require('../api/proxies/rongCloud.server.proxies')
-let QiniuProxie = require('../api/proxies/qiniu.server.proxies')
+const IMProxie = require('../api/proxies/rongCloud.server.proxies')
+const QiniuProxie = require('../api/proxies/qiniu.server.proxies')
 
-const _ = require('lodash');
 const uuidv4 = require('uuid/v4');
 const mongoose = require('mongoose')
 

@@ -24,6 +24,7 @@
     "express-session": "^1.15.6",
     "glob": "^7.1.2",
     "graceful": "^1.0.1",
+    "jsrsasign": "^8.0.12",
     "jwt-simple": "^0.5.1",
     "lodash": "^4.17.4",
     "log4js": "^4.0.1",
