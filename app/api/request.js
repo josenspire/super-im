@@ -1,6 +1,5 @@
 let https = require('https');
 let IMConfig = require('../../configs/config').IMConfig;
-let fs = require('fs');
 let fetch = require('node-fetch');
 
 let host = IMConfig.host;
