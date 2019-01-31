@@ -11,7 +11,6 @@ const jwt = require('jwt-simple');
 const mongoose = require('mongoose');
 
 class UserRepository {
-
     /**
      * Create user and initial concat list
      * @param user

@@ -5,12 +5,12 @@ const GroupModel = require("../models/group.server.model");
 const MemberModel = require("../models/member.server.model");
 
 const Constants = require("../utils/Constants");
-const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 
 class GroupRepository {
     /**
      * Create a user contact group
-     * @param {string} currentUser
+     * @param {Object} currentUser
      * @param {Object} groupInfo
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
@@ -72,7 +72,7 @@ class GroupRepository {
 
     /**
      * Join to one group
-     * @param {string} member
+     * @param {Object} member
      * @param {string} groupID
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
@@ -104,7 +104,7 @@ class GroupRepository {
 
     /**
      * Kick a group member
-     * @param {string} currentUser
+     * @param {Object} currentUser
      * @param {string} groupID
      * @param {string} targetUserID
      * @returns {Promise<{status: number, data: {}, message: string}>}
@@ -207,8 +207,8 @@ class GroupRepository {
 
     /**
      * Rename group name
-     * @param groupID
-     * @param name
+     * @param {string} groupID
+     * @param {string} name
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
     async renameGroup(groupID, name) {
@@ -422,22 +422,22 @@ var queryMembersByGroupID = async groupID => {
     } else {
         return members.filter(member => (member.userID !== null));
     }
-}
+};
 
 var isGroupOwnerOrAdmin = (group, userID) => {
     return (group.owner.toString() === userID.toString()) ? true : false;
-}
+};
 
 var isMemberExistedGroup = (groupMembers, targetUserID) => {
     let index = _.findIndex(groupMembers, o => {
         return _.toString(o.userID._id) === _.toString(targetUserID);
     });
     return (index > -1);
-}
+};
 
 var checkTargetUserIsCurrentUser = (targetUserID, currentUserID) => {
     return targetUserID.toString() === currentUserID.toString();
-}
+};
 
 var generateGroupObject = (currentUser, groupID, groupInfo) => {
     let group = {};
@@ -447,7 +447,7 @@ var generateGroupObject = (currentUser, groupID, groupInfo) => {
     group.owner = currentUserID;
     group.name = groupInfo.name;
     return group;
-}
+};
 
 var generateMembersObject = (groupID, members, currentUser) => {
     let _members = members.map(member => {
@@ -455,7 +455,7 @@ var generateMembersObject = (groupID, members, currentUser) => {
     });
     if (currentUser) _members.unshift({groupID: groupID, userID: currentUser.userID});
     return _members;
-}
+};
 
 var saveGroup = group => {
     const groupModel = new GroupModel(group);
@@ -527,7 +527,7 @@ var dismissGroup = async groupID => {
         console.log(err);
         throw new Error(err);
     }
-}
+};
 
 var removeGroup = groupID => {
     try {
@@ -547,7 +547,7 @@ var removeDuplicate = (orgMembers, newMembers) => {
         if (index > -1) continue;
         orgMembers.push(member);
     }
-}
+};
 
 var convertGroup = group => {
     let _group = JSON.parse(JSON.stringify(group));
@@ -558,7 +558,7 @@ var convertGroup = group => {
 
     convertGroupMembers(_group.members);
     return _group;
-}
+};
 
 var convertGroupMembers = members => {
     return members.filter(member => {
@@ -573,7 +573,7 @@ var convertGroupMembers = members => {
 
         return member;
     })
-}
+};
 
 var convertGroupMembersList = members => {
     return members.map(member => {
@@ -592,7 +592,7 @@ var convertGroupList = (groups, members) => {
         _groups.push(group);
     }
     return _groups;
-}
+};
 
 var convertGroupData = group => {
     let _group = JSON.parse(JSON.stringify(group));
@@ -602,7 +602,7 @@ var convertGroupData = group => {
     delete _group.updateTime;
 
     return _group;
-}
+};
 
 var convertGroupListData = groups => {
     return groups.map(group => {
@@ -622,6 +622,6 @@ var convertUser = user => {
     delete _user.password;
     delete _user.deviceID;
     return _user;
-}
+};
 
 module.exports = new GroupRepository();

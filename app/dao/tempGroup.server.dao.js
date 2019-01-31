@@ -1,6 +1,6 @@
 const TempGroupModel = require('../models/tempGroup.server.model');
 const MemberModel = require('../models/member.server.model');
-const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 
 const uuidv4 = require('uuid/v4');
 

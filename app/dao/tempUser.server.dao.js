@@ -1,5 +1,5 @@
 const TempUserModel = require('../models/tempUser.server.model');
-const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 
 const uuidv4 = require('uuid/v4');
 const _ = require('lodash');
