@@ -31,9 +31,9 @@ exports.sendSMS = async (req, res, next) => {
     }
 };
 
-exports.verifyCode = async (req, res, next) => {
+exports.verifyCode = (req, res, next) => {
     const params = req.data.input.params || {};
-    RSAUtil.privateDecrypt(params, data => {
+    RSAUtil.privateDecrypt(params, async data => {
         const clientPublicKey = data.clientPublicKey;
         const telephone = data.telephone;
         const verifyCode = data.verifyCode;

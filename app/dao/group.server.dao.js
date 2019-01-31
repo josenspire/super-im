@@ -5,392 +5,423 @@ const GroupModel = require("../models/group.server.model");
 const MemberModel = require("../models/member.server.model");
 
 const Constants = require("../utils/Constants");
-const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
 
-exports.createGroup = async (currentUser, groupInfo, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    let groupID = mongoose.Types.ObjectId();
+class GroupRepository {
+    /**
+     * Create a user contact group
+     * @param {string} currentUser
+     * @param {Object} groupInfo
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async createGroup(currentUser, groupInfo) {
+        let result = {status: FAIL, data: {}, message: ""};
+        const groupID = mongoose.Types.ObjectId();
 
-    try {
-        let isGroupOverflow = await isGroupCountOverflow(currentUser.userID);
-        if (isGroupOverflow) {
-            result.message = `Current user's group count is out of max user group count limit (${Constants.MAX_USER_GROUP_OWN_COUNT})`;
-        } else {
-            let group = generateGroupObject(currentUser, groupID, groupInfo);
-            let members = generateMembersObject(groupID, groupInfo.members, currentUser);
+        try {
+            const isGroupOverflow = await isGroupCountOverflow(currentUser.userID);
+            if (isGroupOverflow) {
+                result.message = `Current user's group count is out of max user group count limit (${Constants.MAX_USER_GROUP_OWN_COUNT})`;
+            } else {
+                let group = generateGroupObject(currentUser, groupID, groupInfo);
+                let members = generateMembersObject(groupID, groupInfo.members, currentUser);
 
-            let _group = JSON.parse(JSON.stringify(await saveGroup(group)));
-            await saveMembers(members);
-            _group.members = await queryMembersByGroupID(groupID);
+                let _group = JSON.parse(JSON.stringify(await saveGroup(group)));
+                await saveMembers(members);
+                _group.members = await queryMembersByGroupID(groupID);
 
-            result.data.group = convertGroup(_group);
-            result.status = SUCCESS;
+                result.data.group = convertGroup(_group);
+                result.status = SUCCESS;
+            }
+        } catch (err) {
+            console.log("---[CREATE GROUP ERROR]---", err)
+            result.message = err;
         }
-    } catch (err) {
-        console.log("---[CREATE GROUP ERROR]---", err)
-        result.message = err;
-    }
-    cb(result);
-};
+        return result;
+    };
 
-exports.addGroupMembers = async (groupID, members, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        let groupMembers = await queryMembersByGroupID(groupID);
-        // TODO 
-        // need to check group is existed ?
-        if ((groupMembers.length + members.length) > Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT) {
-            result.message = `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`;
-            result.status = FAIL;
-        } else {
-            let membersObject = generateMembersObject(groupID, members);
-            await addMemberToGroup(groupID, membersObject);
-            // TODO
-            // need to check and remove dulplicate members
-            let group = await queryGroupDataByGroupID(groupID);
-            result.data.group = convertGroup(group);
-            result.status = SUCCESS;
-        }
-    } catch (err) {
-        console.log("---[ADD GROUP ERROR]---", err)
-        result.message = err;
-    }
-    cb(result);
-}
-
-exports.joinGroup = async (member, groupID, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        // TODO 
-        // need to check group is existed ?
-        let groupMembers = await queryMembersByGroupID(groupID);
-        if (isMemberExistedGroup(groupMembers, member.userID)) {
-            result.message = "You are currently group member, please do not repeat";
-        } else {
-            if ((groupMembers.length >= Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT)) {
+    /**
+     * Add members to group
+     * @param {string} groupID
+     * @param {Array} members
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async addGroupMembers(groupID, members) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            let groupMembers = await queryMembersByGroupID(groupID);
+            // TODO: need to check group is existed ?
+            if ((groupMembers.length + members.length) > Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT) {
                 result.message = `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`;
+                result.status = FAIL;
             } else {
-                await joinToGroup(groupID, member);
-
-                let currentGroupData = await queryGroupDataByGroupID(groupID);
-                result.data.group = convertGroup(currentGroupData);
+                const membersObject = generateMembersObject(groupID, members);
+                await addMemberToGroup(groupID, membersObject);
+                // TODO
+                // need to check and remove dulplicate members
+                let group = await queryGroupDataByGroupID(groupID);
+                result.data.group = convertGroup(group);
                 result.status = SUCCESS;
             }
+        } catch (err) {
+            console.log("---[ADD GROUP ERROR]---", err)
+            result.message = err;
         }
-    } catch (err) {
-        console.log("---[JOIN GROUP ERROR]---", err)
-        result.message = err;
+        return result;
     }
-    cb(result);
-}
 
-exports.kickGroupMember = async (currentUser, groupID, targetUserID, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        let group = await queryGroupByID(groupID);
-        let groupMembers = await queryMembersByGroupID(groupID);
-        if (checkTargetUserIsCurrentUser(targetUserID, group.owner)) {
-            result.message = "You can't kick your self as a member";
-        } else if (!isGroupOwnerOrAdmin(group, currentUser.userID)) {
-            result.message = "You do not have the right to do this";
-        } else {
-            if (!isMemberExistedGroup(groupMembers, targetUserID)) {
-                result.message = "This user is not in current group";
+    /**
+     * Join to one group
+     * @param {string} member
+     * @param {string} groupID
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async joinGroup(member, groupID) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            // TODO 
+            // need to check group is existed ?
+            const groupMembers = await queryMembersByGroupID(groupID);
+            if (isMemberExistedGroup(groupMembers, member.userID)) {
+                result.message = "You are currently group member, please do not repeat";
             } else {
-                await removeGroupMember(groupID, targetUserID);
+                if ((groupMembers.length >= Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT)) {
+                    result.message = `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`;
+                } else {
+                    await joinToGroup(groupID, member);
 
-                let currentGroupData = await queryGroupDataByGroupID(groupID);
-                result.data.group = convertGroup(currentGroupData);
-                result.status = SUCCESS;
-            }
-        }
-    } catch (err) {
-        console.log("---[KICK GROUP MEMBER ERROR]---", err)
-        result.message = err;
-    }
-    cb(result);
-}
-
-exports.quitGroup = async (currentUserID, groupID, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        let group = await queryGroupByID(groupID);
-        let groupMembers = await queryMembersByGroupID(groupID);
-
-        if (!isMemberExistedGroup(groupMembers, currentUserID)) {
-            result.message = "You are not in current group";
-        } else {
-            if (groupMembers.length <= 1) {
-                // If members less than 1, group will dismiss
-                await dismissGroup(groupID);
-                result.data = {
-                    isDismiss: true,
-                };
-            } else {
-                await removeGroupMember(groupID, currentUserID);
-                if (isGroupOwnerOrAdmin(group, currentUserID)) {
-                    // Default make secondly members as owner
-                    updateGroupOwner(groupID, groupMembers[1].userID._id);
+                    let currentGroupData = await queryGroupDataByGroupID(groupID);
+                    result.data.group = convertGroup(currentGroupData);
+                    result.status = SUCCESS;
                 }
-                let currentGroupData = await queryGroupDataByGroupID(groupID);
-                result.data = {
-                    group: convertGroup(currentGroupData),
-                    isDismiss: false,
-                };
             }
-            result.status = SUCCESS;
+        } catch (err) {
+            console.log("---[JOIN GROUP ERROR]---", err)
+            result.message = err;
         }
-    } catch (err) {
-        console.log("---[QUIT GROUP ERROR]---", err)
-        result.status = FAIL;
-        result.message = err;
-        result.data = {};
+        return result;
+    };
+
+    /**
+     * Kick a group member
+     * @param {string} currentUser
+     * @param {string} groupID
+     * @param {string} targetUserID
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async kickGroupMember(currentUser, groupID, targetUserID) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            const group = await queryGroupByID(groupID);
+            let groupMembers = await queryMembersByGroupID(groupID);
+            if (checkTargetUserIsCurrentUser(targetUserID, group.owner)) {
+                result.message = "You can't kick your self as a member";
+            } else if (!isGroupOwnerOrAdmin(group, currentUser.userID)) {
+                result.message = "You do not have the right to do this";
+            } else {
+                if (!isMemberExistedGroup(groupMembers, targetUserID)) {
+                    result.message = "This user is not in current group";
+                } else {
+                    await removeGroupMember(groupID, targetUserID);
+
+                    let currentGroupData = await queryGroupDataByGroupID(groupID);
+                    result.data.group = convertGroup(currentGroupData);
+                    result.status = SUCCESS;
+                }
+            }
+        } catch (err) {
+            console.log("---[KICK GROUP MEMBER ERROR]---", err)
+            result.message = err;
+        }
+        return result;
+    };
+
+    /**
+     * Quit group
+     * @param {string} currentUserID
+     * @param {string} groupID
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async quitGroup(currentUserID, groupID) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            const group = await queryGroupByID(groupID);
+            const groupMembers = await queryMembersByGroupID(groupID);
+
+            if (!isMemberExistedGroup(groupMembers, currentUserID)) {
+                result.message = "You are not in current group";
+            } else {
+                if (groupMembers.length <= 1) {
+                    // If members less than 1, group will dismiss
+                    await dismissGroup(groupID);
+                    result.data = {
+                        isDismiss: true,
+                    };
+                } else {
+                    await removeGroupMember(groupID, currentUserID);
+                    if (isGroupOwnerOrAdmin(group, currentUserID)) {
+                        // Default make secondly members as owner
+                        updateGroupOwner(groupID, groupMembers[1].userID._id);
+                    }
+                    let currentGroupData = await queryGroupDataByGroupID(groupID);
+                    result.data = {
+                        group: convertGroup(currentGroupData),
+                        isDismiss: false,
+                    };
+                }
+                result.status = SUCCESS;
+            }
+        } catch (err) {
+            console.log("---[QUIT GROUP ERROR]---", err)
+            result.status = FAIL;
+            result.message = err;
+            result.data = {};
+        }
+        return result;
     }
-    cb(result);
-}
 
-exports.dismissGroup = async (userID, groupID, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        let group = await queryGroupByID(groupID);
+    /**
+     * Dismiss use's group
+     * @param {string} userID
+     * @param {string} groupID
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async dismissGroup(userID, groupID) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            const group = await queryGroupByID(groupID);
+            if (!isGroupOwnerOrAdmin(group, userID)) {
+                result.message = "You do not have the right to do this";
+            } else {
+                await dismissGroup(groupID);
+                let currentGroupData = await queryGroupDataByGroupID(groupID);
+                result.data.group = convertGroup(currentGroupData);
+                result.status = SUCCESS;
+            }
+        } catch (err) {
+            console.log("---[DISMISS GROUP ERROR]---", err)
+            result.message = err;
+        }
+        return result;
+    };
 
-        if (!isGroupOwnerOrAdmin(group, userID)) {
-            result.message = "You do not have the right to do this";
-        } else {
-            await dismissGroup(groupID);
+    /**
+     * Rename group name
+     * @param groupID
+     * @param name
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async renameGroup(groupID, name) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            await updateGroupProfile(groupID, {name});
             let currentGroupData = await queryGroupDataByGroupID(groupID);
             result.data.group = convertGroup(currentGroupData);
             result.status = SUCCESS;
+        } catch (err) {
+            result.message = err;
         }
-    } catch (err) {
-        console.log("---[DISMISS GROUP ERROR]---", err)
-        result.message = err;
-    }
-    cb(result);
-}
+        return result;
+    };
 
-exports.renameGroup = async (groupID, name, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        let opts = { name: name };
-        await updateGroupProfile(groupID, opts);
-        let currentGroupData = await queryGroupDataByGroupID(groupID);
-        result.data.group = convertGroup(currentGroupData);
-        result.status = SUCCESS;
-    } catch (err) {
-        result.message = err;
-    }
-    cb(result);
-}
+    /**
+     * Update group notice information
+     * @param {string} groupID
+     * @param {string} notice
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async updateGroupNotice(groupID, notice) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            await updateGroupProfile(groupID, {notice});
+            let currentGroupData = await queryGroupDataByGroupID(groupID);
+            result.data.group = convertGroup(currentGroupData);
+            result.status = SUCCESS;
+        } catch (err) {
+            result.message = err;
+        }
+        return result;
+    };
 
-exports.updateGroupNotice = async (groupID, notice, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        let opts = { notice: notice };
-        await updateGroupProfile(groupID, opts);
-        let currentGroupData = await queryGroupDataByGroupID(groupID);
-        result.data.group = convertGroup(currentGroupData);
-        result.status = SUCCESS;
-    } catch (err) {
-        result.message = err;
+    /**
+     * Update group member alias
+     * @param {string} groupID
+     * @param {string} userID
+     * @param {string} alias
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async updateGroupMemberAlias(groupID, userID, alias) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            await updateGroupMemberAlias(groupID, userID, alias);
+            result.status = SUCCESS;
+        } catch (err) {
+            result.message = err;
+        }
+        return result;
     }
-    cb(result);
-}
 
-exports.updateGroupMemberAlias = async (groupID, userID, alias, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        await updateGroupMemberAlias(groupID, userID, alias);
-        result.status = SUCCESS;
-    } catch (err) {
-        result.message = err;
-    }
-    cb(result);
-}
+    /**
+     * Query group list by userID
+     * @param {string} userID
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async queryGroupList(userID) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            const groupData = await queryUserAllGroupListData(userID);
+            result.data.groups = groupData;
+            result.status = SUCCESS;
+        } catch (err) {
+            result.message = err.message;
+        }
+        return result;
+    };
 
-exports.queryGroupList = async userID => {
-    let result = { status: FAIL, data: {}, message: "" };
-    try {
-        const groupData = await queryUserAllGroupListData(userID);
-        result.data.groups = groupData;
-        result.status = SUCCESS;
-    } catch (err) {
-        result.message = err.message;
-    }
-    return result;
-}
-
-exports.queryMemberByGroupIDAndMemberID = async ({ groupID, memberID }) => {
-    return new Promise((resolve, reject) => {
-        MemberModel.findOne({ groupID, userID: memberID })
+    /**
+     * Query group member by groupID and memberID
+     * @param {string} groupID
+     * @param {string} memberID
+     * @returns {Promise<*>}
+     */
+    async queryMemberByGroupIDAndMemberID({groupID, memberID}) {
+        const member = await MemberModel.findOne({groupID, userID: memberID})
             .populate("userID")
             .select('-_id')
-            .exec((err, member) => {
-                if (err) return reject(`Server error, query member data fail: ${err.message}`);
-                if (!member) return resolve(null);
-                let _member = JSON.parse(JSON.stringify(member));
-                delete _member._id;
-                delete _member.updateTime;
-                delete _member.createTime;
-                delete _member.groupID;
-                _member.userProfile = convertUser(_member.userID);
-                delete _member.userID;
-                resolve(_member);
+            .exec()
+            .catch(err => {
+                throw new Error(`Server error, query member data fail: ${err.message}`);
             });
-    });
+        if (!member) {
+            return resolve(null);
+        }
+        let _member = Object.assign({}, member);
+        delete _member._id;
+        delete _member.updateTime;
+        delete _member.createTime;
+        delete _member.groupID;
+        _member.userProfile = convertUser(_member.userID);
+        delete _member.userID;
+        return _member;
+    };
 };
 
-var queryUserAllGroupListData = userID => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            let groups = await queryGroupList(userID);
-
-            let groupsPromises = groups.map(group => {
-                return queryGroupByID(group.groupID);
-            });
-            let membersPromises = groups.map(group => {
-                return queryGroupMembers(group.groupID);
-            });
-
-            let groupsData = await Promise.all(groupsPromises);
-            let membersData = await Promise.all(membersPromises);
-
-            let _data = convertGroupList(convertGroupListData(groupsData), convertGroupMembersList(membersData));
-            resolve(_data);
-        } catch (err) {
-            reject(err);
-        }
-    });
-}
-
-var queryGroupDataByGroupID = groupID => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            let result = await Promise.all([queryGroupByID(groupID), queryGroupMembers(groupID)]);
-            let group = {};
-            group = JSON.parse(JSON.stringify(result[0]));
-            group.members = result[1];
-            resolve(group);
-        } catch (err) {
-            console.log(err);
-            reject(err);
-        }
-    })
-}
-
-var updateGroupProfile = (groupID, opts) => {
-    return new Promise((resolve, reject) => {
-        GroupModel.findOneAndUpdate({ _id: groupID, status: true }, { $set: opts }, async (err, group) => {
-            if (err) return reject(err.message);
-            if (!group) return reject(`Current group is not exist, update group profile fail`);
-
-            resolve();
+var queryUserAllGroupListData = async userID => {
+    try {
+        const groups = await queryGroupList(userID);
+        const groupsPromises = groups.map(group => {
+            return queryGroupByID(group.groupID);
         });
-    })
-}
+        const membersPromises = groups.map(group => {
+            return queryGroupMembers(group.groupID);
+        });
+        let groupsData = await Promise.all(groupsPromises);
+        let membersData = await Promise.all(membersPromises);
+        return convertGroupList(convertGroupListData(groupsData), convertGroupMembersList(membersData));
+    } catch (err) {
+        throw new Error(err);
+    }
+};
 
-var updateGroupMemberAlias = (groupID, userID, alias) => {
-    return new Promise(async (resolve, reject) => {
-        MemberModel.findOneAndUpdate({ groupID: groupID, userID: userID }, { $set: { alias: alias } }, (err, member) => {
-            if (err) return reject(err.message);
-            if (!member) return reject("Sorry, this member is not exist or group is dismiss");
-            resolve();
-        })
-    })
-}
+var queryGroupDataByGroupID = async groupID => {
+    try {
+        const result = await Promise.all([queryGroupByID(groupID), queryGroupMembers(groupID)]);
+        let group = {};
+        group = JSON.parse(JSON.stringify(result[0]));
+        group.members = result[1];
+        return group;
+    } catch (err) {
+        console.log(err);
+        throw new Error(err);
+    }
+};
 
-var queryGroupList = userID => {
-    return new Promise((resolve, reject) => {
-        MemberModel.find({ userID: userID, status: 0 })
-            // .populate('groupID')
-            .select('groupID')
-            .exec((err, groups) => {
-                if (err) {
-                    reject(`Server error, query user's group fail: ${err.message}`);
-                } else {
-                    resolve(groups);
-                }
-            })
-        // MemberModel.aggregate([
-        //     {
-        //         $group: {
-        //             _id: { userID: "$userID" }
-        //         },
-        //     },
-        //     // { $match: { userID: userID } }
-        // ]).exec((err, groups) => {
-        //     if (err) {
-        //         reject(`Server error, Query user's group fail: ${err.message}`);
-        //     } else {
-        //         resolve(groups);
-        //     }
-        // })
-    })
-}
+var updateGroupProfile = async (groupID, opts) => {
+    try {
+        const group = await GroupModel.findOneAndUpdate({_id: groupID, status: true}, {$set: opts}).lean();
+        if (!group) {
+            throw new Error(`Current group is not exist, update group profile fail`);
+        }
+        return group;
+    } catch (err) {
+        throw new Error(err.message);
+    }
+};
+
+var updateGroupMemberAlias = async (groupID, userID, alias) => {
+    try {
+        const member = await MemberModel.findOneAndUpdate({groupID, userID}, {
+            $set: {alias}
+        }).lean();
+        if (!member) {
+            throw new Error("Sorry, this member is not exist or group is dismiss");
+        }
+        return member;
+    } catch (err) {
+        throw new Error(err.message);
+    }
+};
+
+var queryGroupList = async userID => {
+    const groups = await MemberModel.find({userID: userID, status: 0})
+        .select('groupID')
+        .exec()
+        .catch(err => {
+            throw new Error(`Server error, query user's group fail: ${err.message}`);
+        });
+    return groups;
+};
 
 var queryGroupMembers = groupID => {
-    return new Promise((resolve, reject) => {
-        MemberModel.find({ groupID: groupID })
-            // .populate("groupID")
-            .populate("userID")
-            .select('-_id')
-            .exec((err, members) => {
-                if (err) return reject(`Server error, query group data fail: ${err.message}`);
-                resolve(members);
-            })
-    })
-}
+    return MemberModel.find({groupID: groupID})
+        .populate("userID")
+        .select('-_id')
+        .exec()
+        .catch(err => {
+            throw new Error(`Server error, query group data fail: ${err.message}`);
+        });
+};
 
 var countUserGroups = currentUserID => {
-    return new Promise((resolve, reject) => {
-        GroupModel.count({ owner: currentUserID, status: true }, (err, count) => {
-            if (err) {
-                reject(err.message);
-            } else {
-                resolve(count);
-            }
-        })
-    })
-}
+    return GroupModel.count({owner: currentUserID, status: true}).lean()
+        .catch(err => {
+            throw new Error(err.message);
+        });
+};
 
 var isGroupCountOverflow = async currentUserID => {
     try {
-        let groups = await countUserGroups(currentUserID);
+        const groups = await countUserGroups(currentUserID);
         return (groups >= Constants.MAX_USER_GROUP_OWN_COUNT);
     } catch (err) {
         throw new Error("Error: count user's groups fail");
     }
-}
+};
 
-var queryGroupByID = groupID => {
-    return new Promise((resolve, reject) => {
-        GroupModel.findOne({ _id: groupID, status: true }, (err, group) => {
-            if (err) {
-                reject(err.message);
-            } else if (!group) {
-                reject("The group is not exist, please check your group id");
-            } else {
-                resolve(group);
-            }
-        })
-    })
-}
+var queryGroupByID = async groupID => {
+    try {
+        const group = await GroupModel.findOne({_id: groupID, status: true}).lean();
+        if (!group) {
+            throw new Error("The group is not exist, please check your group id");
+        } else {
+            return group;
+        }
+    } catch (err) {
+        throw new Error(err.message);
+    }
+};
 
-var queryMembersByGroupID = groupID => {
-    return new Promise((resolve, reject) => {
-        MemberModel.find({ groupID: groupID, status: 0 })
-            .populate("userID")
-            .exec((err, members) => {
-                if (err) {
-                    console.log('--QUERY MEMBERS ERROR--', err);
-                    reject(err);
-                } else if (!members) {
-                    reject("The group is not exist, please check your group id");
-                } else {
-                    resolve(members.filter(member => { return member.userID != null }));
-                }
-            });
-    })
+var queryMembersByGroupID = async groupID => {
+    const members = await MemberModel.find({groupID: groupID, status: 0}).populate("userID").exec()
+        .catch(err => {
+            console.log('--QUERY MEMBERS ERROR--', err);
+            throw new Error(err.message);
+        });
+    if (!members) {
+        throw new Error(`The group is not exist, please check your group id`);
+    } else {
+        return members.filter(member => (member.userID !== null));
+    }
 }
 
 var isGroupOwnerOrAdmin = (group, userID) => {
@@ -411,113 +442,82 @@ var checkTargetUserIsCurrentUser = (targetUserID, currentUserID) => {
 var generateGroupObject = (currentUser, groupID, groupInfo) => {
     let group = {};
     let currentUserID = currentUser.userID;
-    // let members = groupInfo.members;
-    // members.unshift({ userID: currentUserID, alias: currentUser.nickname });
-
     group._id = groupID;
     group.createBy = currentUserID;
     group.owner = currentUserID;
     group.name = groupInfo.name;
-    // group.members = members;
-
     return group;
 }
 
 var generateMembersObject = (groupID, members, currentUser) => {
     let _members = members.map(member => {
-        return { groupID: groupID, userID: member };
+        return {groupID: groupID, userID: member};
     });
-    if (currentUser) _members.unshift({ groupID: groupID, userID: currentUser.userID });
-
+    if (currentUser) _members.unshift({groupID: groupID, userID: currentUser.userID});
     return _members;
 }
 
 var saveGroup = group => {
-    let groupModel = new GroupModel(group);
-    return new Promise((resolve, reject) => {
-        groupModel.save((err, data) => {
-            if (err) {
-                console.log('--[CREATE GROUP FAIL]--', err);
-                reject('Server unknow error, create group fail')
-            } else {
-                resolve(data);
-            }
-        })
-    })
-}
+    const groupModel = new GroupModel(group);
+    try {
+        return groupModel.save().lean();
+    } catch (err) {
+        console.log('--[CREATE GROUP FAIL]--', err);
+        throw new Error('Server unknow error, create group fail');
+    }
+};
 
 var saveMembers = members => {
-    return new Promise((resolve, reject) => {
-        MemberModel.create(members, (err, result) => {
-            if (err) {
-                console.log('--[SAVE GROUP MEMBER FAIL]--', err);
-                reject(`Server error, save group members fail: ${err}`)
-            } else {
-                resolve(result);
-            }
-        })
-    })
-}
+    try {
+        return MemberModel.create(members).lean();
+    } catch (err) {
+        throw new Error(`Server error, save group members fail: ${err}`);
+    }
+};
 
-var addMemberToGroup = (groupID, members) => {
-    return new Promise((resolve, reject) => {
-        MemberModel.create(members, (err, result) => {
-            if (err) {
-                reject(`Server error, join group fail, ${err.message}`);
-            } else if (!result) {
-                reject('Current group is not exist, join group fail');
-            } else {
-                resolve();
-            }
-        });
-    })
-}
+var addMemberToGroup = async (groupID, members) => {
+    try {
+        const result = await MemberModel.create(members).lean();
+        if (!result) {
+            throw new Error('Current group is not exist, join group fail');
+        }
+        return result;
+    } catch (err) {
+        throw new Error(`Server error, join group fail, ${err.message}`);
+    }
+};
 
 var joinToGroup = (groupID, member) => {
-    return new Promise((resolve, reject) => {
-        let memberModel = new MemberModel({ groupID: groupID, userID: member.userID });
-        memberModel.save((err, result) => {
-            if (err) return reject('Server unknow error, add contact fail');
-            resolve();
-        })
-    })
-}
+    try {
+        const memberModel = new MemberModel({groupID, userID: member.userID});
+        return memberModel.save().lean();
+    } catch (err) {
+        throw new Error('Server unknow error, add contact fail');
+    }
+};
 
 var removeGroupMember = (groupID, targetUserID) => {
-    return new Promise((resolve, reject) => {
-        MemberModel.remove({ groupID: groupID, userID: targetUserID }, (err, result) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve();
-            }
-        })
-    })
-}
+    return MemberModel.remove({groupID, userID: targetUserID});
+};
 
 var removeGroupMembers = groupID => {
-    return new Promise((resolve, reject) => {
-        MemberModel.remove({ groupID: groupID }, (err, result) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(result);
-            }
-        })
-    })
-}
+    return MemberModel.remove({groupID});
+};
 
 var updateGroupOwner = (groupID, ownerUserID) => {
-    return new Promise((resolve, reject) => {
-        GroupModel.findOneAndUpdate({ _id: groupID, status: true }, { $set: { owner: ownerUserID } }, (err, result) => {
-            if (err) {
-                reject('Server unknow error, update group owner fail');
-            } else {
-                resolve(result);
+    try {
+        return GroupModel.findOneAndUpdate({
+            _id: groupID,
+            status: true,
+        }, {
+            $set: {
+                owner: ownerUserID,
             }
-        })
-    })
-}
+        }).lean();
+    } catch (err) {
+        throw new Error('Server unknow error, update group owner fail');
+    }
+};
 
 var dismissGroup = async groupID => {
     try {
@@ -530,23 +530,20 @@ var dismissGroup = async groupID => {
 }
 
 var removeGroup = groupID => {
-    return new Promise((resolve, reject) => {
-        GroupModel.findOneAndUpdate({ _id: groupID, status: true }, { $set: { status: false } }, (err, result) => {
-            if (err) {
-                console.log(err);
-                reject(err);
-            } else {
-                resolve(result);
-            }
-        })
-    })
-}
+    try {
+        return GroupModel.findOneAndUpdate({_id: groupID, status: true}, {$set: {status: false}});
+    } catch (error) {
+        throw new Error(err.message);
+    }
+};
 
 // data convert opertaion
 var removeDuplicate = (orgMembers, newMembers) => {
     for (let i = 0; i < newMembers.length; i++) {
         let member = newMembers[i];
-        let index = _.findIndex(orgMembers, o => { return o.userID.toString() == member.userID.toString(); });
+        let index = _.findIndex(orgMembers, o => {
+            return o.userID.toString() == member.userID.toString();
+        });
         if (index > -1) continue;
         orgMembers.push(member);
     }
@@ -626,3 +623,5 @@ var convertUser = user => {
     delete _user.deviceID;
     return _user;
 }
+
+module.exports = new GroupRepository();

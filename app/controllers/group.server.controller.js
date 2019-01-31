@@ -1,130 +1,116 @@
 const GroupService = require("../services/group.server.service");
 const StringUtil = require("../utils/StringUtil");
 const Constants = require("../utils/Constants");
-const { SUCCESS, FAIL } = require("../utils/CodeConstants");
+const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 
-exports.createGroup = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+class GroupController {
+    async createGroup(req, res, next) {
+        let input = req.data.input || {};
+        let currentUser = req.data.user;
 
-    let name = StringUtil.stringSubstr(input.name, Constants.GROUP_NAME_MAX_LENGTH);
-    let members = input.members;
+        let name = StringUtil.stringSubstr(input.name, Constants.GROUP_NAME_MAX_LENGTH);
+        let members = input.members;
 
-    if (members.length < 1) {
-        return res.json({
-            status: FAIL,
-            data: {},
-            message: "Group's member count should be greater than 1 at least"
-        })
-    };
-    if (members.length > 500) {
-        return res.json({
-            status: FAIL,
-            data: {},
-            message: `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`
-        })
-    }
-    let groupInfo = {
-        name: name,
-        members: members
-    };
-    GroupService.createGroup(currentUser, groupInfo, result => {
-        result.data = {};
+        if (members.length < 1) {
+            return res.json({
+                status: FAIL,
+                data: {},
+                message: "Group's member count should be greater than 1 at least"
+            })
+        }
+        ;
+        if (members.length > 500) {
+            return res.json({
+                status: FAIL,
+                data: {},
+                message: `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`
+            })
+        }
+        let groupInfo = {
+            name: name,
+            members: members
+        };
+        const result = await GroupService.createGroup(currentUser, groupInfo);
         return res.json(result)
-    });
-}
+    };
 
-exports.addGroupMembers = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+    async addGroupMembers(req, res, next) {
+        const input = req.data.input || {};
+        const currentUser = req.data.user;
 
-    GroupService.addGroupMembers(currentUser, input.groupID, input.members, result => {
-        result.data = {};
-        return res.json(result);
-    });
-}
+        const result = await GroupService.addGroupMembers(currentUser, input.groupID, input.members);
+        res.json(result);
+    };
 
-exports.joinGroup = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+    async joinGroup(req, res, next) {
+        const input = req.data.input || {};
+        const currentUser = req.data.user;
 
-    const { joinType, groupID } = input;
-    GroupService.joinGroup(currentUser, groupID, joinType, result => {
-        result.data = {};
-        return res.json(result);
-    });
-}
+        const {joinType, groupID} = input;
+        const result = await GroupService.joinGroup(currentUser, groupID, joinType);
+        res.json(result);
+    };
 
-exports.kickGroupMember = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+    async kickGroupMember(req, res, next) {
+        const input = req.data.input || {};
+        const currentUser = req.data.user;
 
-    GroupService.kickGroupMember(currentUser, input.groupID, input.targetUserID, result => {
-        result.data = {};
-        return res.json(result);
-    });
-}
+        const result = await GroupService.kickGroupMember(currentUser, input.groupID, input.targetUserID);
+        res.json(result);
+    };
 
-exports.quitGroup = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+    async quitGroup(req, res, next) {
+        const input = req.data.input || {};
+        const currentUser = req.data.user;
 
-    GroupService.quitGroup(currentUser, input.groupID, result => {
-        return res.json(result);
-    });
-}
+        const result = await GroupService.quitGroup(currentUser, input.groupID);
+        res.json(result);
+    };
 
-exports.dismissGroup = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+    async dismissGroup(req, res, next) {
+        const input = req.data.input || {};
+        const currentUser = req.data.user;
 
-    GroupService.dismissGroup(currentUser, input.groupID, result => {
-        result.data = {};
-        return res.json(result);
-    });
-}
+        const result = await GroupService.dismissGroup(currentUser, input.groupID);
+        res.json(result);
+    };
 
-exports.renameGroup = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+    async renameGroup(req, res, next) {
+        const input = req.data.input || {};
+        const currentUser = req.data.user;
 
-    GroupService.renameGroup(currentUser, input.groupID, input.name, result => {
-        result.data = {};
-        return res.json(result);
-    });
-}
+        const result = await GroupService.renameGroup(currentUser, input.groupID, input.name);
+        res.json(result);
+    };
 
-exports.updateGroupNotice = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+    async updateGroupNotice(req, res, next) {
+        const input = req.data.input || {};
+        const currentUser = req.data.user;
 
-    if (input.notice.length > 100) {
-        return res.json({
-            status: FAIL,
-            data: {},
-            message: `Group's notice is out of max length limit (${Constants.GROUP_NOTICE_MAX_LENGTH})`
-        })
+        if (input.notice.length > 100) {
+            return res.json({
+                status: FAIL,
+                data: {},
+                message: `Group's notice is out of max length limit (${Constants.GROUP_NOTICE_MAX_LENGTH})`
+            })
+        }
+        const result = await GroupService.updateGroupNotice(currentUser, input.groupID, input.notice);
+        res.json(result);
     }
-    GroupService.updateGroupNotice(currentUser, input.groupID, input.notice, result => {
-        result.data = {};
-        return res.json(result);
-    });
-}
 
-exports.updateGroupMemberAlias = (req, res, next) => {
-    let input = req.data.input || {};
-    let currentUser = req.data.user;
+    async updateGroupMemberAlias(req, res, next) {
+        const input = req.data.input || {};
+        const currentUser = req.data.user;
 
-    GroupService.updateGroupMemberAlias(currentUser, input.groupID, input.alias, result => {
-        result.data = {};
-        return res.json(result);
-    });
-}
+        const result = await GroupService.updateGroupMemberAlias(currentUser, input.groupID, input.alias);
+        res.json(result);
+    };
 
-exports.getGroupList = (req, res, next) => {
-    let input = req.data.input || {};
+    async getGroupList(req, res, next) {
+        const input = req.data.input || {};
+        const result = await GroupService.getGroupList(input.userID);
+        res.json(result);
+    }
+};
 
-    GroupService.getGroupList(input.userID, result => {
-        return res.json(result);
-    });
-}
+module.exports = new GroupController();

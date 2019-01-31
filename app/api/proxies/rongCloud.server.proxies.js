@@ -1,6 +1,5 @@
-
 const _ = require('lodash');
-const { appKey, appSecret } = require('../../../configs/config').RongCloudConfig;
+const {appKey, appSecret} = require('../../../configs/config').RongCloudConfig;
 
 const rongCloud = require('rongcloud-sdk')({
     appkey: appKey,
@@ -20,25 +19,29 @@ var errorHandle = (err) => {
 
 // User
 exports.createUser = async (userID, nickname, avatar) => {
-    const user = { id: _.toString(userID), name: nickname, portrait: avatar || 'https://dn-qiniu-avatar.qbox.me/avatar/f9f953f958ef1505a241a3270dfa408d?qiniu-avatar' };
+    const user = {
+        id: _.toString(userID),
+        name: nickname,
+        portrait: avatar || 'https://dn-qiniu-avatar.qbox.me/avatar/f9f953f958ef1505a241a3270dfa408d?qiniu-avatar'
+    };
     User.register(user).then(result => {
-        callback({ data: result.token });
+        callback({data: result.token});
     }, error => {
         console.log(error);
-        callback({ error });
+        callback({error});
     });
 }
 
 /**
  * IM - send concact notification
- * 
- * @param {*} currentUser 
- * @param {*} contactID 
- * @param {*} message 
- * @param {*} operation 
- * @param {*} userProfile 
+ *
+ * @param {*} currentUser
+ * @param {*} contactID
+ * @param {*} message
+ * @param {*} operation
+ * @param {*} userProfile
  */
-exports.sendContactNotification = async ({ currentUser = '', contactID = '', message = '', operation = '', userProfile = {}, objectName = 'Custom:ContactNtf', isIncludeSender = 0 }) => {
+exports.sendContactNotification = async ({currentUser = '', contactID = '', message = '', operation = '', userProfile = {}, objectName = 'Custom:ContactNtf', isIncludeSender = 0}) => {
     const userID = _.toString(currentUser.userID);
     const notificationMessage = {
         senderId: userID,
@@ -65,7 +68,7 @@ exports.sendContactNotification = async ({ currentUser = '', contactID = '', mes
 }
 
 // IM - send group notification
-exports.sendGroupNotification = async ({ currentUserID = '', operation = '', group = {}, memberID = null, membersID = [], member = {}, isIncludeSender = 1 }) => {
+exports.sendGroupNotification = async ({currentUserID = '', operation = '', group = {}, memberID = null, membersID = [], member = {}, isIncludeSender = 1}) => {
     const groupId = _.toString(group.groupID);
     let groupNotificationMessage = {
         senderId: currentUserID,
@@ -148,7 +151,7 @@ exports.quitGroup = async (groupId, member) => {
 }
 
 /**
- * 
+ *
  * @param {string} groupId  // group id
  * @param {object} member // 群主或群管理
  */
