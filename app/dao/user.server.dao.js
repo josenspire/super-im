@@ -26,10 +26,10 @@ class UserRepository {
             const userModel = new UserModel(user);
             let _user = await insertUser(userModel);
 
-            const tokenModel = new TokenModel({_id: tokenID, token: token, user: user._id});
+            const tokenModel = new TokenModel({_id: tokenID, token: token, user: _user._id});
             const _token = await insertToken(tokenModel);
 
-            await initContactList(user._id);
+            await initContactList(_user._id);
             result.status = SUCCESS;
             result.data.userProfile = convertUser(_user);
             result.data.token = _token.token;
@@ -212,29 +212,30 @@ class UserRepository {
         return result;
     }
 
-    // TODO verify is exec will return a promise result?
-    tokenVerify(token) {
+    /**
+     * Get user information by token
+     * @param {string} token
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async tokenVerify(token) {
         let result = {status: FAIL, data: {}, message: ''};
-        return new Promise((resolve, reject) => {
-            TokenModel.findOne({token: token})
-                .populate('user')
-                .exec((err, token) => {
-                    if (err) {
-                        result.status = SERVER_UNKNOW_ERROR;
-                        result.message = 'Sorry, server unknow error';
-                        return reject(result);
-                    } else if (!token) {
-                        result.message = 'This token is invalid, please login again';
-                    } else if (token) {
-                        result.status = SUCCESS;
-                        result.data.token = token.token;
-                        result.data.userProfile = convertTokenInfo(token);
-                        result.data.secretKey = Constants.AES_SECRET;
-                    }
-                    resolve(result)
-                });
-        });
-    };
+        const user = await TokenModel.findOne({token}).populate('user').exec()
+            .catch(err => {
+                console.log(err);
+                result.status = SERVER_UNKNOW_ERROR;
+                result.message = 'Sorry, server unknow error';
+                return result;
+            });
+        if (!user) {
+            result.message = 'This token is invalid, please login again';
+        } else if (user) {
+            result.status = SUCCESS;
+            result.data.token = user.token;
+            result.data.userProfile = convertTokenInfo(user);
+            result.data.secretKey = Constants.AES_SECRET;
+        }
+        return result;
+    }
 
     /**
      * Reset user password by telephone and new password

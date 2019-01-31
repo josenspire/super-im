@@ -3,24 +3,23 @@ const GroupDao = require("../dao/group.server.dao");
 const {SUCCESS} = require("../utils/CodeConstants");
 
 class DAOManager {
-    getUserProfileAndContactsAndGroups(token, cb) {
-        UserDao.tokenVerify(token, async userData => {
-            if (userData.status != SUCCESS) return cb(userData);
+    async getUserProfileAndContactsAndGroups(token) {
+        const userData = await UserDao.tokenVerify(token);
+        if (userData.status != SUCCESS) {
+            return userData
+        }
+        const userID = userData.data.userProfile.userID || "";
+        return await queryContactsAndGroups(userID, userData);
+    };
 
-            const userID = userData.data.userProfile.userID || "";
-            const result = await queryContactsAndGroups(userID, userData);
-            cb(result);
-        })
-    }
-
-    getUserProfileAndContactsAndGroupsByUserInfo(telephone, password, cb) {
-        UserDao.queryUserByTelephoneAndPassword(telephone, password, async userData => {
-            if (userData.status != SUCCESS) return cb(userData);
-
-            const userID = userData.data.userProfile.userID;
-            const result = await queryContactsAndGroups(userID, userData);
-            cb(result);
-        })
+    async getUserProfileAndContactsAndGroupsByUserInfo(telephone, password) {
+        const userData = await UserDao.queryUserByTelephoneAndPassword(telephone, password);
+        if (userData.status != SUCCESS) {
+            return userData;
+        }
+        const userID = userData.data.userProfile.userID;
+        const result = await queryContactsAndGroups(userID, userData);
+        return result;
     }
 
     async createUserAndGetAllInfo(user, token) {
@@ -45,10 +44,12 @@ class DAOManager {
     };
 };
 
-var queryContactsAndGroups = (userID, userData) => {
+var queryContactsAndGroups = async (userID, userData) => {
     let result = JSON.parse(JSON.stringify(userData));
     const contactsData = await UserDao.queryUserContactsByUserID(userID);
-    if (contactsData.status != SUCCESS) return cb(contactsData);
+    if (contactsData.status != SUCCESS) {
+        return contactsData;
+    }
 
     result.data.contacts = contactsData.data.contacts;
     const queryResult = await GroupDao.queryGroupList(userID);

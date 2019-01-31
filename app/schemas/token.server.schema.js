@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const uuidv4 = require('uuid/v4');
 const DateUtils = require('../utils/DateUtils')
 
 let Schema = mongoose.Schema

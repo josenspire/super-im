@@ -19,7 +19,7 @@ var errorHandle = (err) => {
 }
 
 // User
-exports.createUser = (userID, nickname, avatar, callback) => {
+exports.createUser = async (userID, nickname, avatar) => {
     const user = { id: _.toString(userID), name: nickname, portrait: avatar || 'https://dn-qiniu-avatar.qbox.me/avatar/f9f953f958ef1505a241a3270dfa408d?qiniu-avatar' };
     User.register(user).then(result => {
         callback({ data: result.token });

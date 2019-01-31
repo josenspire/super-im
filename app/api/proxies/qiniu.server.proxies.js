@@ -37,9 +37,8 @@ let uploadAvatar = (upToken, key, localFile) => {
 
 exports.uploadAvatar = async (fileName, localFile) => {
     try {
-        let token = upToken(QiniuConfig.Bucket, fileName);
-        let result = await uploadAvatar(token, fileName, localFile);
-        return result;
+        const token = upToken(QiniuConfig.Bucket, fileName);
+        return await uploadAvatar(token, fileName, localFile);
     } catch (err) {
         console.log(err)
         return err;

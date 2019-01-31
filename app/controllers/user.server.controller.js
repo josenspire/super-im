@@ -25,7 +25,7 @@ class UserController {
         })
     };
 
-    login(req, res, next) {
+    async login(req, res, next) {
         const data = req.data.input.params || {};
 
         const verifyCode = data.verifyCode || "";
@@ -35,10 +35,8 @@ class UserController {
         user.deviceID = data.deviceID;
 
         if (_.isEmpty(verifyCode)) {
-            UserService.queryUserWithoutVerify(user.telephone, user.password, callback => {
-                req.data.output = callback;
-                next();
-            })
+            req.data.output = await UserService.queryUserWithoutVerify(user.telephone, user.password);
+            next();
         } else {
             SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, async validateCallback => {
                 if (validateCallback.status === SUCCESS) {
@@ -73,10 +71,8 @@ class UserController {
         if (isExist.status === false) {
             SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
                 if (_sms.status === SUCCESS) {
-                    UserService.createUser(user, callback => {
-                        req.data.output = callback;
-                        next();
-                    })
+                    req.data.output = UserService.createUser(user);
+                    next();
                 } else {
                     req.data.output = _sms;
                     next();
@@ -91,15 +87,13 @@ class UserController {
         }
     };
 
-    tokenVerifyLogin(req, res, next) {
+    async tokenVerifyLogin(req, res, next) {
         let data = JSON.parse(req.body);
         // let data = req.body;
         let token = data.token;
         console.log('[--TOKEN AUTH--]', token);
 
-        UserService.tokenVerifyLogin(token, callback => {
-            return res.json(callback);
-        })
+        return await UserService.tokenVerifyLogin(token);
     }
 
     logout(req, res, next) {
@@ -167,12 +161,12 @@ class UserController {
             }
             const userProfile = tokenValid.data.userProfile;
             try {
-                let uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
-                let avatarUrl = `${Constants.QN_DEFAULT_EXTERNAL_LINK}${uploadAvatarResult.key}`;
-                let updateResult = await UserService.updateUserAvatar(userProfile.userID, avatarUrl);
+                const uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
+                const avatarUrl = `${Constants.QN_DEFAULT_EXTERNAL_LINK}${uploadAvatarResult.key}`;
+                const updateResult = await UserService.updateUserAvatar(userProfile.userID, avatarUrl);
                 result.status = updateResult.status;
                 result.data = {
-                    avatarUrl: avatarUrl,
+                    avatarUrl,
                     width: "200",
                     height: "200"
                 };
@@ -216,7 +210,7 @@ class UserController {
     uploadAvatarByBase64(req, res, next) {
         let form = new multiparty.Form();
         form.parse(req, async (err, fields, files) => {
-            let avatarBase64 = fields.uploadAvatar[0].replace(/^data:image\/\w+;base64,/, '');
+            const avatarBase64 = fields.uploadAvatar[0].replace(/^data:image\/\w+;base64,/, '');
             // let avatarBase64 = fields.uploadAvatar[0];
             let userID = fields.userID[0];
             let avatar = new Buffer(avatarBase64, 'base64');
@@ -234,18 +228,14 @@ class UserController {
     }
 
     /** User Contact Part */
+    async requestAddContact(req, res, next) {
+        const currentUser = req.data.user;
+        const input = req.data.input;
 
-    requestAddContact(req, res, next) {
-        let currentUser = req.data.user;
-        let input = req.data.input;
-
-        let contactID = input.contactID;
-        let message = input.reason || "";
-
-        UserService.requestAddContact(currentUser, contactID, message, inviteResult => {
-            req.data.output = inviteResult;
-            next();
-        })
+        const contactID = input.contactID;
+        const message = input.reason || "";
+        req.data.output = await UserService.requestAddContact(currentUser, contactID, message);
+        next();
     }
 
     async acceptAddContact(req, res, next) {
@@ -260,24 +250,22 @@ class UserController {
         next();
     }
 
-    rejectAddContact(req, res, next) {
-        let currentUser = req.data.user;
-        let input = req.data.input;
+    async rejectAddContact(req, res, next) {
+        const currentUser = req.data.user;
+        const input = req.data.input;
 
-        let contactID = input.contactID;
-        let rejectReason = input.reason || "";
+        const contactID = input.contactID;
+        const rejectReason = input.reason || "";
 
-        UserService.rejectAddContact(currentUser, contactID, rejectReason, contactList => {
-            req.data.output = contactList;
-            next();
-        })
+        req.data.output = await UserService.rejectAddContact(currentUser, contactID, rejectReason);
+        next();
     }
 
     async deleteContact(req, res, next) {
-        let currentUser = req.data.user;
-        let input = req.data.input;
+        const currentUser = req.data.user;
+        const input = req.data.input;
 
-        let contactID = input.contactID;
+        const contactID = input.contactID;
         req.data.output = await UserService.deleteContact(currentUser, contactID);
         next();
     }
@@ -300,13 +288,11 @@ class UserController {
         next();
     }
 
-    getBlackList(req, res, next) {
+    async getBlackList(req, res, next) {
         let input = req.data.input;
         let userID = input.userID;
-        UserService.getBlackList(userID, userList => {
-            req.data.output = userList;
-            next();
-        })
+        req.data.output = await UserService.getBlackList(userID);    
+        next();
     }
 
     async searchUserByTelephoneOrNickname(req, res, next) {
