@@ -1,96 +1,81 @@
-const UserModel = require('../models/user.server.model');
 const TempUserModel = require('../models/tempUser.server.model');
-const Constants = require('../utils/Constants');
-const DateUtils = require('../utils/DateUtils');
-const StringUtil = require('../utils/StringUtil');
-const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
 
 const uuidv4 = require('uuid/v4');
 const _ = require('lodash');
 
-exports.getTempUserID = async (userID, cb) => {
-    let result = { status: FAIL, data: {}, message: '' };
-    let newTempUserID = uuidv4();
-    try {
-        let tempUser = await updateTempUserByUserID(userID, newTempUserID);
-        if (tempUser) {
-            result.data.tempUserID = newTempUserID;
-        } else {
-            let createResult = await createTempUser(userID);
-            result.data.tempUserID = createResult.tempUserID;
-        }
-        result.status = SUCCESS;
-    } catch (err) {
-        console.log(err);
-        result.message = err;
-    }
-    cb(result);
-}
+class TempUserRepository {
 
-exports.getUserProfileByTempUserID = async (tempUserID, cb) => {
-    let result = { status: FAIL, data: {}, message: '' };
-    try {
-        let tempUser = await queryTempUserByTempUserID(tempUserID);
-        if (tempUser) {
-            result.data.userProfile = convertUserProfile(tempUser.user);
+    /**
+     * Get temp userID
+     * @param {string} userID
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async getTempUserID(userID) {
+        let result = {status: FAIL, data: {}, message: ''};
+        const newTempUserID = uuidv4();
+        try {
+            const tempUser = await updateTempUserByUserID(userID, newTempUserID);
+            if (tempUser) {
+                result.data.tempUserID = newTempUserID;
+            } else {
+                const createResult = await createTempUser(userID);
+                result.data.tempUserID = createResult.tempUserID;
+            }
             result.status = SUCCESS;
-        } else {
-            result.message = "This ID is expired, please reacquire";
+        } catch (err) {
+            console.log(err);
+            result.message = err;
         }
-    } catch (err) {
-        result.message = err;
+        return result;
     }
-    cb(result);
-}
 
-var updateTempUserByUserID = (userID, newTempUserID) => {
-    return new Promise((resolve, reject) => {
-        TempUserModel.findOneAndUpdate({ user: userID }, { $set: { tempUserID:  newTempUserID} })
-            .populate("user")
-            .exec((err, tempUser) => {
-                if (err) {
-                    return reject(`Server error, query temp userID fail: ${err.message}`);
-                }
-                // tempUser.tempUserID = newTempUserID;
-                resolve(tempUser);
-            })
-    })
-}
+    /**
+     * Query user profile by temp userID
+     * @param {string} tempUserID
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async getUserProfileByTempUserID(tempUserID) {
+        let result = {status: FAIL, data: {}, message: ''};
+        try {
+            const tempUser = await queryTempUserByTempUserID(tempUserID);
+            if (tempUser) {
+                result.data.userProfile = convertUserProfile(tempUser.user);
+                result.status = SUCCESS;
+            } else {
+                result.message = "This ID is expired, please reacquire";
+            }
+        } catch (err) {
+            result.message = err;
+        }
+        return result;
+    };
+};
 
-var queryTempUserByUserID = userID => {
-    return new Promise((resolve, reject) => {
-        TempUserModel.findOne({ user: userID })
-            .populate("user")
-            .exec((err, tempUser) => {
-                if (err) {
-                    return reject(`Server error, query temp userID fail: ${err.message}`);
-                }
-                resolve(tempUser);
-            })
-    })
+var updateTempUserByUserID = async (userID, newTempUserID) => {
+    return TempUserModel.findOneAndUpdate({user: userID}, {$set: {tempUserID: newTempUserID}})
+        .populate("user")
+        .exec()
+        .catch(err => {
+            throw new Error(`Server error, query temp userID fail: ${err.message}`);
+        });
 }
 
 var queryTempUserByTempUserID = tempUserID => {
-    return new Promise((resolve, reject) => {
-        TempUserModel.findOne({ tempUserID: tempUserID })
-            .populate("user")
-            .exec((err, tempUser) => {
-                if (err) {
-                    return reject(`Server error, query temp userID fail: ${err.message}`);
-                }
-                resolve(tempUser);
-            })
-    })
+    return TempUserModel
+        .findOne({tempUserID})
+        .populate("user").exec().catch(err => {
+            throw new Error(`Server error, query temp userID fail: ${err.message}`);
+        });
 }
 
 var createTempUser = userID => {
-    return new Promise((resolve, reject) => {
-        var tempUser = new TempUserModel({ user: userID, tempUserID: uuidv4() });
-        tempUser.save((err, result) => {
-            if (err) return reject(`Server error, create temp user fail: ${err.message}`);
-            resolve(result);
-        });
-    })
+    try {
+        const tempUser = new TempUserModel({user: userID, tempUserID: uuidv4()});
+        return tempUser.save().lean();
+    } catch (err) {
+        throw new Error(`Server error, create temp user fail: ${err.message}`);
+    }
 }
 
 var convertUserProfile = userProfile => {
@@ -107,4 +92,6 @@ var convertUserProfile = userProfile => {
     delete user.role;
 
     return user;
-}
+};
+
+module.exports = new TempUserRepository();

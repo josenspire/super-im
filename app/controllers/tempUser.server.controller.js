@@ -1,20 +1,20 @@
 const TempUserService = require('../services/tempUser.server.service')
 
-exports.getTempUserID = (req, res, next) => {
-    let input = req.data.input;
-    let userID = input.userID;
+class TempUserController {
+    async getTempUserID(req, res, next) {
+        const input = req.data.input;
+        const userID = input.userID;
 
-    TempUserService.getTempUserID(userID, result => {
-        req.data.output = result;
+        req.data.output = await TempUserService.getTempUserID(userID);
         next();
-    });
-}
+    };
 
-exports.getUserProfileByTempUserID = (req, res, next) => {
-    let input = req.data.input;
-    let tempUserID = input.tempUserID || "";
-    TempUserService.getUserProfileByTempUserID(tempUserID, result => {
-        req.data.output = result;
+    async getUserProfileByTempUserID(req, res, next) {
+        const input = req.data.input;
+        const tempUserID = input.tempUserID || "";
+        req.data.output = await TempUserService.getUserProfileByTempUserID(tempUserID);
         next();
-    });
-}
+    };
+};
+
+module.exports = new TempUserController();
