@@ -1,83 +1,72 @@
 const SMSModel = require('../models/sms.server.model')
-const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
 
-// save verifyCode
-exports.saveSMS = async (telephone, verifyCode, codeType, cb) => {
-    let result = {
-        status: FAIL,
-        data: { skipVerify: false },
-        message: ""
-    };
-    let newDate = Date.now();
-    let conditions = { telephone: telephone, codeType: codeType };
-    let opts = { verifyCode: verifyCode, expiresAt: newDate };
-    try {
-        let updateResult = await findAndUpdateSMSInfo(conditions, opts);
-        if (updateResult) {
-            console.log('---[SMS]---', updateResult);
-            result.status = SUCCESS;
-            result.data.verifyCode = verifyCode;
-            result.data.expiresAt = newDate;
-            result.message = 'Send SMS verify code success, expires time is 15 min'
-        } else {
-            let _sms = new SMSModel({ telephone: telephone, verifyCode: verifyCode, codeType: codeType });
-            let newSMSInfo = await saveSMSInformation(_sms);
-            result.status = SUCCESS;
-            result.data.verifyCode = verifyCode;
-            result.data.expiresAt = newSMSInfo.expiresAt;
-            result.message = 'Send SMS verify code success, expires time is 15 min'
+class SMSRepository {
+    /**
+     * Save sms information
+     * @param {string} telephone
+     * @param {string} verifyCode
+     * @param {string} codeType
+     * @returns {Promise<{status: number, data: {skipVerify: boolean}, message: string}>}
+     */
+    async saveSMS(telephone, verifyCode, codeType) {
+        let result = {status: FAIL, data: {skipVerify: false}, message: ""};
+        const newDate = Date.now();
+        const conditions = {telephone: telephone, codeType: codeType};
+        const opts = {verifyCode: verifyCode, expiresAt: newDate};
+        try {
+            const updateResult = await SMSModel.findOneAndUpdate(conditions, opts).lean();
+
+            if (updateResult) {
+                console.log('---[SMS]---', updateResult);
+                result.status = SUCCESS;
+                result.data.verifyCode = verifyCode;
+                result.data.expiresAt = newDate;
+                result.message = 'Send SMS verify code success, expires time is 15 min'
+            } else {
+                const _sms = new SMSModel({telephone: telephone, verifyCode: verifyCode, codeType: codeType});
+                const newSMSInfo = await smsModel.save(_sms).lean();
+                result.status = SUCCESS;
+                result.data.verifyCode = verifyCode;
+                result.data.expiresAt = newSMSInfo.expiresAt;
+                result.message = 'Send SMS verify code success, expires time is 15 min'
+            }
+        } catch (err) {
+            result.data = {skipVerify: false};
+            result.message = err;
         }
-    } catch (err) {
-        result.data = { skipVerify: false };
-        result.message = err;
-    }
-    cb(result);
-}
+        return result;
+    };
 
-// check telephone and verifyCode
-exports.validateRecord = (telephone, verifyCode, codeType, cb) => {
-    let result = { status: FAIL, data: {}, message: "" };
-    SMSModel.findOne({ telephone: telephone, codeType: codeType }, (err, _sms) => {
-        if (err) {
+    /**
+     * Validate record
+     * @param {string} telephone
+     * @param {string} verifyCode
+     * @param {string} codeType
+     * @returns {Promise<{status: number, data: {}, message: string}>}
+     */
+    async validateRecord(telephone, verifyCode, codeType) {
+        let result = {status: FAIL, data: {}, message: ""};
+        try {
+            const _sms = await SMSModel.findOne({telephone: telephone, codeType: codeType}).lean();
+            if (_sms) {
+                if (verifyCode === _sms.verifyCode) {
+                    result.status = SUCCESS;
+                    result.data.verifyCode = verifyCode;
+                    result.message = 'The SMS verify code validate success';
+                } else {
+                    result.message = 'The SMS verify code validation invalid';
+                }
+            } else if (!_sms) {
+                result.message = 'The verify code is expires, please get the code again'
+            }
+        } catch (err) {
             console.log(err)
             result.status = SERVER_UNKNOW_ERROR;
             result.message = 'Sorry, server unknow error';
-        } else if (_sms) {
-            if (verifyCode === _sms.verifyCode) {
-                result.status = SUCCESS;
-                result.data.verifyCode = verifyCode;
-                result.message = 'The SMS verify code validate success';
-            } else {
-                result.message = 'The SMS verify code validation invalid';
-            }
-        } else if (!_sms) {
-            result.message = 'The verify code is expires, please get the code again'
         }
-        cb(result)
-    })
-}
+        return result;
+    }
+};
 
-var findAndUpdateSMSInfo = (conditions, opts) => {
-    return new Promise((resolve, reject) => {
-        SMSModel.findOneAndUpdate(conditions, opts, (err, result) => {
-            if (err) {
-                console.log("---[SMS]---", err)
-                reject("Sorry, server unknow error");
-            } else {
-                resolve(result);
-            }
-        })
-    })
-}
-
-var saveSMSInformation = smsModel => {
-    return new Promise((resolve, reject) => {
-        smsModel.save((err, result) => {
-            if (err) {
-                reject("Sorry, server unknow error");
-            } else {
-                resolve(result)
-            }
-        });
-    })
-}
+module.exports = new SMSRepository();

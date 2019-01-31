@@ -1,5 +1,4 @@
 const TempUserDao = require('../dao/tempUser.server.dao');
-const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
 
 class TempUserService {
     getTempUserID (userID) {

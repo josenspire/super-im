@@ -38,15 +38,14 @@ class UserController {
             req.data.output = await UserService.queryUserWithoutVerify(user.telephone, user.password);
             next();
         } else {
-            SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN, async validateCallback => {
-                if (validateCallback.status === SUCCESS) {
-                    req.data.output = await UserService.updateDeviceID(user.telephone, user.password, user.deviceID);
-                    next();
-                } else {
-                    req.data.output = validateCallback;
-                    next();
-                }
-            })
+            const validateCallback = await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
+            if (validateCallback.status === SUCCESS) {
+                req.data.output = await UserService.updateDeviceID(user.telephone, user.password, user.deviceID);
+                next();
+            } else {
+                req.data.output = validateCallback;
+                next();
+            }
         }
     };
 
@@ -64,20 +63,18 @@ class UserController {
         user.countryCode = data.countryCode || '';
         user.deviceID = data.deviceID;
 
-        let verifyCode = data.verifyCode || '';
+        const verifyCode = data.verifyCode || '';
 
         console.log('[--REGISTER--]: ', data)
         const isExist = await UserService.isTelephoneExist(user.telephone);
         if (isExist.status === false) {
-            SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER, _sms => {
-                if (_sms.status === SUCCESS) {
-                    req.data.output = UserService.createUser(user);
-                    next();
-                } else {
-                    req.data.output = _sms;
-                    next();
-                }
-            })
+            const _sms = await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER);
+            if (_sms.status === SUCCESS) {
+                req.data.output = UserService.createUser(user);
+            } else {
+                req.data.output = _sms;
+            }
+            next();
         } else {
             let result = {data: {}};
             result.status = FAIL;
