@@ -1,7 +1,7 @@
 import test from 'ava';
-import UserDao from '../../app/repositories/user.server.dao';
-import UserModel from '../../app/models/user.server.model';
-import TokenModel from '../../app/models/token.server.model';
+import UserDao from '../../app/repositories/user.repository';
+import UserModel from '../../app/models/user.model';
+import TokenModel from '../../app/models/token.model';
 
 import {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} from "../../app/utils/CodeConstants";
 import mongoose from 'mongoose';

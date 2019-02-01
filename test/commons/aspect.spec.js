@@ -1,5 +1,5 @@
 import test from 'ava';
-import AspectControl from '../../app/commons/aspect.server.common';
+import AspectControl from '../../app/commons/aspect.common';
 
 test.before(() => {
 });

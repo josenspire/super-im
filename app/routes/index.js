@@ -1,8 +1,8 @@
-const index = require('./index.server.routes');
-const auth = require('./auth.server.routes');
-const user = require('./user.server.routes');
-const contact = require('./contact.server.routes');
-const group = require('./group.server.routes');
+const index = require('./index.routes');
+const auth = require('./auth.routes');
+const user = require('./user.routes');
+const contact = require('./contact.routes');
+const group = require('./group.routes');
 
 module.exports = initRouter = app => {
   app.use('/', index);
