@@ -5,45 +5,55 @@ const RSAUtil = require('../utils/RSAUtil')
 const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 const Constants = require('../utils/Constants');
 
-exports.sendSMS = async (req, res, next) => {
-    const data = req.data.input.params || {};
-    const codeType = (data.codeType).toUpperCase();
-    const telephone = data.telephone;
-    const userInformation = data.data;
-    const verifyCode = StringUtil.randomCodeString(5);
-    let result = {};
-    try {
-        switch (codeType) {
-            case Constants.SMS_TYPE_REGISTER:
-                result = await register(telephone, verifyCode);
-                break;
-            case Constants.SMS_TYPE_LOGIN:
-                result = await login(userInformation, telephone, verifyCode);
-                break;
-            case Constants.SMS_TYPE_OTHERS:
-                return res.json('Others Type SMS')
+class SMSController {
+    async sendSMS(req, res, next) {
+        const {params} = req.input || {};
+
+        const codeType = (params.codeType).toUpperCase();
+        const telephone = params.telephone;
+        const verifyCode = StringUtil.randomCodeString(5);
+
+        let result = {};
+        try {
+            switch (codeType) {
+                case Constants.SMS_TYPE_REGISTER:
+                    result = await register(telephone, verifyCode);
+                    break;
+                case Constants.SMS_TYPE_LOGIN:
+                    if (!req.user) {
+                        throw new Error(`User information missing, please input your username and password`);
+                    }
+                    result = await login(req.user, telephone, verifyCode);
+                    break;
+                case Constants.SMS_TYPE_OTHERS:
+                    return res.json('Others Type SMS')
+            }
+        } catch (err) {
+            result = {
+                status: FAIL,
+                data: {},
+                message: err.message,
+            };
         }
-        req.data.output = result;
+        req.output = result;
         next();
-    } catch (err) {
-        console.log(err)
-        return res.json(err)
-    }
-};
+    };
 
-exports.verifyCode = (req, res, next) => {
-    const params = req.data.input.params || {};
-    RSAUtil.privateDecrypt(params, async data => {
-        const clientPublicKey = data.clientPublicKey;
-        const telephone = data.telephone;
-        const verifyCode = data.verifyCode;
-        const codeType = (data.codeType).toUpperCase();
+    verifyCode(req, res, next) {
+        const params = req.data.input.params || {};
+        RSAUtil.privateDecrypt(params, async data => {
+            const clientPublicKey = data.clientPublicKey;
+            const telephone = data.telephone;
+            const verifyCode = data.verifyCode;
+            const codeType = (data.codeType).toUpperCase();
 
-        const verifyCallback = await SMSService.validateRecord(telephone, verifyCode, codeType);
-        RSAUtil.publicEncryptObj(verifyCallback, clientPublicKey, result => {
-            return res.json(result)
+            const verifyCallback = await SMSService.validateRecord(telephone, verifyCode, codeType);
+            RSAUtil.publicEncryptObj(verifyCallback, clientPublicKey, result => {
+                return res.json(result)
+            });
         });
-    });
+    };
+
 };
 
 var register = async (telephone, verifyCode) => {
@@ -80,3 +90,5 @@ var login = async (user, telephone, verifyCode) => {
     }
     return queryResult;
 };
+
+module.exports = new SMSController();

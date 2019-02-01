@@ -71,7 +71,7 @@ var queryGroupByTempGroupID = async tempGroupID => {
 
 var createTempGroup = groupID => {
     let tempGroup = new TempGroupModel({group: groupID, tempGroupID: uuidv4()});
-    return tempGroup.save().lean();
+    return tempGroup.save();
 };
 
 var convertGroupProfile = group => {

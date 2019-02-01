@@ -25,7 +25,7 @@ class SMSRepository {
                 result.message = 'Send SMS verify code success, expires time is 15 min'
             } else {
                 const _sms = new SMSModel({telephone: telephone, verifyCode: verifyCode, codeType: codeType});
-                const newSMSInfo = await smsModel.save(_sms).lean();
+                const newSMSInfo = await _sms.save();
                 result.status = SUCCESS;
                 result.data.verifyCode = verifyCode;
                 result.data.expiresAt = newSMSInfo.expiresAt;

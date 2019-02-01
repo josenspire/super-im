@@ -1,5 +1,5 @@
 import test from 'ava';
-import UserDao from '../../app/dao/user.server.dao';
+import UserDao from '../../app/repositories/user.server.dao';
 import UserModel from '../../app/models/user.server.model';
 import TokenModel from '../../app/models/token.server.model';
 

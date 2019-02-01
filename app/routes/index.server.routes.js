@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Index = require('../controllers/index')
-const {decryptParam} = require('../commons/aspect.server.common');
+const {handleRequest} = require('../commons/aspect.server.common');
 
 router.get('/', Index.index);
-router.post('/test', decryptParam);
+router.post('/test', handleRequest);
 
 module.exports = router;

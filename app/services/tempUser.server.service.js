@@ -1,4 +1,4 @@
-const TempUserDao = require('../dao/tempUser.server.dao');
+const TempUserDao = require('../repositories/tempUser.server.dao');
 
 class TempUserService {
     getTempUserID (userID) {

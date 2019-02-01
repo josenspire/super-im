@@ -22,7 +22,7 @@ test(`should decrypt request data and verify signature then return verify failed
         },
     };
 
-    AspectControl.decryptParam(req, res);
+    AspectControl.handleRequest(req, res);
     console.log('----', result);
     t.true(result.length > 0);
 });

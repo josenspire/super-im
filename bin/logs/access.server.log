@@ -1,0 +1,2 @@
+[2019-02-01T16:54:03.899] [INFO] [Normal] - ::1 - - "POST /v1/api/auth/obtainSMSCode HTTP/1.1" 200 2 "" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"
+[2019-02-01T16:54:15.263] [INFO] [Normal] - ::1 - - "POST /v1/api/auth/obtainSMSCode HTTP/1.1" 200 2 "" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"

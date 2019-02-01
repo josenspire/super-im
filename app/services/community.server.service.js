@@ -1,5 +1,5 @@
-const CommunityDao = require('../dao/community.server.dao')
-const UserDao = require('../dao/user.server.dao')
+const CommunityDao = require('../repositories/community.server.dao')
+const UserDao = require('../repositories/user.server.dao')
 
 const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
 

@@ -460,7 +460,7 @@ var generateMembersObject = (groupID, members, currentUser) => {
 var saveGroup = group => {
     const groupModel = new GroupModel(group);
     try {
-        return groupModel.save().lean();
+        return groupModel.save();
     } catch (err) {
         console.log('--[CREATE GROUP FAIL]--', err);
         throw new Error('Server unknow error, create group fail');
@@ -490,7 +490,7 @@ var addMemberToGroup = async (groupID, members) => {
 var joinToGroup = (groupID, member) => {
     try {
         const memberModel = new MemberModel({groupID, userID: member.userID});
-        return memberModel.save().lean();
+        return memberModel.save();
     } catch (err) {
         throw new Error('Server unknow error, add contact fail');
     }

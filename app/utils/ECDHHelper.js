@@ -40,13 +40,13 @@ class ECDHHelper {
                 format: 'pem',
             }
         });
-        writeFileSync(`${dirPath}/ecdh_pub1.pem`, publicKey, err => {
+        writeFileSync(`${dirPath}/ecdh_pub.pem`, publicKey, err => {
             if (err) {
                 console.log('--[CREATE_PUB_KEY]--', err);
                 throw new Error(err.message);
             }
         });
-        writeFileSync(`${dirPath}/ecdh_priv1.pem`, privateKey, err => {
+        writeFileSync(`${dirPath}/ecdh_priv.pem`, privateKey, err => {
             if (err) {
                 console.log('--[CREATE_PRIV_KEY]--', err);
                 throw new Error(err.message);
@@ -62,7 +62,11 @@ class ECDHHelper {
      * @returns {string | base64}
      */
     computeSecret(otherPublicKey) {
-        return this.computeSecretByPEM(generateBaseKeyToPEM(otherPublicKey));
+        try {
+            return this.computeSecretByPEM(generateBaseKeyToPEM(otherPublicKey));
+        } catch (err) {
+            throw new Error(`Unsuccessful negotiation, please check your key`);
+        }
     };
 
     /**

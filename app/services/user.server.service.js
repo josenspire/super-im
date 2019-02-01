@@ -1,4 +1,4 @@
-const UserDao = require('../dao/user.server.dao');
+const UserDao = require('../repositories/user.server.dao');
 const DaoManager = require('../daoManager/dao.server.manager');
 const Constants = require("../utils/Constants");
 const {SUCCESS, FAIL} = require("../utils/CodeConstants");

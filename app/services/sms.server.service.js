@@ -1,4 +1,4 @@
-const SMSDao = require('../dao/sms.server.dao')
+const SMSDao = require('../repositories/sms.server.dao')
 const AliyunSMSUtil = require('../utils/AliyunSMSUtil');
 const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require("../utils/CodeConstants");
 

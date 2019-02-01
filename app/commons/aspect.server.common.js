@@ -4,12 +4,15 @@ const UserService = require('../services/user.server.service.js');
 const {SUCCESS, SIGNATURE_VERIFY_FAIL} = require('../utils/CodeConstants.js');
 
 const ecdhHelper = ECDHHelper.getInstance();
-class AspectControl {
-    constructor() {};
 
-    async decryptParam(req, res, next) {
+class AspectControl {
+    constructor() {
+    };
+
+    async handleRequest(req, res, next) {
         const {data, secretKey, signature} = req.body;
         console.log('---[REQUEST DATA]---', data, secretKey, signature);
+
         try {
             const secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
             const decipherText = decipher({cipherText: data, secret});
@@ -23,16 +26,23 @@ class AspectControl {
                 return res.json(buildResponseBody(requestResult, secret));
             }
             else {
-                // TODO handle verify logic after ECDH/AES opts
-                req.data = {};
-                const isValid = await UserService.tokenVerify(data.token)
-                if (isValid.status != 200) {
+                // should use token + deviceID verify, order to Prevent application of double opening
+                /**
+                 * @params {string} token
+                 * @params {string} deviceID
+                 * @params {Object} params
+                 * @params {Object} extension
+                 */
+                const {token, deviceID, params, extension} = JSON.parse(decipherText);
+                const isValid = await UserService.tokenVerify(token);
+                if (isValid.status != SUCCESS) {
                     return res.json(isValid);
                 } else {
-                    let user = isValid.data.userProfile;
-                    data.params.userID = user.userID;
-                    req.data.input = data.params;
-                    req.data.user = user;
+                    req.input = {};
+                    const {userProfile} = isValid.data;
+                    params['currentUserID'] = userProfile.userID;
+                    req.input = {params, extension};
+                    req.user = userProfile;
                     next();
                 }
             }
@@ -48,10 +58,16 @@ class AspectControl {
         }
     };
 
-    encryptParam(req, res) {
-        let output = req.data.output;
-        console.log('---[RESPONSE DATA]---', output)
+    async handleRequestTest(req, res, next) {
+        req.input = req.body
+        next();
+    };
+
+    handleResponse(req, res) {
+        const output = req.output;
+        console.log('---[RESPONSE DATA]---', output);
         return res.json(output);
+        // return res.json(buildResponseBody(buildRequestResult({status: SERVER_ERROR, message: err.message}), ));
     };
 };
 

@@ -1,5 +1,5 @@
-const UserDao = require("../dao/user.server.dao");
-const GroupDao = require("../dao/group.server.dao");
+const UserDao = require("../repositories/user.server.dao");
+const GroupDao = require("../repositories/group.server.dao");
 const {SUCCESS} = require("../utils/CodeConstants");
 
 class DAOManager {

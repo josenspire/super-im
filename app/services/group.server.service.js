@@ -1,6 +1,6 @@
 const IMProxie = require('../api/proxies/rongCloud.server.proxies')
-const GroupDao = require("../dao/group.server.dao");
-const TempGroupDao = require('../dao/tempGroup.server.dao');
+const GroupDao = require("../repositories/group.server.dao");
+const TempGroupDao = require('../repositories/tempGroup.server.dao');
 const Constants = require("../utils/Constants");
 const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
 const _ = require("lodash");

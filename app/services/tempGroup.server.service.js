@@ -1,4 +1,4 @@
-const TempGroupDao = require('../dao/tempGroup.server.dao');
+const TempGroupDao = require('../repositories/tempGroup.server.dao');
 
 class TempGroupService {
     async getTempGroupID(groupID) {

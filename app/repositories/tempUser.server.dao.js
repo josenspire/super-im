@@ -72,7 +72,7 @@ var queryTempUserByTempUserID = tempUserID => {
 var createTempUser = userID => {
     try {
         const tempUser = new TempUserModel({user: userID, tempUserID: uuidv4()});
-        return tempUser.save().lean();
+        return tempUser.save();
     } catch (err) {
         throw new Error(`Server error, create temp user fail: ${err.message}`);
     }
