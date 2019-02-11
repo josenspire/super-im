@@ -1,31 +1,26 @@
 const UserRepository = require('../repositories/user.repository');
 const DaoManager = require('../daoManager/dao.manager');
 const Constants = require("../utils/Constants");
-const {SUCCESS, FAIL} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const TError = require('../commons/error.common');
 
-const IMProxie = require('../api/proxies/rongCloud.server.proxies')
-const QiniuProxie = require('../api/proxies/qiniu.server.proxies')
-
+const IMProxie = require('../api/proxies/rongCloud.server.proxies');
+const QiniuProxie = require('../api/proxies/qiniu.server.proxies');
 const uuidv4 = require('uuid/v4');
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
 class UserService {
     // create user
-    createUser(user) {
-        let result = {status: FAIL, data: {}, message: ""};
+    async createUser(user) {
         const userID = mongoose.Types.ObjectId();
-        return new Promise((resolve, reject) => {
-            IMProxie.createUser(userID, user.nickname, null, async response => {
-                if (response.error) {
-                    console.log('---[IM CRETEUSER FAIL]---', response.error)
-                    result.message = response.error;
-                    return resolve(resolve);
-                }
-                user._id = userID;
-                const _result = await DaoManager.createUserAndGetAllInfo(user, response.data);
-                resolve(_result);
-            });
-        });
+        try {
+            const CloudRegisterResult = await IMProxie.createUser({userID, nickname: user.nickname, avatar: null});
+            user._id = userID;
+            return await DaoManager.createUserAndGetAllInfo(user, CloudRegisterResult.token);
+        } catch (err) {
+            console.log('---[IM CRETEUSER FAIL]---', err);
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
+        }
     };
 
     // user login

@@ -3,7 +3,6 @@ const fs = require('fs');
 const uuidv4 = require('uuid/v4');
 
 const UserService = require('../services/user.service');
-const GroupService = require('../services/group.service');
 const SMSService = require('../services/sms.service');
 const RSAUtil = require('../utils/RSAUtil');
 const {SUCCESS, FAIL} = require("../utils/CodeConstants");
@@ -12,9 +11,10 @@ const Constants = require('../utils/Constants');
 const multiparty = require('multiparty');
 const atavarUpload = require('../api/commons/upload.server.common');
 const QiniuProxie = require('../api/proxies/qiniu.server.proxies');
+const TError = require('../commons/error.common');
+const {success, fail, error} = require('../commons/response.common');
 
 class UserController {
-
     getPublicKey(req, res, next) {
         return res.json({
             status: SUCCESS,
@@ -50,38 +50,34 @@ class UserController {
     };
 
     async register(req, res, next) {
-        let data = req.data.input.params || {};
-
-        let user = {};
-        user.telephone = data.telephone;
-        user.password = data.password;
-        user.nickname = data.nickname;
-        user.sex = data.sex || 0;
-        user.birthday = data.birthday || '';
-        user.location = data.location || '';
-        user.signature = data.signature || '';
-        user.countryCode = data.countryCode || '';
-        user.deviceID = data.deviceID;
-
-        const verifyCode = data.verifyCode || '';
-
-        console.log('[--REGISTER--]: ', data)
-        const isExist = await UserService.isTelephoneExist(user.telephone);
-        if (isExist.status === false) {
-            const _sms = await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER);
-            if (_sms.status === SUCCESS) {
-                req.data.output = UserService.createUser(user);
+        const {user, verifyCode} = req.input.params || {};
+        const _user = {
+            telephone: user.telephone,
+            password: user.password,
+            nickname: user.nickname,
+            sex: user.sex || 0,
+            birthday: user.birthday || '',
+            location: user.location || '',
+            signature: user.signature || '',
+            countryCode: user.countryCode || '',
+            deviceID: user.deviceID,
+        };
+        console.log('[--REGISTER--]: ', user);
+        let result = {};
+        try {
+            const isExist = await UserService.isTelephoneExist(_user.telephone);
+            if (!isExist) {
+                await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER);
+                const createResult = await UserService.createUser(user);
+                result = success(createResult);
             } else {
-                req.data.output = _sms;
+                result = fail(FAIL, "The telephone is already exist");
             }
-            next();
-        } else {
-            let result = {data: {}};
-            result.status = FAIL;
-            result.message = isExist.message;
-            req.data.output = result;
-            next();
+        } catch (err) {
+            result = error(err);
         }
+        req.output = result;
+        next();
     };
 
     async tokenVerifyLogin(req, res, next) {

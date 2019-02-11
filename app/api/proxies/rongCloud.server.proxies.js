@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const {appKey, appSecret} = require('../../../configs/config').RongCloudConfig;
+const TError = require('../../commons/error.common');
 
 const rongCloud = require('rongcloud-sdk')({
     appkey: appKey,
@@ -15,22 +16,29 @@ let GroupMessage = Message.Group;
 var errorHandle = (err) => {
     console.log('---[IM REQUEST ERROR]---', err);
     return err.text;
-}
+};
 
-// User
-exports.createUser = async (userID, nickname, avatar) => {
+/**
+ * Rong cloud register new user
+ * @param {string} userID
+ * @param {string} nickname
+ * @param avatar
+ * @returns {Promise<{data: *}>} register result
+ */
+exports.createUser = async ({userID, nickname, avatar}) => {
     const user = {
         id: _.toString(userID),
         name: nickname,
         portrait: avatar || 'https://dn-qiniu-avatar.qbox.me/avatar/f9f953f958ef1505a241a3270dfa408d?qiniu-avatar'
     };
-    User.register(user).then(result => {
-        callback({data: result.token});
-    }, error => {
-        console.log(error);
-        callback({error});
-    });
-}
+    try {
+        return await User.register(user);
+    } catch (err) {
+        console.log('----------', err);
+        // throw new TError(500, error);
+        throw new Error(err);
+    }
+};
 
 /**
  * IM - send concact notification
@@ -65,7 +73,7 @@ exports.sendContactNotification = async ({currentUser = '', contactID = '', mess
     });
     console.log('Sending private notification Success: ', result);
     return result.code;
-}
+};
 
 // IM - send group notification
 exports.sendGroupNotification = async ({currentUserID = '', operation = '', group = {}, memberID = null, membersID = [], member = {}, isIncludeSender = 1}) => {

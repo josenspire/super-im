@@ -1,21 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const UserControl = require('../controllers/user.controller');
+const {
+    getPublicKey,
+    register,
+    login,
+    logout,
+    tokenVerifyLogin
+} = require('../controllers/user.controller');
 const {sendSMS, verifyCode} = require('../controllers/sms.controller');
-const AsceptControl = require('../controllers/aspect.controller');
+const AspectControl = require('../controllers/aspect.controller');
 
-let RSAAscept = AsceptControl.RSA;
+let RSAAspect = AspectControl.RSA;
 
 const {handleRequestTest, handleResponse} = require('../commons/aspect.common.js');
 
-router.get('/getSecretKey', UserControl.getPublicKey);
+router.get('/getSecretKey', getPublicKey);
 
-router.post('/register', RSAAscept.decryptParam, UserControl.register, RSAAscept.encryptParam);
-router.post('/login', RSAAscept.decryptParam, UserControl.login, RSAAscept.encryptParam);
-router.post('/logout', RSAAscept.decryptParam, UserControl.logout, RSAAscept.encryptParam);
-router.post('/tokenVerify', UserControl.tokenVerifyLogin);
+router.post('/register', handleRequestTest, register, handleResponse);
+router.post('/login', RSAAspect.decryptParam, login, RSAAspect.encryptParam);
+router.post('/logout', RSAAspect.decryptParam, logout, RSAAspect.encryptParam);
+router.post('/tokenVerify', tokenVerifyLogin);
 // sms
 router.post('/obtainSMSCode', handleRequestTest, sendSMS, handleResponse);
-router.post('/verifySMSCode', RSAAscept.decryptParam, verifyCode, RSAAscept.encryptParam);
+router.post('/verifySMSCode', RSAAspect.decryptParam, verifyCode, RSAAspect.encryptParam);
 
 module.exports = router;

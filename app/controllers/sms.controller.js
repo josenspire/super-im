@@ -58,7 +58,7 @@ class SMSController {
 
 var register = async (telephone, verifyCode) => {
     const isExist = await UserService.isTelephoneExist(telephone);
-    if (isExist.status === false) {
+    if (!isExist) {
         const sms = await SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_REGISTER);
         sms.data.skipVerify = false;
         return sms;

@@ -7,6 +7,9 @@ const DateUtils = require('../utils/DateUtils');
 const JWT_SECRET = require('../utils/Constants');   // secret key
 const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
 
+const TError = require('../commons/error.common');
+
+const _ = require('lodash');
 const jwt = require('jwt-simple');
 const mongoose = require('mongoose');
 
@@ -15,30 +18,27 @@ class UserRepository {
      * Create user and initial concat list
      * @param user
      * @param token
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @returns {Promise<{userProfile: any | {}, token, secretKey: string}>}
      */
     async createUser(user, token) {
-        let result = {status: FAIL, data: {}, message: ''};
         const tokenID = mongoose.Types.ObjectId();
         try {
             user.token = tokenID;
-            const userModel = new UserModel(user);
-            let _user = await insertUser(userModel);
+            let _user = await insertUser(new UserModel(user));
 
-            const tokenModel = new TokenModel({_id: tokenID, token: token, user: _user._id});
-            const _token = await insertToken(tokenModel);
+            const tokenModel = new TokenModel({_id: tokenID, token, user: _user._id});
+            await tokenModel.save();
 
             await initContactList(_user._id);
-            result.status = SUCCESS;
-            result.data.userProfile = convertUser(_user);
-            result.data.token = _token.token;
-            result.data.secretKey = Constants.AES_SECRET;
+            return {
+                userProfile: convertUser(_user),
+                token,
+                secretKey: Constants.AES_SECRET,
+            };
         } catch (err) {
-            console.log(err)
-            result.message = err;
-            result.data = {};
+            console.log(err);
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-        return result;
     }
 
     /**
@@ -72,20 +72,17 @@ class UserRepository {
     /**
      * Check is telephone already exist
      * @param telephone
-     * @returns {Promise<{status: boolean, message: string}>}
+     * @returns {Promise<boolean>}
      */
     async isTelephoneExist(telephone) {
-        let result = {status: false, message: ''};
+        let result = false;
         try {
             const user = await UserModel.findOne({telephone: telephone}).lean();
             if (user) {
-                result.message = 'The telephone is already exist';
-            } else {
-                result.status = false;
-                result.message = 'The telephone is not exist';
+                result = true;
             }
         } catch (err) {
-            result.message = 'Sorry, server unknow error';
+            throw new TError(SERVER_UNKNOW_ERROR, 'Sorry, server unknow error');
         }
         return result;
     };
@@ -151,7 +148,7 @@ class UserRepository {
                 resolve(result);
             });
         });
-    }
+    };
 
     /**
      * Query user group by telephone
@@ -179,7 +176,7 @@ class UserRepository {
             result.data = {};
         }
         return result;
-    }
+    };
 
     /**
      * Update device ID
@@ -209,7 +206,7 @@ class UserRepository {
             result.data = {};
         }
         return result;
-    }
+    };
 
     /**
      * Get user information by token
@@ -234,7 +231,7 @@ class UserRepository {
             result.data.secretKey = Constants.AES_SECRET;
         }
         return result;
-    }
+    };
 
     /**
      * Reset user password by telephone and new password
@@ -375,21 +372,13 @@ class UserRepository {
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
     async queryUserContactsByUserID(userID) {
-        let result = {status: FAIL, data: {}, message: ''};
         try {
             let contactsInfo = await queryUserContactsByUserID(userID);
-            if (!contactsInfo) {
-                result.data.contacts = [];
-            } else {
-                result.data.contacts = convertContacts(contactsInfo);
-                result.status = SUCCESS;
-            }
+            return _.isEmpty(contactsInfo) ? [] : convertContacts(contactsInfo);
         } catch (err) {
             console.log('---[QUERY CONTACTS FAIL]---', err)
-            result.message = err;
-            result.data = {};
+            throw new TError(FAIL, err.message);
         }
-        return result;
     }
 
     /**
@@ -421,21 +410,6 @@ class UserRepository {
         }
     };
 };
-
-/** User & Token Part */
-
-var insertToken = tokenModel => {
-    return new Promise((resolve, reject) => {
-        tokenModel.save((err, data) => {
-            if (err) {
-                console.log('--[CREATE TOKEN FAIL]--', err)
-                reject('Server unknow error,login fail')
-            } else {
-                resolve(data);
-            }
-        })
-    })
-}
 
 var updateToken = (_id) => {
     return new Promise((resolve, reject) => {
@@ -684,19 +658,14 @@ var updateRemark = (userID, contactID, remark) => {
 }
 
 var queryUserContactsByUserID = userID => {
-    return new Promise((resolve, reject) => {
-        ContactModel.findOne({userID: userID})
-            .populate("contacts.userID")    // 查询数组中的某个字段的ref数据
-            .exec((err, contacts) => {
-                if (err) {
-                    console.log(err);
-                    reject('Server unknow error, get user contact list fail');
-                } else {
-                    resolve(contacts);
-                }
-            })
-    })
-}
+    return ContactModel.findOne({userID: userID})
+        .populate("contacts.userID")    // 查询数组中的某个字段的ref数据
+        .exec()
+        .catch(err => {
+            console.log(err);
+            throw new Error('Server unknow error, get user contact list fail');
+        });
+};
 
 var searchUserByTelephoneOrNickname = (queryCondition, pageIndex) => {
     return new Promise((resolve, reject) => {

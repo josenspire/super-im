@@ -267,11 +267,8 @@ class GroupRepository {
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
     async queryGroupList(userID) {
-        let result = {status: FAIL, data: {}, message: ""};
         try {
-            const groupData = await queryUserAllGroupListData(userID);
-            result.data.groups = groupData;
-            result.status = SUCCESS;
+            return await queryUserAllGroupListData(userID);
         } catch (err) {
             result.message = err.message;
         }
@@ -319,7 +316,7 @@ var queryUserAllGroupListData = async userID => {
         let membersData = await Promise.all(membersPromises);
         return convertGroupList(convertGroupListData(groupsData), convertGroupMembersList(membersData));
     } catch (err) {
-        throw new Error(err);
+        throw new Error(err.message);
     }
 };
 

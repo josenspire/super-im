@@ -1,5 +1,6 @@
 const SMSModel = require('../models/sms.model')
 const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const TError = require('../commons/error.common');
 
 class SMSRepository {
     /**
@@ -39,33 +40,23 @@ class SMSRepository {
     };
 
     /**
-     * Validate record
-     * @param {string} telephone
-     * @param {string} verifyCode
-     * @param {string} codeType
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * Validate sms code
+     * @param telephone
+     * @param verifyCode
+     * @param codeType
+     * @returns {Promise<object>}
      */
     async validateRecord(telephone, verifyCode, codeType) {
-        let result = {status: FAIL, data: {}, message: ""};
-        try {
-            const _sms = await SMSModel.findOne({telephone: telephone, codeType: codeType}).lean();
-            if (_sms) {
-                if (verifyCode === _sms.verifyCode) {
-                    result.status = SUCCESS;
-                    result.data.verifyCode = verifyCode;
-                    result.message = 'The SMS verify code validate success';
-                } else {
-                    result.message = 'The SMS verify code validation invalid';
-                }
-            } else if (!_sms) {
-                result.message = 'The verify code is expires, please get the code again'
+        const _sms = await SMSModel.findOne({telephone, codeType}).lean();
+        if (_sms) {
+            if (verifyCode === _sms.verifyCode) {
+                return _sms;
+            } else {
+                throw new TError(FAIL, 'The SMS verify code validation invalid');
             }
-        } catch (err) {
-            console.log(err)
-            result.status = SERVER_UNKNOW_ERROR;
-            result.message = 'Sorry, server unknow error';
+        } else {
+            throw new TError(FAIL, 'The verify code is expires, please get the code again');
         }
-        return result;
     }
 };
 
