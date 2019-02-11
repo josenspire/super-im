@@ -1,8 +1,8 @@
 const { SUCCESS, FAIL, SERVER_ERROR } = require('../utils/Constants');
 
 class TResponse {
-    success (result) {
-        return { status: SUCCESS, data: result || {}, message: '' };
+    success (result, message) {
+        return { status: SUCCESS, data: result || {}, message: message || "" };
     };
 
     fail (code, message) {

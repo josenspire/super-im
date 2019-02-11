@@ -192,26 +192,25 @@ class UserRepository {
 
     /**
      * Get user information by token
-     * @param {string} token
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @param token
+     * @returns {Promise<token: string, userProfile: Object>}
      */
     async tokenVerify(token) {
-        let result = {status: FAIL, data: {}, message: ''};
-        const user = await TokenModel.findOne({token}).populate('user').exec()
+        const user = await TokenModel.findOne({token})
+            .populate('user')
+            .exec()
             .catch(err => {
                 console.log(err);
-                result.status = SERVER_UNKNOW_ERROR;
-                result.message = 'Sorry, server unknow error';
-                return result;
+                throw new TError(SERVER_UNKNOW_ERROR, 'Sorry, server unknow error');
             });
         if (!user) {
-            result.message = 'This token is invalid, please login again';
-        } else if (user) {
-            result.status = SUCCESS;
-            result.data.token = user.token;
-            result.data.userProfile = convertTokenInfo(user);
+            throw new TError(FAIL, 'This token is invalid, please login again');
+        } else {
+            let result = {};
+            result.token = user.token;
+            result.userProfile = convertTokenInfo(user);
+            return result;
         }
-        return result;
     };
 
     /**

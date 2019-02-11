@@ -62,8 +62,8 @@ class UserController {
             const isExist = await UserService.isTelephoneExist(_user.telephone);
             if (!isExist) {
                 await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER);
-                const createResult = await UserService.createUser(user);
-                result = success(createResult);
+                await UserService.createUser(user);
+                result = success(null, "Congratulations, registration is successful");
             } else {
                 result = fail(FAIL, "The telephone is already exist");
             }
