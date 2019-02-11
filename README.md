@@ -12,8 +12,7 @@
 
 ``` bash
 
-D:.                   
-├───.vscode           -- vscode config
+super-im:
 ├───app               
 │   ├───api           -- proxy api / call webservice
 │   │   ├───client    
@@ -22,7 +21,7 @@ D:.
 │   │   └───resources 
 │   │
 │   ├───controllers   -- input control
-│   ├───dao           -- db operation
+│   ├───reopsitory    -- db operation
 │   ├───daoManager    -- decoupling - between service and dao
 │   ├───models        -- models
 │   ├───routes        -- url routes
@@ -31,21 +30,31 @@ D:.
 │   ├───utils         -- tools
 │   └───views         -- ejs view
 ├───bin               -- entry
+│   └───dev-server.js -- server start
 ├───configs           -- env config
-│   └───env           
+│   ├───ecdh_priv.pem -- ecdh private key
+│   ├───ecdh_pub.pem  -- ecdh public key
+│   ├───env
+│   │   ├───index.js        -- environment index config file
+│   │   ├───development.js  -- development environment config file
+│   │   ├───production.js   -- production environment config file
+│   │   └───test.js         -- test environment config file
+│   │
+│   └───log4jConfig.json    -- log4js config file
 ├───doc               -- doc
-│          
-│            
+│
 ├───lib               -- express, mongoose etc..
+│   ├───app.js        -- server config file
+│   ├───express.js    -- express config file
+│   ├───logger.js     -- TODO
+│   └───mongoose.js   -- mongoose config file
 ├───logs              -- log4js log files
 ├───public            -- public static resource
 │   │
 │   └───stylesheets   
-└───test              -- unit test
-    ├───dao           
-    ├───service       
-    └───utils         
-
+├───test              -- unit test       
+│    └───utils
+└───Dockerfile        -- docker config file
 ```
 
 ## Environment Constrol

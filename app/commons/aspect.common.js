@@ -59,7 +59,7 @@ class AspectControl {
     };
 
     async handleRequestTest(req, res, next) {
-        req.input = req.body
+        req.input = req.body;
         next();
     };
 
