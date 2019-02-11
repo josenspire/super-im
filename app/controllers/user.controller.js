@@ -26,27 +26,21 @@ class UserController {
     };
 
     async login(req, res, next) {
-        const data = req.data.input.params || {};
-
-        const verifyCode = data.verifyCode || "";
-        let user = {};
-        user.telephone = data.telephone;
-        user.password = data.password;
-        user.deviceID = data.deviceID;
-
+        const {params, extension} = req.input || {};
+        const {user, verifyCode} = params;
+        // TODO: to save the information about OS etc.
+        // let extension = {};
         if (_.isEmpty(verifyCode)) {
-            req.data.output = await UserService.queryUserWithoutVerify(user.telephone, user.password);
-            next();
+            req.output = await UserService.queryUserWithoutVerify(user.telephone, user.password);
         } else {
-            const validateCallback = await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
-            if (validateCallback.status === SUCCESS) {
-                req.data.output = await UserService.updateDeviceID(user.telephone, user.password, user.deviceID);
-                next();
+            const validateResult = await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
+            if (validateResult) {
+                req.output = await UserService.updateDeviceID(user.telephone, user.password, user.deviceID);
             } else {
-                req.data.output = validateCallback;
-                next();
+                req.output = validateResult;
             }
         }
+        next();
     };
 
     async register(req, res, next) {

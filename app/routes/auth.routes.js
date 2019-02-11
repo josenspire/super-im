@@ -17,7 +17,7 @@ const {handleRequestTest, handleResponse} = require('../commons/aspect.common.js
 router.get('/getSecretKey', getPublicKey);
 
 router.post('/register', handleRequestTest, register, handleResponse);
-router.post('/login', RSAAspect.decryptParam, login, RSAAspect.encryptParam);
+router.post('/login', handleRequestTest, login, handleResponse);
 router.post('/logout', RSAAspect.decryptParam, logout, RSAAspect.encryptParam);
 router.post('/tokenVerify', tokenVerifyLogin);
 // sms

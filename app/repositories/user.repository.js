@@ -33,7 +33,6 @@ class UserRepository {
             return {
                 userProfile: convertUser(_user),
                 token,
-                secretKey: Constants.AES_SECRET,
             };
         } catch (err) {
             console.log(err);
@@ -48,26 +47,18 @@ class UserRepository {
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
     async queryUserByTelephoneAndPassword(telephone, password) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            const data = await queryUserByTelephoneAndPassword(telephone, password);
-            if (data.isMatch) {
-                let _user = convertUser(data.user);
-                await updateToken(data.user.token);
-                result.data.token = data.user.token.token;
-                result.data.userProfile = _user;
-                result.data.secretKey = Constants.AES_SECRET;
-                result.status = SUCCESS;
-            } else {
-                result.message = 'Sorry, Your telephone or password is invalid';
-            }
-        } catch (err) {
-            console.log(err)
-            result.message = err;
-            result.data = {};
+        let result = {};
+        const {user, isMatch} = await queryUserByTelephoneAndPassword(telephone, password);
+        if (isMatch) {
+            await updateToken(user.token._id);
+            const _user = convertUser(user);
+            result.token = user.token.token;
+            result.userProfile = _user;
+        } else {
+            throw new TError(FAIL, 'Sorry, Your telephone or password is invalid');
         }
         return result;
-    }
+    };
 
     /**
      * Check is telephone already exist
@@ -186,24 +177,15 @@ class UserRepository {
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
     async updateDeviceID(telephone, password, deviceID) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            let data = await queryUserByTelephoneAndPassword(telephone, password);
-            if (data.isMatch) {
-                let token = data.user.token.token;
-                let _user = await updateDeviceID(telephone, deviceID);
-                delete _user.deviceID;
-                result.data.userProfile = convertUser(_user);
-                result.data.secretKey = Constants.AES_SECRET;
-                result.data.token = token;
-                result.status = SUCCESS;
-            } else {
-                result.message = 'Telephone or password is incorrect';
-            }
-        } catch (err) {
-            console.log('--[UPDATE DEVICEID FAIL]--', err)
-            result.message = err;
-            result.data = {};
+        let result = {};
+        const {user, isMatch} = await queryUserByTelephoneAndPassword(telephone, password);
+        if (isMatch) {
+            const {token} = user.token;
+            let _user = await updateDeviceID(telephone, deviceID);
+            result.userProfile = convertUser(_user);
+            result.token = token;
+        } else {
+            throw new TError(FAIL, 'Telephone or password is incorrect');
         }
         return result;
     };
@@ -228,7 +210,6 @@ class UserRepository {
             result.status = SUCCESS;
             result.data.token = user.token;
             result.data.userProfile = convertTokenInfo(user);
-            result.data.secretKey = Constants.AES_SECRET;
         }
         return result;
     };
@@ -411,58 +392,46 @@ class UserRepository {
     };
 };
 
-var updateToken = (_id) => {
-    return new Promise((resolve, reject) => {
-        let opts = {loginTime: DateUtils.formatCommonUTCDate(Date.now())};
-        TokenModel.findByIdAndUpdate(_id, {$set: opts})
-            .exec(err => {
-                if (err) {
-                    console.log('--[UPDATE TOKEN ERROR]--', err.message);
-                    reject('Server unknow error, login fail')
-                } else {
-                    resolve()
-                }
-            })
-    })
-}
-
-var updateDeviceID = (telephone, deviceID) => {
-    return new Promise((resolve, reject) => {
-        UserModel.findOneAndUpdate({telephone: telephone}, {$set: {deviceID: deviceID}}, (err, user) => {
-            if (err) {
-                console.log(err)
-                reject('Server unknow error, login fail')
-            } else {
-                user.deviceID = deviceID;
-            }
-            resolve(user);
-        })
-    })
-}
-
-var insertUser = userModel => {
-    let message = '';
-    return new Promise((resolve, reject) => {
-        userModel.save((err, user) => {
-            if (err) {
-                console.log("[--CREATE USER FAIL--]", err);
-                let errMsg = err.errors;
-                if (errMsg) {
-                    if (errMsg.telephone || errMsg.password) {
-                        message = errMsg.telephone ? errMsg.telephone.message : errMsg.password.message;
-                    } else if (errMsg.nickname) {
-                        message = errMsg.nickname.message;
-                    }
-                } else {
-                    message = 'Sorry, server unknow error';
-                }
-                reject(message);
-            } else {
-                resolve(user);
-            }
+var updateToken = _id => {
+    const opts = {loginTime: DateUtils.formatCommonUTCDate(Date.now())};
+    return TokenModel.findByIdAndUpdate(_id, {$set: opts})
+        .exec()
+        .catch(err => {
+            console.log('--[UPDATE TOKEN ERROR]--', err.message);
+            throw new Error('Server unknow error, login fail');
         });
-    })
-}
+};
+
+var updateDeviceID = async (telephone, deviceID) => {
+    let user = await UserModel.findOneAndUpdate({telephone}, {$set: {deviceID: deviceID}})
+        .exec()
+        .catch(err => {
+            console.log(err);
+            throw new Error('Server unknow error, login fail');
+        });
+    user['deviceID'] = deviceID;
+    return user;
+};
+
+var insertUser = async userModel => {
+    let message = '';
+    try {
+        return await userModel.save();
+    } catch (err) {
+        console.log("[--CREATE USER FAIL--]", err);
+        let errMsg = err.errors;
+        if (errMsg) {
+            if (errMsg.telephone || errMsg.password) {
+                message = errMsg.telephone ? errMsg.telephone.message : errMsg.password.message;
+            } else if (errMsg.nickname) {
+                message = errMsg.nickname.message;
+            }
+        } else {
+            message = 'Sorry, server unknow error';
+        }
+        throw new Error(message);
+    };
+};
 
 var queryByTelephone = telephone => {
     return new Promise((resolve, reject) => {
@@ -507,24 +476,21 @@ var updateUserProfile = (userID, opts) => {
     })
 }
 
-var queryUserByTelephoneAndPassword = (telephone, password) => {
-    return new Promise((resolve, reject) => {
-        UserModel.findOne({telephone: telephone})
-            .populate('token')
-            .exec((err, user) => {
-                if (err) {
-                    console.log(err)
-                    reject('The telephone or password is invalid')
-                } else if (!user) {
-                    resolve('Sorry, Your telephone or password is invalid');
-                } else {
-                    user.comparePassword(password, isMatch => {
-                        resolve(isMatch ? {user: user, isMatch: true} : {isMatch: false})
-                    })
-                }
-            })
-    })
-}
+var queryUserByTelephoneAndPassword = async (telephone, password) => {
+    const user = await UserModel.findOne({telephone})
+        .populate('token')
+        .exec()
+        .catch(err => {
+            console.log(err)
+            throw new Error('The telephone or password is invalid');
+        });
+    if (!user) {
+        throw new Error('Sorry, Your telephone or password is invalid');
+    } else {
+        const isMatch = user.comparePassword(password);
+        return (isMatch ? {user, isMatch: true} : {isMatch: false})
+    }
+};
 
 /** User Contact Part */
 var acceptAddContact = (userID, contactID, remarkName) => {
@@ -697,6 +663,7 @@ var convertUser = user => {
     delete _user.role;
     delete _user.meta;
     delete _user.password;
+    delete _user.deviceID;
     return _user;
 }
 

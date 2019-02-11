@@ -154,10 +154,10 @@ UserSchema.pre('save', function (next) {
 
 //decode password and checking
 UserSchema.methods = {
-    comparePassword: function (_password, cb) {
-        let dpassword = jwt.decode(this.password, SECRET);
+    comparePassword: function (_password) {
+        const dpassword = jwt.decode(this.password, SECRET);
         console.log('----[TRUE PASSWORD]----', dpassword);
-        cb(_password === dpassword)
+        return (_password === dpassword);
     }
 };
 

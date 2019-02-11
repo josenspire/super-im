@@ -14,12 +14,14 @@ class DAOManager {
     };
 
     async getUserProfileAndContactsAndGroupsByUserInfo(telephone, password) {
-        const userData = await UserRepository.queryUserByTelephoneAndPassword(telephone, password);
-        if (userData.status != SUCCESS) {
-            return userData;
+        let queryResult = await UserRepository.queryUserByTelephoneAndPassword(telephone, password);
+        if (queryResult.userProfile) {
+            const {userID} = queryResult.userProfile;
+            const {contacts, groups} = await queryContactsAndGroups(userID);
+            queryResult.contacts = contacts;
+            queryResult.groups = groups;
         }
-        const {userID} = userData.data.userProfile;
-        return await queryContactsAndGroups(userID);
+        return queryResult;
     };
 
     async createUserAndGetAllInfo(user, token) {
@@ -34,13 +36,14 @@ class DAOManager {
     };
 
     async updateDeviceIDAndGetUserInfo(telephone, password, deviceID) {
-        const userData = await UserRepository.updateDeviceID(telephone, password, deviceID);
-        if (userData.status != SUCCESS) {
-            return userData;   
+        const updateResult = await UserRepository.updateDeviceID(telephone, password, deviceID);
+        if (updateResult.userProfile) {
+            const {userID} = updateResult.userProfile;
+            const {contacts, groups} = await queryContactsAndGroups(userID);
+            updateResult.contacts = contacts;
+            updateResult.groups = groups;
         }
-
-        const {userID} = userData.data.userProfile;
-        return await queryContactsAndGroups(userID);
+        return updateResult;
     };
 };
 
