@@ -1,5 +1,4 @@
-const mongoose = require('mongoose')
-const TempUserSchema = require('../schemas/tempUser.schema')
-const TempUser = mongoose.model('TempUser', TempUserSchema)
+const mongoose = require('mongoose');
+const TempUserSchema = require('../schemas/tempUser.schema');
 
-module.exports = TempUser;
+module.exports = mongoose.model('TempUser', TempUserSchema);

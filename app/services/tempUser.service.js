@@ -1,12 +1,12 @@
-const TempUserDao = require('../repositories/tempUser.repository');
+const TempUserRepository = require('../repositories/tempUser.repository');
 
 class TempUserService {
     getTempUserID (userID) {
-        return TempUserDao.getTempUserID(userID);
+        return TempUserRepository.getTempUserID(userID);
     };
 
     getUserProfileByTempUserID (tempUserID) {
-        return TempUserDao.getUserProfileByTempUserID(tempUserID);
+        return TempUserRepository.getUserProfileByTempUserID(tempUserID);
     };
 };
 

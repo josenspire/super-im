@@ -5,7 +5,6 @@ let Schema = mongoose.Schema;
 let ObjectId = Schema.Types.ObjectId;
 
 let GroupSchema = new mongoose.Schema({
-
     createBy: {
         type: ObjectId,
         ref: "User"
@@ -39,6 +38,6 @@ let GroupSchema = new mongoose.Schema({
         versionKey: false,
         timestamps: { createdAt: 'createTime', updatedAt: 'updateTime' }
     }
-)
+);
 
-module.exports = GroupSchema
+module.exports = GroupSchema;

@@ -5,7 +5,6 @@ let Schema = mongoose.Schema;
 let ObjectId = Schema.Types.ObjectId;
 
 let CommunitySchema = new mongoose.Schema({
-
     userID: {           // belong to
         type: ObjectId,
         ref: "User"
@@ -41,16 +40,16 @@ let CommunitySchema = new mongoose.Schema({
 }, {
         versionKey: false
     }
-)
+);
 
 CommunitySchema.pre('save', function (next) {
-    let user = this
+    let user = this;
     if (this.isNew) {
         this.meta.createAt = this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     } else {
         this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     }
     next();
-})
+});
 
 module.exports = CommunitySchema

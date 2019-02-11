@@ -5,18 +5,17 @@ let Schema = mongoose.Schema;
 let ObjectId = Schema.Types.ObjectId;
 
 const jwt = require('jwt-simple');
-const uuidv4 = require('uuid/v4');
-const DateUtils = require('../utils/DateUtils')
+const DateUtils = require('../utils/DateUtils');
 
 // validate email format
 let validateEmail = email => {
-    var filter = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+    const filter = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
     if (!email.match(filter)) {
         return false;
     } else {
         return true;
     };
-}
+};
 
 // validate telephone
 let validateTel = telephone => {
@@ -31,7 +30,7 @@ let validatePassword = password => {
 // validate nickname
 let validateNickname = nickname => {
     return (nickname.length >= 1 && nickname.length <= 12);
-}
+};
 
 let UserSchema = new mongoose.Schema({
 
@@ -138,11 +137,11 @@ let UserSchema = new mongoose.Schema({
 }, {
         versionKey: false
     }
-)
+);
 
 
 UserSchema.pre('save', function (next) {
-    let user = this
+    let user = this;
     if (this.isNew) {
         this.meta.createAt = this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     } else {
@@ -151,16 +150,16 @@ UserSchema.pre('save', function (next) {
     //encode password
     user.password = jwt.encode(user.password, SECRET);
     next()
-})
+});
 
 //decode password and checking
 UserSchema.methods = {
     comparePassword: function (_password, cb) {
         let dpassword = jwt.decode(this.password, SECRET);
-        console.log('----[TRUE PASSWORD]----', dpassword)
+        console.log('----[TRUE PASSWORD]----', dpassword);
         cb(_password === dpassword)
     }
-}
+};
 
 UserSchema.statics = {
     findById: function (id, cb) {
@@ -168,6 +167,6 @@ UserSchema.statics = {
             .findOne({ _id: id })
             .exec(cb)
     }
-}
+};
 
-module.exports = UserSchema
+module.exports = UserSchema;

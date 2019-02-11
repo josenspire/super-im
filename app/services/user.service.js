@@ -1,4 +1,4 @@
-const UserDao = require('../repositories/user.repository');
+const UserRepository = require('../repositories/user.repository');
 const DaoManager = require('../daoManager/dao.manager');
 const Constants = require("../utils/Constants");
 const {SUCCESS, FAIL} = require("../utils/CodeConstants");
@@ -30,7 +30,7 @@ class UserService {
 
     // user login
     async queryUserByTelephoneAndPassword(telephone, password, deviceID) {
-        const user = await UserDao.queryUserByTelephoneAndPassword(telephone, password);
+        const user = await UserRepository.queryUserByTelephoneAndPassword(telephone, password);
         if (user.status === SUCCESS) {
             if (user.data.userProfile.deviceID != deviceID) {
                 user.data.userProfile = {};
@@ -48,7 +48,7 @@ class UserService {
     };
 
     tokenVerify(token) {
-        return UserDao.tokenVerify(token);
+        return UserRepository.tokenVerify(token);
     };
 
     tokenVerifyLogin(token) {
@@ -56,12 +56,12 @@ class UserService {
     }
 
     isTelephoneExist(telephone) {
-        return UserDao.isTelephoneExist(telephone);
+        return UserRepository.isTelephoneExist(telephone);
     }
 
     // reset user's password
     resetPassword(telephone) {
-        return UserDao.resetPassword(telephone, newpwd);
+        return UserRepository.resetPassword(telephone, newpwd);
     }
 
     updateDeviceID(telephone, password, deviceID) {
@@ -69,15 +69,15 @@ class UserService {
     }
 
     getUserProfile(userID) {
-        return UserDao.queryByUserID(userID);
+        return UserRepository.queryByUserID(userID);
     }
 
     updateUserProfile(userID, userProfile) {
-        return UserDao.updateUserProfile(userID, userProfile);
+        return UserRepository.updateUserProfile(userID, userProfile);
     }
 
     updateUserAvatar(userID, avatarUrl) {
-        return UserDao.updateUserAvatar(userID, avatarUrl);
+        return UserRepository.updateUserAvatar(userID, avatarUrl);
     }
 
     async uploadAvatar(telephone) {
@@ -98,10 +98,10 @@ class UserService {
             result.message = 'You can\'t add yourself to a contact';
             return result;
         }
-        const user = await UserDao.queryByUserID(contactID);
+        const user = await UserRepository.queryByUserID(contactID);
         if (user.status === SUCCESS) {
             try {
-                const isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
+                const isContact = await UserRepository.checkContactIsExistByUserIDAndContactID(userID, contactID);
                 if (isContact) {
                     result.message = "This user is already your contact";
                 } else {
@@ -125,7 +125,7 @@ class UserService {
 
     async acceptAddContact(currentUser, contactID, remarkName) {
         let userID = currentUser.userID.toString();
-        let result = await UserDao.acceptAddContact(userID, contactID, remarkName || '');
+        let result = await UserRepository.acceptAddContact(userID, contactID, remarkName || '');
         if (result.status === SUCCESS) {
             try {
                 const message = "You've added him to be a contact";
@@ -150,7 +150,7 @@ class UserService {
     async rejectAddContact (currentUser, contactID, rejectReason) {
         let result = {status: FAIL, data: {}, message: ""};
         const userID = currentUser.userID.toString();
-        const isContact = await UserDao.checkContactIsExistByUserIDAndContactID(userID, contactID);
+        const isContact = await UserRepository.checkContactIsExistByUserIDAndContactID(userID, contactID);
         if (isContact) {
             result.message = "Error operating, this user is not your contact";
             return result;
@@ -175,7 +175,7 @@ class UserService {
     async deleteContact(currentUser, contactID) {
         const userID = currentUser.userID.toString();
 
-        const result = await UserDao.deleteContact(userID, contactID);
+        const result = await UserRepository.deleteContact(userID, contactID);
         await IMProxie.sendContactNotification({
             currentUser: currentUser,
             contactID: contactID,
@@ -187,15 +187,15 @@ class UserService {
     }
 
     updateRemark(userID, contactID, remark) {
-        return UserDao.updateRemark(userID, contactID, remark);
+        return UserRepository.updateRemark(userID, contactID, remark);
     }
 
     getUserContacts(userID) {
-        return UserDao.queryUserContactsByUserID(userID);
+        return UserRepository.queryUserContactsByUserID(userID);
     }
 
     searchUserByTelephoneOrNickname(queryCondition, pageIndex) {
-        return UserDao.searchUserByTelephoneOrNickname(queryCondition, pageIndex);
+        return UserRepository.searchUserByTelephoneOrNickname(queryCondition, pageIndex);
     }
 
     getBlackList(telephone) {

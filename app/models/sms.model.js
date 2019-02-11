@@ -1,5 +1,6 @@
-const mongoose = require('mongoose')
-const SMSSchema = require('../schemas/sms.schema')
-const SMS = mongoose.model('SMS', SMSSchema)
+const mongoose = require('mongoose');
+const SMSSchema = require('../schemas/sms.schema');
 
-module.exports = SMS;
+SMSSchema.index({telephone: 1});
+
+module.exports = mongoose.model('SMS', SMSSchema);

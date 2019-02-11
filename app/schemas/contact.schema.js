@@ -49,17 +49,16 @@ let ContactSchema = new mongoose.Schema({
 }, {
         versionKey: false
     }
-)
-
+);
 
 ContactSchema.pre('save', function (next) {
-    let user = this
+    let user = this;
     if (this.isNew) {
         this.meta.createAt = this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     } else {
         this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     }
     next();
-})
+});
 
-module.exports = ContactSchema
+module.exports = ContactSchema;

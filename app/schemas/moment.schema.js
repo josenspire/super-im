@@ -5,7 +5,6 @@ let Schema = mongoose.Schema;
 let ObjectId = Schema.Types.ObjectId;
 
 let MomentSchema = new mongoose.Schema({
-
     userID: {        // belong to
         type: ObjectId,
         ref: "User"
@@ -43,17 +42,17 @@ let MomentSchema = new mongoose.Schema({
 }, {
         versionKey: false
     }
-)
+);
 
 
 MomentSchema.pre('save', function (next) {
-    let user = this
+    let user = this;
     if (this.isNew) {
         this.publishAt = this.meta.createAt = this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     } else {
         this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     }
     next();
-})
+});
 
-module.exports = MomentSchema
+module.exports = MomentSchema;

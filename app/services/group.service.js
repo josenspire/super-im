@@ -1,6 +1,6 @@
 const IMProxie = require('../api/proxies/rongCloud.server.proxies')
-const GroupDao = require("../repositories/group.repository");
-const TempGroupDao = require('../repositories/tempGroup.repository');
+const GroupRepository = require("../repositories/group.repository");
+const TempGroupRepository = require('../repositories/tempGroup.repository');
 const Constants = require("../utils/Constants");
 const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
 const _ = require("lodash");
@@ -12,7 +12,7 @@ class GroupService {
         let members = _.cloneDeep(groupInfo.members);
         members.push(currentUserID);
         
-        const createResult = await GroupDao.createGroup(currentUser, groupInfo);
+        const createResult = await GroupRepository.createGroup(currentUser, groupInfo);
         result = _.cloneDeep(createResult);
         if (result.status != SUCCESS) {
             return result;
@@ -37,7 +37,7 @@ class GroupService {
     async addGroupMembers(currentUser, groupID, members) {
         let result = {status: FAIL, data: {}, message: ""};
         try {
-            const _result = await GroupDao.addGroupMembers(groupID, members);
+            const _result = await GroupRepository.addGroupMembers(groupID, members);
             result = _.cloneDeep(_result);
             if (result.status !== SUCCESS) {
                 return result;
@@ -70,14 +70,14 @@ class GroupService {
         };
         let _groupID = groupID;
         if (joinType === 'QrCode') {
-            const groupResult = await TempGroupDao.getGroupProfileByTempGroupID(groupID);
+            const groupResult = await TempGroupRepository.getGroupProfileByTempGroupID(groupID);
             if (groupResult.status === SUCCESS) {
                 _groupID = groupResult.data.group.groupID;
             } else {
                 return groupResult;
             }
         }
-        const _result = await GroupDao.joinGroup(member, _groupID);
+        const _result = await GroupRepository.joinGroup(member, _groupID);
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) {
@@ -108,7 +108,7 @@ class GroupService {
             userID: currentUser.userID,
             alias: currentUser.nickname
         };
-        const _result = await GroupDao.joinGroup(member, groupID);
+        const _result = await GroupRepository.joinGroup(member, groupID);
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) {
@@ -134,7 +134,7 @@ class GroupService {
 
     async kickGroupMember(currentUser, groupID, targetUserID) {
         let result = {status: FAIL, data: {}, message: ""};
-        const _result = await GroupDao.kickGroupMember(currentUser, groupID, targetUserID);
+        const _result = await GroupRepository.kickGroupMember(currentUser, groupID, targetUserID);
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) {
@@ -162,12 +162,12 @@ class GroupService {
     async quitGroup (currentUser, groupID) {
         let result = {status: FAIL, data: {}, message: ""};
         const currentUserID = _.toString(currentUser.userID);
-        const member = await GroupDao.queryMemberByGroupIDAndMemberID({groupID, memberID: currentUser.userID});
+        const member = await GroupRepository.queryMemberByGroupIDAndMemberID({groupID, memberID: currentUser.userID});
         if (!member) {
             result.message = 'Invalid operation, your have not join into this group'
             return result;
         }
-        const _result = await GroupDao.quitGroup(currentUserID, groupID);
+        const _result = await GroupRepository.quitGroup(currentUserID, groupID);
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) {
@@ -199,8 +199,8 @@ class GroupService {
         let result = {status: FAIL, data: {}, message: ""};
         const currentUserID = _.toString(currentUser.userID);
 
-        const member = await GroupDao.queryMemberByGroupIDAndMemberID({groupID, memberID: currentUser.userID});
-        const _result = await GroupDao.dismissGroup(currentUserID, groupID);
+        const member = await GroupRepository.queryMemberByGroupIDAndMemberID({groupID, memberID: currentUser.userID});
+        const _result = await GroupRepository.dismissGroup(currentUserID, groupID);
         result = _.cloneDeep(_result);
         try {
             if (result.status != SUCCESS) {
@@ -227,7 +227,7 @@ class GroupService {
     async renameGroup(currentUser, groupID, name, cb) {
         let result = {status: FAIL, data: {}, message: ""};
         try {
-            const _result = await GroupDao.renameGroup(groupID, name);
+            const _result = await GroupRepository.renameGroup(groupID, name);
             result = _.cloneDeep(_result);
             if (result.status != SUCCESS) {
                 return result;
@@ -253,7 +253,7 @@ class GroupService {
     async updateGroupNotice(currentUser, groupID, notice) {
         let result = {status: FAIL, data: {}, message: ""};
         try {
-            const _result = await GroupDao.updateGroupNotice(groupID, notice);
+            const _result = await GroupRepository.updateGroupNotice(groupID, notice);
             result = _.cloneDeep(_result);
             if (result.status != SUCCESS) {
                 return result;
@@ -276,11 +276,11 @@ class GroupService {
     }
 
     updateGroupMemberAlias(currentUser, groupID, alias) {
-        return GroupDao.updateGroupMemberAlias(groupID, currentUser.userID, alias);
+        return GroupRepository.updateGroupMemberAlias(groupID, currentUser.userID, alias);
     };
 
     getGroupList(userID) {
-        return GroupDao.queryGroupList(userID);
+        return GroupRepository.queryGroupList(userID);
     }
 };
 

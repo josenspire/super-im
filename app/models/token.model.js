@@ -1,5 +1,6 @@
-const mongoose = require('mongoose')
-const TokenSchema = require('../schemas/token.schema')
-const Token = mongoose.model('Token', TokenSchema)
+const mongoose = require('mongoose');
+const TokenSchema = require('../schemas/token.schema');
 
-module.exports = Token;
+TokenSchema.index({token: 1});
+
+module.exports = mongoose.model('Token', TokenSchema);

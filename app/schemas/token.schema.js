@@ -1,11 +1,10 @@
-const mongoose = require('mongoose')
-const DateUtils = require('../utils/DateUtils')
+const mongoose = require('mongoose');
+const DateUtils = require('../utils/DateUtils');
 
-let Schema = mongoose.Schema
-let ObjectId = Schema.Types.ObjectId
+let Schema = mongoose.Schema;
+let ObjectId = Schema.Types.ObjectId;
 
 let TokenSchema = new mongoose.Schema({
-
     token: {
         type: String,
         unique: true,
@@ -42,11 +41,10 @@ let TokenSchema = new mongoose.Schema({
 }, {
         versionKey: false
     }
-)
+);
 
 
 TokenSchema.pre('save', function (next) {
-    let token = this
     if (this.isNew) {
         this.loginTime = DateUtils.formatCommonUTCDate(Date.now());
         this.expires = DateUtils.formatCommonUTCDate(Date.now() + (1000 * 60 * 60 * 24));
@@ -55,7 +53,7 @@ TokenSchema.pre('save', function (next) {
         this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     }
     next();
-})
+});
 
 TokenSchema.statics = {
     findById: function (id, cb) {
@@ -63,6 +61,6 @@ TokenSchema.statics = {
             .findOne({ _id: id })
             .exec(cb)
     },
-}
+};
 
 module.exports = TokenSchema;

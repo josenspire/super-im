@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const MomentSchema = require('../schemas/moment.server.schema');
-const Moment = mongoose.model('Moment', MomentSchema);
+const MomentSchema = require('../schemas/moment.schema');
 
-module.exports = Moment;
+module.exports = mongoose.model('Moment', MomentSchema);

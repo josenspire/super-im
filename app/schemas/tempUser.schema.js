@@ -1,12 +1,11 @@
-const mongoose = require('mongoose')
-let moment = require('moment')
+const mongoose = require('mongoose');
 
 let Schema = mongoose.Schema;
 let ObjectId = Schema.Types.ObjectId;
 
 const DateUtils = require('../utils/DateUtils');
 
-let TempUserSchema = new mongoose.Schema({
+const TempUserSchema = new mongoose.Schema({
     user: {
         type: ObjectId,
         ref: "User"
@@ -27,7 +26,7 @@ let TempUserSchema = new mongoose.Schema({
         versionKey: false,
         timestamps: { createdAt: 'createTime', updatedAt: 'updateTime' }
     }
-)
+);
 
 TempUserSchema.statics = {
     findById: function (id, cb) {
@@ -35,6 +34,6 @@ TempUserSchema.statics = {
             .findOne({ _id: id })
             .exec(cb)
     }
-}
+};
 
 module.exports = TempUserSchema;

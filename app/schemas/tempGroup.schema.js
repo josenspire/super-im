@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
 let Schema = mongoose.Schema;
 let ObjectId = Schema.Types.ObjectId;
@@ -26,6 +26,6 @@ let TempGroupSchema = new mongoose.Schema({
         versionKey: false,
         timestamps: { createdAt: 'createTime', updatedAt: 'updateTime' }
     }
-)
+);
 
 module.exports = TempGroupSchema;

@@ -1,7 +1,6 @@
-const mongoose = require('mongoose')
-let moment = require('moment')
+const mongoose = require('mongoose');
 
-let SMSSchema = new mongoose.Schema({
+const SMSSchema = new mongoose.Schema({
     // telephone
     telephone: {
         type: String,
@@ -40,11 +39,10 @@ let SMSSchema = new mongoose.Schema({
 }, {
         versionKey: false
     }
-)
+);
 
 
 SMSSchema.pre('save', function (next) {
-    let verifyCode = this
     if (this.isNew) {
         this.meta.createAt = this.meta.updateAt = Date.now();
     } else {
@@ -52,7 +50,7 @@ SMSSchema.pre('save', function (next) {
     }
     this.expiresAt = Date.now();
     next()
-})
+});
 
 SMSSchema.statics = {
     findById: function (id, cb) {
@@ -60,6 +58,6 @@ SMSSchema.statics = {
             .findOne({ _id: id })
             .exec(cb)
     },
-}
+};
 
-module.exports = SMSSchema
+module.exports = SMSSchema;
