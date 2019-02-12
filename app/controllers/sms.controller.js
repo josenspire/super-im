@@ -1,9 +1,10 @@
-const SMSService = require('../services/sms.service')
-const UserService = require('../services/user.service')
+const SMSService = require('../services/sms.service');
+const UserService = require('../services/user.service');
 const StringUtil = require('../utils/StringUtil');
-const RSAUtil = require('../utils/RSAUtil')
 const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 const Constants = require('../utils/Constants');
+const {success, error} = require('../commons/response.common');
+const TError = require('../commons/error.common');
 
 class SMSController {
     async sendSMS(req, res, next) {
@@ -21,57 +22,43 @@ class SMSController {
                     break;
                 case Constants.SMS_TYPE_LOGIN:
                     if (!req.user) {
-                        throw new Error(`User information missing, please input your username and password`);
+                        throw new TError(FAIL, `User information missing, please input your username and password`);
                     }
                     result = await login(req.user, telephone, verifyCode);
                     break;
                 case Constants.SMS_TYPE_OTHERS:
                     return res.json('Others Type SMS')
             }
+            req.output = success(result, "Send SMS verify code success, expires time is 15 min");
         } catch (err) {
-            result = {
-                status: FAIL,
-                data: {},
-                message: err.message,
-            };
+            req.output = error(err);
         }
-        req.output = result;
         next();
     };
 
-    verifyCode(req, res, next) {
-        const params = req.data.input.params || {};
-        RSAUtil.privateDecrypt(params, async data => {
-            const clientPublicKey = data.clientPublicKey;
-            const telephone = data.telephone;
-            const verifyCode = data.verifyCode;
-            const codeType = (data.codeType).toUpperCase();
-
-            const verifyCallback = await SMSService.validateRecord(telephone, verifyCode, codeType);
-            RSAUtil.publicEncryptObj(verifyCallback, clientPublicKey, result => {
-                return res.json(result)
-            });
-        });
+    async verifyCode(req, res, next) {
+        const {params} = req.input;
+        const {telephone, verifyCode, codeType} = params.telephone;
+        try {
+            const verifyResult = await SMSService.validateRecord(telephone, verifyCode, codeType.toUpperCase());
+            res.output = success(verifyResult);
+        } catch (err) {
+            res.output = error(err);
+        }
+        next();
     };
+}
 
-};
-
-var register = async (telephone, verifyCode) => {
+const register = async (telephone, verifyCode) => {
     const isExist = await UserService.isTelephoneExist(telephone);
     if (!isExist) {
-        const sms = await SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_REGISTER);
-        sms.data.skipVerify = false;
-        return sms;
+        return await SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_REGISTER);
     } else {
-        return {
-            status: FAIL,
-            data: {},
-            message: isExist.message,
-        };
+        throw new TError(FAIL, "This telephone is already register");
     }
 };
 
-var login = async (user, telephone, verifyCode) => {
+const login = async (user, telephone, verifyCode) => {
     const queryResult = await UserService.queryUserByTelephoneAndPassword(user.telephone, user.password, user.deviceID);
     if (queryResult.status === SUCCESS) {
         if (queryResult.data.verifyTelephone === true) {       // need to verify telephone

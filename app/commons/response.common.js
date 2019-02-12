@@ -1,4 +1,4 @@
-const { SUCCESS, FAIL, SERVER_ERROR } = require('../utils/Constants');
+const { SUCCESS, FAIL, SERVER_UNKNOW_ERROR } = require('../utils/CodeConstants');
 
 class TResponse {
     success (result, message) {
@@ -11,7 +11,7 @@ class TResponse {
 
     error (err, message) {
         console.error(`${err.stack}`);
-        return { status: err.code || SERVER_ERROR, data: {}, message: message || err.message };
+        return { status: err.code || SERVER_UNKNOW_ERROR, data: {}, message: message || err.message };
     };
 };
 

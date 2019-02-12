@@ -30,15 +30,21 @@ class UserController {
         const {user, verifyCode} = params;
         // TODO: to save the information about OS etc.
         // let extension = {};
-        if (_.isEmpty(verifyCode)) {
-            req.output = await UserService.queryUserWithoutVerify(user.telephone, user.password);
-        } else {
-            const validateResult = await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
-            if (validateResult) {
-                req.output = await UserService.updateDeviceID(user.telephone, user.password, user.deviceID);
+        let result = {};
+        try {
+            if (_.isEmpty(verifyCode)) {
+                result = await UserService.queryUserWithoutVerify(user.telephone, user.password);
             } else {
-                req.output = validateResult;
+                const validateResult = await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
+                if (validateResult) {
+                    result = await UserService.updateDeviceID(user.telephone, user.password, user.deviceID);
+                } else {
+                    result = validateResult;
+                }
             }
+            req.output = success(result);
+        } catch (err) {
+            req.output = error(err);
         }
         next();
     };
@@ -84,7 +90,7 @@ class UserController {
     }
 
     logout(req, res, next) {
-        req.data.output = {
+        req.output = {
             status: SUCCESS,
             data: {},
             message: ""
@@ -103,25 +109,34 @@ class UserController {
     }
 
     async getUserProfile(req, res, next) {
-        const input = req.data.input;
-        const userID = input.targetUserID;
-        req.data.output = await UserService.getUserProfile(userID);
+        const {params} = req.input;
+        try {
+            const userProfile = await UserService.getUserProfile(params.targetUserID);
+            req.output = success(userProfile);
+        } catch (err) {
+            req.output = error(err);
+        }
         next();
-    }
+    };
 
     async updateUserProfile(req, res, next) {
-        const input = req.data.input;
-        const userID = input.userID;
+        const {params} = req.input;
+        const {userID} = req.user;
         const userProfile = {
-            nickname: input.nickname || "",
-            birthday: input.birthday || "",
-            signature: input.signature || "",
-            location: input.location || "",
-            sex: parseInt(input.sex) || 0,
+            nickname: params.nickname || "",
+            birthday: params.birthday || "",
+            signature: params.signature || "",
+            location: params.location || "",
+            sex: checkFieldIsExist(params.sex) ? parseInt(params.sex) : 0,
         };
-        req.data.output = await UserService.updateUserProfile(userID, userProfile);
+        try {
+            await UserService.updateUserProfile(userID, userProfile);
+            req.output = success(null, "Your profile is updated");
+        } catch (err) {
+            req.output = error(err);
+        }
         next();
-    }
+    };
 
     /** User avatar upload */
     uploadAvatar(req, res, next) {
@@ -304,6 +319,10 @@ var saveFile = (filename, path, avatar) => {
             }
         })
     })
-}
+};
+
+const checkFieldIsExist = field => {
+    return !(field === null || field === "" || field === undefined);
+};
 
 module.exports = new UserController();

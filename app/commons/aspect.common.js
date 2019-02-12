@@ -1,15 +1,14 @@
+const _ = require('lodash');
+const {fail, error} = require('../commons/response.common');
 const ECDHHelper = require('../utils/ECDHHelper.js');
 const {cipher, decipher} = require('../utils/AESHelper.js');
-const UserService = require('../services/user.service.js');
-const {SUCCESS, SIGNATURE_VERIFY_FAIL} = require('../utils/CodeConstants.js');
+const {tokenVerify} = require('../services/user.service.js');
+const {SUCCESS, FAIL, SIGNATURE_VERIFY_FAIL} = require('../utils/CodeConstants.js');
 
 const ecdhHelper = ECDHHelper.getInstance();
 
 class AspectControl {
-    constructor() {
-    };
-
-    async handleRequest(req, res, next) {
+    static async handleRequest(req, res, next) {
         const {data, secretKey, signature} = req.body;
         console.log('---[REQUEST DATA]---', data, secretKey, signature);
 
@@ -34,7 +33,7 @@ class AspectControl {
                  * @params {Object} extension
                  */
                 const {token, deviceID, params, extension} = JSON.parse(decipherText);
-                const isValid = await UserService.tokenVerify(token);
+                const isValid = await tokenVerify(token);
                 if (isValid.status != SUCCESS) {
                     return res.json(isValid);
                 } else {
@@ -58,18 +57,38 @@ class AspectControl {
         }
     };
 
-    async handleRequestTest(req, res, next) {
+    static async handleRequestTest(req, res, next) {
         req.input = req.body;
         next();
     };
 
-    handleResponse(req, res) {
+    static async handleRequestWithTokenTest(req, res, next) {
+        const requestData = req.body;
+        const token = _.get(requestData, 'token');
+        if (!token) {
+            req.output = fail(FAIL, "Parameters is incompleteness");
+            return AspectControl.handleResponse(req, res);
+        }
+        try {
+            const currentUserProfile = await tokenVerify(token);
+            requestData['params'].userID = currentUserProfile.userID;
+
+            req.user = currentUserProfile;
+        } catch (err) {
+            req.output = error(err);
+            return AspectControl.handleResponse(req, res);
+        }
+        req.input = requestData;
+        next();
+    };
+
+    static handleResponse(req, res) {
         const output = req.output;
         console.log('---[RESPONSE DATA]---', output);
         return res.json(output);
         // return res.json(buildResponseBody(buildRequestResult({status: SERVER_ERROR, message: err.message}), ));
     };
-};
+}
 
 const buildRequestResult = ({status = SUCCESS, data = {}, message = ''}) => {
     return JSON.stringify({status, data, message});
@@ -83,4 +102,4 @@ const buildResponseBody = (requestResult, secret) => {
     return response;
 };
 
-module.exports = new AspectControl();
+module.exports = AspectControl;

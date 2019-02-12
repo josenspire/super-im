@@ -34,7 +34,6 @@ exports.createUser = async ({userID, nickname, avatar}) => {
     try {
         return await User.register(user);
     } catch (err) {
-        console.log('----------', err);
         // throw new TError(500, error);
         throw new Error(err);
     }

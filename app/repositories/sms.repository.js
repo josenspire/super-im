@@ -8,33 +8,29 @@ class SMSRepository {
      * @param {string} telephone
      * @param {string} verifyCode
      * @param {string} codeType
-     * @returns {Promise<{status: number, data: {skipVerify: boolean}, message: string}>}
+     * @returns {Promise<{verifyCode: string, expiresAt: null, skipVerify: boolean}>}
      */
     async saveSMS(telephone, verifyCode, codeType) {
-        let result = {status: FAIL, data: {skipVerify: false}, message: ""};
+        let result = {
+            verifyCode: "",
+            expiresAt: null,
+            skipVerify: false,
+        };
         const newDate = Date.now();
-        const conditions = {telephone: telephone, codeType: codeType};
         const opts = {verifyCode: verifyCode, expiresAt: newDate};
         try {
-            const updateResult = await SMSModel.findOneAndUpdate(conditions, opts).lean();
-
+            const updateResult = await SMSModel.findOneAndUpdate({telephone, codeType}, opts).lean();
             if (updateResult) {
                 console.log('---[SMS]---', updateResult);
-                result.status = SUCCESS;
-                result.data.verifyCode = verifyCode;
-                result.data.expiresAt = newDate;
-                result.message = 'Send SMS verify code success, expires time is 15 min'
+                result.verifyCode = verifyCode;
+                result.expiresAt = newDate;
             } else {
-                const _sms = new SMSModel({telephone: telephone, verifyCode: verifyCode, codeType: codeType});
-                const newSMSInfo = await _sms.save();
-                result.status = SUCCESS;
-                result.data.verifyCode = verifyCode;
-                result.data.expiresAt = newSMSInfo.expiresAt;
-                result.message = 'Send SMS verify code success, expires time is 15 min'
+                const newSMSInfo = await new SMSModel({telephone, verifyCode, codeType}).save();
+                result.verifyCode = verifyCode;
+                result.expiresAt = newSMSInfo.expiresAt;
             }
         } catch (err) {
-            result.data = {skipVerify: false};
-            result.message = err;
+            throw new TError(SERVER_UNKNOW_ERROR, "Server error, Send SMS verify code fail");
         }
         return result;
     };

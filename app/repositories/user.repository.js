@@ -15,29 +15,23 @@ const mongoose = require('mongoose');
 class UserRepository {
     /**
      * Create user and initial concat list
-     * @param user
-     * @param token
-     * @returns {Promise<{userProfile: any | {}, token, secretKey: string}>}
+     * @param {string} user
+     * @param {string} token
+     * @returns {Promise<{userProfile: any | {}, token: *}>}
      */
     async createUser(user, token) {
         const tokenID = mongoose.Types.ObjectId();
+        user.token = tokenID;
+        let _user = await insertUser(new UserModel(user));
         try {
-            user.token = tokenID;
-            let _user = await insertUser(new UserModel(user));
-
-            const tokenModel = new TokenModel({_id: tokenID, token, user: _user._id});
-            await tokenModel.save();
-
-            await initContactList(_user._id);
-            return {
-                userProfile: convertUser(_user),
-                token,
-            };
+            await new TokenModel({_id: tokenID, token, user: _user._id}).save();
+            await new ContactModel({userID: _user._id, contacts: []}).save();
+            return {userProfile: convertUser(_user), token};
         } catch (err) {
             console.log(err);
             throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-    }
+    };
 
     /**
      * Query user information by telephone and password
@@ -79,51 +73,40 @@ class UserRepository {
 
     /**
      * Query user information by user id
-     * @param userID
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @param {string} userID
+     * @returns {Promise<userProfile>}
      */
     async queryByUserID(userID) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            let user = await queryByUserID(userID);
-            if (!user) {
-                result.message = `This user is not exist, Please check your operation`;
-            } else {
-                result.data.userProfile = convertUserProfile(user);
-                result.status = SUCCESS;
-            }
-        } catch (err) {
-            console.log('--[QUERY BY USERID FAIL]--');
-            result.message = err;
-            result.data = {};
+        const user = await queryByUserID(userID);
+        if (!user) {
+            throw new TError(FAIL, `This user is not exist, Please check your operation`);
+        } else {
+            return convertUserProfile(user);
         }
-        return result;
-    }
+    };
 
     /**
      * Update user profile by user id
-     * @param userID
-     * @param userProfile
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @param {string} userID
+     * @param {object} userProfile
+     * @returns {Promise<void>}
      */
     async updateUserProfile(userID, userProfile) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            let opts = {
-                nickname: userProfile.nickname,
-                birthday: userProfile.birthday,
-                signature: userProfile.signature,
-                location: userProfile.location,
-                sex: userProfile.sex
-            };
-            await updateUserProfile(userID, opts);
-            result.status = SUCCESS;
-        } catch (err) {
-            console.log('--[QUERY BY USERID FAIL]--');
-            result.message = err;
-            result.data = {};
+        const opts = {
+            nickname: userProfile.nickname,
+            birthday: userProfile.birthday,
+            signature: userProfile.signature,
+            location: userProfile.location,
+            sex: userProfile.sex,
+        };
+        await UserModel.findOneAndUpdate({_id: userID}, {$set: opts})
+            .exec()
+            .catch(err => {
+                throw new TError(FAIL, "Server error, fail to update user profile");
+            });
+        if (!user) {
+            throw new TError(SERVER_UNKNOW_ERROR, "Sorry, this user is not exist")
         }
-        return result;
     };
 
     updateUserAvatar(userID, avatarUrl) {
@@ -204,12 +187,8 @@ class UserRepository {
             });
         if (!user) {
             throw new TError(FAIL, 'This token is invalid, please login again');
-        } else {
-            return {
-                token: user.token,
-                userProfile: convertTokenInfo(user),
-            };
         }
+        return convertTokenInfo(user);
     };
 
     /**
@@ -412,6 +391,7 @@ const updateDeviceID = async (telephone, deviceID) => {
 
 const insertUser = async userModel => {
     let message = '';
+    let code = FAIL;
     try {
         return await userModel.save();
     } catch (err) {
@@ -425,10 +405,10 @@ const insertUser = async userModel => {
             }
         } else {
             message = 'Sorry, server unknow error';
+            code = SERVER_UNKNOW_ERROR;
         }
-        throw new Error(message);
+        throw new TError(code, message);
     }
-    ;
 };
 
 const queryByTelephone = async telephone => {
@@ -441,32 +421,11 @@ const queryByTelephone = async telephone => {
 };
 
 const queryByUserID = userID => {
-    return new Promise((resolve, reject) => {
-        UserModel.findOne({_id: userID})
-            .exec((err, user) => {
-                if (err) {
-                    console.log('---[QUERY BY USERID]---', err);
-                    reject('Server unknow error, query user fail');
-                } else {
-                    resolve(user);
-                }
-            })
-    })
-}
-
-const updateUserProfile = (userID, opts) => {
-    return new Promise((resolve, reject) => {
-        UserModel.findOneAndUpdate({_id: userID}, {$set: opts})
-            .exec((err, user) => {
-                if (err) {
-                    reject("Server error, fail to update user profile")
-                } else if (!user) {
-                    reject("Sorry, this user is not exist")
-                } else {
-                    resolve();
-                }
-            })
-    })
+    return UserModel.findOne({_id: userID}).lean()
+        .catch(err => {
+            console.log('---[QUERY BY USERID]---', err);
+            throw new Error('Server unknow error, query user fail');
+        });
 };
 
 const queryUserByTelephoneAndPassword = async (telephone, password) => {
@@ -474,11 +433,11 @@ const queryUserByTelephoneAndPassword = async (telephone, password) => {
         .populate('token')
         .exec()
         .catch(err => {
-            console.log(err)
-            throw new Error('The telephone or password is invalid');
+            console.log(err);
+            throw new TError(FAIL, 'The telephone or password is invalid');
         });
     if (!user) {
-        throw new Error('Sorry, Your telephone or password is invalid');
+        throw new TError(FAIL, 'Sorry, Your telephone or password is invalid');
     } else {
         const isMatch = user.comparePassword(password);
         return (isMatch ? {user, isMatch: true} : {isMatch: false})
@@ -544,20 +503,6 @@ const deleteContactToEachOther = (userID, contactID) => {
                 reject('Server unknow error, delete contact fail');
             } else {
                 resolve(result);
-            }
-        })
-    })
-};
-
-const initContactList = userID => {
-    return new Promise((resolve, reject) => {
-        let contactModel = new ContactModel({userID: userID, contacts: []});
-        contactModel.save((err, contactList) => {
-            if (err) {
-                console.log('INIT CONTACT LIST FAIL', err)
-                reject('Server unknow error, init contact list fail')
-            } else {
-                resolve(contactList);
             }
         })
     })
@@ -674,10 +619,8 @@ const convertUserProfile = user => {
 };
 
 const convertContactInfo = contact => {
-    let _contact = JSON.parse(JSON.stringify(contact)) || {};
-
+    const _contact = JSON.parse(JSON.stringify(contact)) || {};
     let user = _contact.userID;
-
     user.userID = user._id;
 
     delete user._id;

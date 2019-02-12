@@ -1,20 +1,28 @@
 const express = require('express');
 const router = express.Router();
-const UserControl = require('../controllers/user.controller');
-const TempUserControl = require('../controllers/tempUser.controller');
-const AsceptControl = require('../controllers/aspect.controller');
-let AESAscept = AsceptControl.AES;
-
+const {
+    getUserProfile,
+    updateUserProfile,
+    searchUserByTelephoneOrNickname,
+    uploadAvatar,
+    uploadAvatarByBase64,
+} = require('../controllers/user.controller');
+const {
+    getTempUserID,
+    getUserProfileByTempUserID,
+} = require('../controllers/tempUser.controller');
+// const {handleRequestTest, handleResponse} = require('../commons/aspect.common.js');
+const AspectHelper = require('../commons/aspect.common.js');
 // user
-router.post('/getUserProfile', AESAscept.decryptParam, UserControl.getUserProfile, AESAscept.encryptParam);
-router.post('/updateUserProfile', AESAscept.decryptParam, UserControl.updateUserProfile, AESAscept.encryptParam);
-router.post('/searchUser', AESAscept.decryptParam, UserControl.searchUserByTelephoneOrNickname, AESAscept.encryptParam);
-// temp user
-router.post('/getTempUserID', AESAscept.decryptParam, TempUserControl.getTempUserID, AESAscept.encryptParam);
-router.post('/getUserProfileByTempUserID', AESAscept.decryptParam, TempUserControl.getUserProfileByTempUserID, AESAscept.encryptParam);
+router.post('/getUserProfile', AspectHelper.handleRequestWithTokenTest, getUserProfile, AspectHelper.handleResponse);
+router.post('/updateUserProfile', AspectHelper.handleRequestWithTokenTest, updateUserProfile, AspectHelper.handleResponse);
+router.post('/searchUser', AspectHelper.handleRequestWithTokenTest, searchUserByTelephoneOrNickname, AspectHelper.handleResponse);
+// // temp user
+// router.post('/getTempUserID', AESAscept.decryptParam, getTempUserID, AESAscept.encryptParam);
+// router.post('/getUserProfileByTempUserID', AESAscept.decryptParam, getUserProfileByTempUserID, AESAscept.encryptParam);
 
 // avatar upload
-router.post('/uploadAvatar', UserControl.uploadAvatar);
-router.post('/uploadAvatarByBase64', UserControl.uploadAvatarByBase64);
+router.post('/uploadAvatar', uploadAvatar);
+router.post('/uploadAvatarByBase64', uploadAvatarByBase64);
 
 module.exports = router;

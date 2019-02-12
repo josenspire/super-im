@@ -13,14 +13,9 @@ class UserService {
     // create user
     async createUser(user) {
         const userID = mongoose.Types.ObjectId();
-        try {
-            const CloudRegisterResult = await IMProxie.createUser({userID, nickname: user.nickname, avatar: null});
-            user._id = userID;
-            return await DaoManager.createUserAndGetAllInfo(user, CloudRegisterResult.token);
-        } catch (err) {
-            console.log('---[IM CRETEUSER FAIL]---', err);
-            throw new TError(SERVER_UNKNOW_ERROR, err.message);
-        }
+        const CloudRegisterResult = await IMProxie.createUser({userID, nickname: user.nickname, avatar: null});
+        user._id = userID;
+        return await DaoManager.createUserAndGetAllInfo(user, CloudRegisterResult.token);
     };
 
     // user login
@@ -68,7 +63,7 @@ class UserService {
     }
 
     updateUserProfile(userID, userProfile) {
-        return UserRepository.updateUserProfile(userID, userProfile);
+        UserRepository.updateUserProfile(userID, userProfile);
     }
 
     updateUserAvatar(userID, avatarUrl) {
@@ -142,7 +137,7 @@ class UserService {
         return result;
     }
 
-    async rejectAddContact (currentUser, contactID, rejectReason) {
+    async rejectAddContact(currentUser, contactID, rejectReason) {
         let result = {status: FAIL, data: {}, message: ""};
         const userID = currentUser.userID.toString();
         const isContact = await UserRepository.checkContactIsExistByUserIDAndContactID(userID, contactID);
