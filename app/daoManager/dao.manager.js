@@ -1,56 +1,47 @@
 const _ = require('lodash');
 const UserRepository = require("../repositories/user.repository");
 const GroupRepository = require("../repositories/group.repository");
-const {SUCCESS} = require("../utils/CodeConstants");
 
 class DAOManager {
     async getUserProfileAndContactsAndGroups(token) {
-        const userData = await UserRepository.tokenVerify(token);
-        if (userData.status != SUCCESS) {
-            return userData
-        }
-        const {userID} = userData.data.userProfile || "";
-        return await queryContactsAndGroups(userID);
+        const verifyResult = await UserRepository.tokenVerify(token);
+        return _.merge({}, verifyResult, await convertContactsAndGroups(verifyResult.userProfile));
     };
 
     async getUserProfileAndContactsAndGroupsByUserInfo(telephone, password) {
-        let queryResult = await UserRepository.queryUserByTelephoneAndPassword(telephone, password);
-        if (queryResult.userProfile) {
-            const {userID} = queryResult.userProfile;
-            const {contacts, groups} = await queryContactsAndGroups(userID);
-            queryResult.contacts = contacts;
-            queryResult.groups = groups;
-        }
-        return queryResult;
+        const queryResult = await UserRepository.queryUserByTelephoneAndPassword(telephone, password);
+        return _.merge({}, queryResult, await convertContactsAndGroups(queryResult.userProfile));
     };
 
     async createUserAndGetAllInfo(user, token) {
-        let createResult = await UserRepository.createUser(user, token);
-        if (createResult.userProfile) {
-            const {userID} = createResult.userProfile;
-            const {contacts, groups} = await queryContactsAndGroups(userID);
-            createResult.contacts = contacts;
-            createResult.groups = groups;
-        }
-        return createResult;
+        const createResult = await UserRepository.createUser(user, token);
+        return _.merge({}, createResult, await convertContactsAndGroups(createResult.userProfile));
     };
 
     async updateDeviceIDAndGetUserInfo(telephone, password, deviceID) {
         const updateResult = await UserRepository.updateDeviceID(telephone, password, deviceID);
-        if (updateResult.userProfile) {
-            const {userID} = updateResult.userProfile;
-            const {contacts, groups} = await queryContactsAndGroups(userID);
-            updateResult.contacts = contacts;
-            updateResult.groups = groups;
-        }
-        return updateResult;
+        return _.merge({}, updateResult, await convertContactsAndGroups(updateResult.userProfile));
     };
-};
+}
 
-var queryContactsAndGroups = async userID => {
+const queryContactsAndGroups = async userID => {
     let result = {contacts: [], groups: []};
     result.contacts = await UserRepository.queryUserContactsByUserID(userID);
     result.groups = await GroupRepository.queryGroupList(userID);
+    return result;
+};
+
+const convertContactsAndGroups = async userProfile => {
+    let result = {
+        contacts: [],
+        groups: [],
+    };
+    if (userProfile) {
+        const {userID} = userProfile;
+        const {contacts, groups} = await queryContactsAndGroups(userID);
+        result.contacts = contacts;
+        result.groups = groups;
+    }
     return result;
 };
 

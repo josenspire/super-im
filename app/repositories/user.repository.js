@@ -2,7 +2,6 @@ const UserModel = require('../models/user.model');
 const TokenModel = require('../models/token.model');
 const ContactModel = require('../models/contact.model');
 
-const Constants = require('../utils/Constants');
 const DateUtils = require('../utils/DateUtils');
 const JWT_SECRET = require('../utils/Constants');   // secret key
 const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
@@ -94,7 +93,7 @@ class UserRepository {
                 result.status = SUCCESS;
             }
         } catch (err) {
-            console.log('--[QUERY BY USERID FAIL]--')
+            console.log('--[QUERY BY USERID FAIL]--');
             result.message = err;
             result.data = {};
         }
@@ -120,7 +119,7 @@ class UserRepository {
             await updateUserProfile(userID, opts);
             result.status = SUCCESS;
         } catch (err) {
-            console.log('--[QUERY BY USERID FAIL]--')
+            console.log('--[QUERY BY USERID FAIL]--');
             result.message = err;
             result.data = {};
         }
@@ -150,7 +149,7 @@ class UserRepository {
         let result = {status: FAIL, data: {}, message: ''};
         const promiseList = telephoneList.map(telephone => {
             return queryByTelephone(telephone);
-        })
+        });
         try {
             let userList = await Promise.all(promiseList);
             let newUserList = [];
@@ -158,11 +157,11 @@ class UserRepository {
                 if (user.status === SUCCESS) {
                     newUserList.push(user.data.user)
                 }
-            })
+            });
             result.status = SUCCESS;
             result.data.userList = newUserList;
         } catch (err) {
-            console.log('--[QUERY USERLIST FAIL]--', err)
+            console.log('--[QUERY USERLIST FAIL]--', err);
             result.message = err;
             result.data = {};
         }
@@ -206,10 +205,10 @@ class UserRepository {
         if (!user) {
             throw new TError(FAIL, 'This token is invalid, please login again');
         } else {
-            let result = {};
-            result.token = user.token;
-            result.userProfile = convertTokenInfo(user);
-            return result;
+            return {
+                token: user.token,
+                userProfile: convertTokenInfo(user),
+            };
         }
     };
 
@@ -269,7 +268,7 @@ class UserRepository {
                 }
             }
         } catch (err) {
-            console.log('---[ADD CONTACT FAIL]---', err)
+            console.log('---[ADD CONTACT FAIL]---', err);
             result.message = err;
             result.data = {};
         }
@@ -307,7 +306,7 @@ class UserRepository {
                 }
             }
         } catch (err) {
-            console.log('---[DELETE CONTACT FAIL]---', err)
+            console.log('---[DELETE CONTACT FAIL]---', err);
             result.message = err;
             result.data = {};
         }
@@ -339,7 +338,7 @@ class UserRepository {
                 }
             }
         } catch (err) {
-            console.log('---[UPDATE CONTACT REMARK FAIL]---', err)
+            console.log('---[UPDATE CONTACT REMARK FAIL]---', err);
             result.message = err;
             result.data = {};
         }
@@ -349,14 +348,14 @@ class UserRepository {
     /**
      * Query user contacts by user id
      * @param userID
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @returns {Promise<Array>}
      */
     async queryUserContactsByUserID(userID) {
         try {
             let contactsInfo = await queryUserContactsByUserID(userID);
             return _.isEmpty(contactsInfo) ? [] : convertContacts(contactsInfo);
         } catch (err) {
-            console.log('---[QUERY CONTACTS FAIL]---', err)
+            console.log('---[QUERY CONTACTS FAIL]---', err);
             throw new TError(FAIL, err.message);
         }
     }
@@ -374,7 +373,7 @@ class UserRepository {
             result.data.userList = convertSearchUserList(userList);
             result.status = SUCCESS;
         } catch (err) {
-            console.log('---[QUERY USER FAIL]---', err)
+            console.log('---[QUERY USER FAIL]---', err);
             result.message = err;
             result.data = {};
         }
@@ -383,15 +382,14 @@ class UserRepository {
 
     async checkContactIsExistByUserIDAndContactID(userID, contactID) {
         try {
-            const isExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
-            return isExist;
+            return await checkContactIsExistByUserIDAndContactID(userID, contactID);
         } catch (err) {
             return false;
         }
     };
-};
+}
 
-var updateToken = _id => {
+const updateToken = _id => {
     const opts = {loginTime: DateUtils.formatCommonUTCDate(Date.now())};
     return TokenModel.findByIdAndUpdate(_id, {$set: opts})
         .exec()
@@ -401,7 +399,7 @@ var updateToken = _id => {
         });
 };
 
-var updateDeviceID = async (telephone, deviceID) => {
+const updateDeviceID = async (telephone, deviceID) => {
     let user = await UserModel.findOneAndUpdate({telephone}, {$set: {deviceID: deviceID}})
         .exec()
         .catch(err => {
@@ -412,7 +410,7 @@ var updateDeviceID = async (telephone, deviceID) => {
     return user;
 };
 
-var insertUser = async userModel => {
+const insertUser = async userModel => {
     let message = '';
     try {
         return await userModel.save();
@@ -429,24 +427,20 @@ var insertUser = async userModel => {
             message = 'Sorry, server unknow error';
         }
         throw new Error(message);
-    };
+    }
+    ;
 };
 
-var queryByTelephone = telephone => {
-    return new Promise((resolve, reject) => {
-        UserModel.findOne({telephone: telephone})
-            .exec((err, user) => {
-                if (err) {
-                    console.log('---[QUERY BY TELEPHONE]---')
-                    reject('Server unknow error')
-                } else if (user) {
-                    resolve(convertUser(user));
-                }
-            })
-    })
-}
+const queryByTelephone = async telephone => {
+    const user = await UserModel.findOne({telephone: telephone})
+        .lean().catch(err => {
+            console.log('---[QUERY BY TELEPHONE]---');
+            throw new Error(err.message);
+        });
+    return convertUser(user);
+};
 
-var queryByUserID = userID => {
+const queryByUserID = userID => {
     return new Promise((resolve, reject) => {
         UserModel.findOne({_id: userID})
             .exec((err, user) => {
@@ -460,7 +454,7 @@ var queryByUserID = userID => {
     })
 }
 
-var updateUserProfile = (userID, opts) => {
+const updateUserProfile = (userID, opts) => {
     return new Promise((resolve, reject) => {
         UserModel.findOneAndUpdate({_id: userID}, {$set: opts})
             .exec((err, user) => {
@@ -473,9 +467,9 @@ var updateUserProfile = (userID, opts) => {
                 }
             })
     })
-}
+};
 
-var queryUserByTelephoneAndPassword = async (telephone, password) => {
+const queryUserByTelephoneAndPassword = async (telephone, password) => {
     const user = await UserModel.findOne({telephone})
         .populate('token')
         .exec()
@@ -492,7 +486,7 @@ var queryUserByTelephoneAndPassword = async (telephone, password) => {
 };
 
 /** User Contact Part */
-var acceptAddContact = (userID, contactID, remarkName) => {
+const acceptAddContact = (userID, contactID, remarkName) => {
     return new Promise((resolve, reject) => {
         try {
             let contact = {
@@ -502,7 +496,7 @@ var acceptAddContact = (userID, contactID, remarkName) => {
             let _contact = {
                 userID: userID,        // other contact add current user
                 remarkName: ''
-            }
+            };
             Promise.all([addContactToEachOther(userID, contact), addContactToEachOther(contactID, _contact)])
                 .then(result => {
                     resolve(result)
@@ -511,13 +505,13 @@ var acceptAddContact = (userID, contactID, remarkName) => {
                     reject('Server unknow error, add contact fail')
                 })
         } catch (err) {
-            console.log(err)
+            console.log(err);
             reject('Server unknow error, add contact fail')
         }
-    })
-}
+    });
+};
 
-var addContactToEachOther = (userID, contact) => {
+const addContactToEachOther = (userID, contact) => {
     return new Promise((resolve, reject) => {
         ContactModel.findOneAndUpdate({userID: userID}, {$addToSet: {contacts: contact}}, (err, result) => {
             if (err) {
@@ -529,9 +523,9 @@ var addContactToEachOther = (userID, contact) => {
             }
         })
     })
-}
+};
 
-var deleteContact = (userID, contactID) => {
+const deleteContact = (userID, contactID) => {
     return new Promise(async (resolve, reject) => {
         Promise.all([deleteContactToEachOther(userID, contactID), deleteContactToEachOther(contactID, userID)])
             .then(result => {
@@ -541,9 +535,9 @@ var deleteContact = (userID, contactID) => {
                 reject('Server unknow error, delete contact fail')
             })
     })
-}
+};
 
-var deleteContactToEachOther = (userID, contactID) => {
+const deleteContactToEachOther = (userID, contactID) => {
     return new Promise((resolve, reject) => {
         ContactModel.update({userID: userID}, {$pull: {contacts: {userID: contactID}}}, (err, result) => {
             if (err) {
@@ -553,9 +547,9 @@ var deleteContactToEachOther = (userID, contactID) => {
             }
         })
     })
-}
+};
 
-var initContactList = userID => {
+const initContactList = userID => {
     return new Promise((resolve, reject) => {
         let contactModel = new ContactModel({userID: userID, contacts: []});
         contactModel.save((err, contactList) => {
@@ -567,9 +561,9 @@ var initContactList = userID => {
             }
         })
     })
-}
+};
 
-var checkContactIsExistByUserIDAndContactID = async (userID, contactID) => {
+const checkContactIsExistByUserIDAndContactID = async (userID, contactID) => {
     let isExist = false;
     try {
         let userContacts = await queryUserContactsByUserID(userID);
@@ -586,21 +580,21 @@ var checkContactIsExistByUserIDAndContactID = async (userID, contactID) => {
             }
         }
     } catch (err) {
-        console.log(err)
+        console.log(err);
         isExist = false;
     }
     return isExist;
-}
+};
 
-var checkContactIDIsCurrentUserID = (userID, contactID) => {
+const checkContactIDIsCurrentUserID = (userID, contactID) => {
     let _userID = JSON.parse(JSON.stringify(userID));
     if (_userID) {
         if (_userID.toString() === contactID) return true;
     }
     return false;
-}
+};
 
-var updateRemark = (userID, contactID, remark) => {
+const updateRemark = (userID, contactID, remark) => {
     return new Promise(async (resolve, reject) => {
         ContactModel.findOne({userID: userID}, (err, contactList) => {
             if (err) {
@@ -620,9 +614,9 @@ var updateRemark = (userID, contactID, remark) => {
             }
         })
     })
-}
+};
 
-var queryUserContactsByUserID = userID => {
+const queryUserContactsByUserID = userID => {
     return ContactModel.findOne({userID: userID})
         .populate("contacts.userID")    // 查询数组中的某个字段的ref数据
         .exec()
@@ -632,7 +626,7 @@ var queryUserContactsByUserID = userID => {
         });
 };
 
-var searchUserByTelephoneOrNickname = (queryCondition, pageIndex) => {
+const searchUserByTelephoneOrNickname = (queryCondition, pageIndex) => {
     return new Promise((resolve, reject) => {
         // const nickNameReg = new RegExp(queryCondition, 'i');
         // UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: { $regex: nickNameReg } }] })
@@ -651,9 +645,9 @@ var searchUserByTelephoneOrNickname = (queryCondition, pageIndex) => {
                 }
             })
     })
-}
+};
 
-var convertUser = user => {
+const convertUser = user => {
     let _user = JSON.parse(JSON.stringify(user)) || {};
     _user.userID = user._id;
     delete _user._id;
@@ -664,9 +658,9 @@ var convertUser = user => {
     delete _user.password;
     delete _user.deviceID;
     return _user;
-}
+};
 
-var convertUserProfile = user => {
+const convertUserProfile = user => {
     let _user = JSON.parse(JSON.stringify(user)) || {};
     _user.userID = user._id;
     delete _user._id;
@@ -677,9 +671,9 @@ var convertUserProfile = user => {
     delete _user.meta;
     delete _user.password;
     return _user;
-}
+};
 
-var convertContactInfo = contact => {
+const convertContactInfo = contact => {
     let _contact = JSON.parse(JSON.stringify(contact)) || {};
 
     let user = _contact.userID;
@@ -698,9 +692,9 @@ var convertContactInfo = contact => {
     _user.userProfile = user;
     _user.remark = _contact.remark;
     return _user;
-}
+};
 
-var convertContacts = contactsData => {
+const convertContacts = contactsData => {
     let _contactList = contactsData.contacts;
     if (!_contactList.length) return [];
 
@@ -711,9 +705,9 @@ var convertContacts = contactsData => {
         convertContactsData.push(contact);
     }
     return convertContactsData;
-}
+};
 
-var convertSearchUserList = userList => {
+const convertSearchUserList = userList => {
     let _userList = JSON.parse(JSON.stringify(userList));
     if (!_userList.length) return [];
 
@@ -724,9 +718,9 @@ var convertSearchUserList = userList => {
         convertUserListData.push(user);
     }
     return convertUserListData;
-}
+};
 
-var convertTokenInfo = tokenInfo => {
+const convertTokenInfo = tokenInfo => {
     let _tokenInfo = JSON.parse(JSON.stringify(tokenInfo));
 
     let userProfile = _tokenInfo.user;
@@ -739,6 +733,6 @@ var convertTokenInfo = tokenInfo => {
     delete userProfile.token;
 
     return userProfile;
-}
+};
 
 module.exports = new UserRepository();
