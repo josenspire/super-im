@@ -17,9 +17,9 @@ const AspectHelper = require('../commons/aspect.common.js');
 router.post('/getUserProfile', AspectHelper.handleRequestWithTokenTest, getUserProfile, AspectHelper.handleResponse);
 router.post('/updateUserProfile', AspectHelper.handleRequestWithTokenTest, updateUserProfile, AspectHelper.handleResponse);
 router.post('/searchUser', AspectHelper.handleRequestWithTokenTest, searchUserByTelephoneOrNickname, AspectHelper.handleResponse);
-// // temp user
-// router.post('/getTempUserID', AESAscept.decryptParam, getTempUserID, AESAscept.encryptParam);
-// router.post('/getUserProfileByTempUserID', AESAscept.decryptParam, getUserProfileByTempUserID, AESAscept.encryptParam);
+// temp user
+router.post('/getTempUserID', AspectHelper.handleRequestWithTokenTest, getTempUserID, AspectHelper.handleResponse);
+router.post('/getUserProfileByTempUserID', AspectHelper.handleRequestWithTokenTest, getUserProfileByTempUserID, AspectHelper.handleResponse);
 
 // avatar upload
 router.post('/uploadAvatar', uploadAvatar);

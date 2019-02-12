@@ -8,6 +8,6 @@ class TempUserService {
     getUserProfileByTempUserID (tempUserID) {
         return TempUserRepository.getUserProfileByTempUserID(tempUserID);
     };
-};
+}
 
 module.exports = new TempUserService();

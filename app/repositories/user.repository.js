@@ -341,22 +341,13 @@ class UserRepository {
 
     /**
      * Search user information by telephone or nickname
-     * @param queryCondition
-     * @param pageIndex
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @param {string} queryCondition
+     * @param {Number} pageIndex
+     * @returns {Promise<Object>}
      */
     async searchUserByTelephoneOrNickname(queryCondition, pageIndex) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            let userList = await searchUserByTelephoneOrNickname(queryCondition, pageIndex);
-            result.data.userList = convertSearchUserList(userList);
-            result.status = SUCCESS;
-        } catch (err) {
-            console.log('---[QUERY USER FAIL]---', err);
-            result.message = err;
-            result.data = {};
-        }
-        return result;
+        const userList = await searchUserByTelephoneOrNickname(queryCondition, pageIndex);
+        return convertSearchUserList(userList);
     }
 
     async checkContactIsExistByUserIDAndContactID(userID, contactID) {
@@ -571,25 +562,19 @@ const queryUserContactsByUserID = userID => {
         });
 };
 
-const searchUserByTelephoneOrNickname = (queryCondition, pageIndex) => {
-    return new Promise((resolve, reject) => {
-        // const nickNameReg = new RegExp(queryCondition, 'i');
-        // UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: { $regex: nickNameReg } }] })
-        UserModel.find({$or: [{telephone: queryCondition}, {nickname: queryCondition}]})
-            .populate("user")
-            .limit(20)
-            .skip(pageIndex * 20)
-            .exec((err, userList) => {
-                if (err) {
-                    console.log('---[SEARCH USER FAIL]---', err)
-                    reject('Server unknow error, search user fail')
-                } else if (!userList) {
-                    reject('User is not exist')
-                } else {
-                    resolve(userList)
-                }
-            })
-    })
+const searchUserByTelephoneOrNickname = async (queryCondition, pageIndex) => {
+    // const nickNameReg = new RegExp(queryCondition, 'i');
+    // UserModel.find({ $or: [{ telephone: queryCondition }, { nickname: { $regex: nickNameReg } }] })
+    const userList = await UserModel.find({$or: [{telephone: queryCondition}, {nickname: queryCondition}]})
+        .populate("user")
+        .limit(20)
+        .skip(pageIndex * 20)
+        .exec()
+        .catch(err => {
+            console.log('---[SEARCH USER FAIL]---', err);
+            throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, search user fail');
+        });
+    return userList;
 };
 
 const convertUser = user => {

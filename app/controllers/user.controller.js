@@ -227,7 +227,7 @@ class UserController {
                 result.message = err;
             }
         });
-    }
+    };
 
     /** User Contact Part */
     async requestAddContact(req, res, next) {
@@ -238,7 +238,7 @@ class UserController {
         const message = input.reason || "";
         req.data.output = await UserService.requestAddContact(currentUser, contactID, message);
         next();
-    }
+    };
 
     async acceptAddContact(req, res, next) {
         let currentUser = req.data.user;
@@ -250,7 +250,7 @@ class UserController {
 
         req.data.output = await UserService.acceptAddContact(currentUser, contactID, remarkName);
         next();
-    }
+    };
 
     async rejectAddContact(req, res, next) {
         const currentUser = req.data.user;
@@ -261,7 +261,7 @@ class UserController {
 
         req.data.output = await UserService.rejectAddContact(currentUser, contactID, rejectReason);
         next();
-    }
+    };
 
     async deleteContact(req, res, next) {
         const currentUser = req.data.user;
@@ -270,7 +270,7 @@ class UserController {
         const contactID = input.contactID;
         req.data.output = await UserService.deleteContact(currentUser, contactID);
         next();
-    }
+    };
 
     async updateRemark(req, res, next) {
         let input = req.data.input;
@@ -281,34 +281,36 @@ class UserController {
 
         req.data.output = await UserService.updateRemark(userID, contactID, remark);
         next();
-    }
+    };
 
     async getUserContacts(req, res, next) {
         let userID = req.data.input.userID;
         const data = await UserService.getUserContacts(userID);
         req.data.output = data;
         next();
-    }
+    };
 
     async getBlackList(req, res, next) {
         let input = req.data.input;
         let userID = input.userID;
-        req.data.output = await UserService.getBlackList(userID);    
+        req.data.output = await UserService.getBlackList(userID);
         next();
-    }
+    };
 
     async searchUserByTelephoneOrNickname(req, res, next) {
-        const input = req.data.input;
-        const queryCondition = input.queryCondition || "";
-        const pageIndex = parseInt(input.pageIndex) || 0;
-        const searchResult = await UserService.searchUserByTelephoneOrNickname(queryCondition, pageIndex);
-        req.data.output = searchResult;
+        const {params} = req.input;
+        const pageIndex = checkFieldIsExist(params.pageIndex) ? parseInt(params.pageIndex) : 0;
+        try {
+            const searchResult = await UserService.searchUserByTelephoneOrNickname(params.queryCondition || "", pageIndex);
+            req.output = success(searchResult);
+        } catch (err) {
+            req.output = error(err);
+        }
         next();
-    }
+    };
+}
 
-};
-
-var saveFile = (filename, path, avatar) => {
+const saveFile = (filename, path, avatar) => {
     return new Promise((resolve, reject) => {
         fs.writeFile(path + filename, avatar, err => {
             if (err) {

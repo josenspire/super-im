@@ -1,86 +1,75 @@
 const TempUserModel = require('../models/tempUser.model');
-const {SUCCESS, FAIL} = require("../utils/CodeConstants");
-
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const TError = require('../commons/error.common');
 const uuidv4 = require('uuid/v4');
-const _ = require('lodash');
 
 class TempUserRepository {
-
     /**
      * Get temp userID
      * @param {string} userID
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @returns {Promise<string>}
      */
     async getTempUserID(userID) {
-        let result = {status: FAIL, data: {}, message: ''};
+        let tempUserID = '';
         const newTempUserID = uuidv4();
-        try {
-            const tempUser = await updateTempUserByUserID(userID, newTempUserID);
-            if (tempUser) {
-                result.data.tempUserID = newTempUserID;
-            } else {
-                const createResult = await createTempUser(userID);
-                result.data.tempUserID = createResult.tempUserID;
-            }
-            result.status = SUCCESS;
-        } catch (err) {
-            console.log(err);
-            result.message = err;
+        const tempUser = await updateTempUserByUserID(userID, newTempUserID);
+        if (tempUser) {
+            tempUserID = newTempUserID;
+        } else {
+            const createResult = await createTempUser(userID);
+            tempUserID = createResult.tempUserID;
         }
-        return result;
-    }
+        return {tempUserID};
+    };
 
     /**
      * Query user profile by temp userID
      * @param {string} tempUserID
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @returns {Promise<Object>}
      */
     async getUserProfileByTempUserID(tempUserID) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            const tempUser = await queryTempUserByTempUserID(tempUserID);
-            if (tempUser) {
-                result.data.userProfile = convertUserProfile(tempUser.user);
-                result.status = SUCCESS;
-            } else {
-                result.message = "This ID is expired, please reacquire";
-            }
-        } catch (err) {
-            result.message = err;
+        const tempUser = await queryTempUserByTempUserID(tempUserID);
+        if (tempUser) {
+            return {userProfile: convertUserProfile(tempUser.user)};
+        } else {
+            throw new TError(FAIL, "This ID is expired, please reacquire");
         }
         return result;
     };
-};
+}
 
-var updateTempUserByUserID = async (userID, newTempUserID) => {
+const updateTempUserByUserID = async (userID, newTempUserID) => {
     return TempUserModel.findOneAndUpdate({user: userID}, {$set: {tempUserID: newTempUserID}})
         .populate("user")
         .exec()
         .catch(err => {
-            throw new Error(`Server error, query temp userID fail: ${err.message}`);
+            console.log(err);
+            throw new TError(SERVER_UNKNOW_ERROR, `Server error, query temp userID fail`);
         });
-}
+};
 
-var queryTempUserByTempUserID = tempUserID => {
-    return TempUserModel
-        .findOne({tempUserID})
-        .populate("user").exec().catch(err => {
-            throw new Error(`Server error, query temp userID fail: ${err.message}`);
+const queryTempUserByTempUserID = tempUserID => {
+    return TempUserModel.findOne({tempUserID})
+        .populate("user")
+        .exec()
+        .catch(err => {
+            console.log(err);
+            throw new TError(SERVER_UNKNOW_ERROR, `Server error, query temp userID fail`);
         });
-}
+};
 
-var createTempUser = userID => {
+const createTempUser = userID => {
     try {
         const tempUser = new TempUserModel({user: userID, tempUserID: uuidv4()});
         return tempUser.save();
     } catch (err) {
-        throw new Error(`Server error, create temp user fail: ${err.message}`);
+        console.log(err);
+        throw new TError(SERVER_UNKNOW_ERROR, `Server error, create temp user fail`);
     }
-}
+};
 
-var convertUserProfile = userProfile => {
+const convertUserProfile = userProfile => {
     let user = JSON.parse(JSON.stringify(userProfile));
-
     user.userID = userProfile._id;
 
     delete user._id;
@@ -90,7 +79,6 @@ var convertUserProfile = userProfile => {
     delete user.token;
     delete user.status;
     delete user.role;
-
     return user;
 };
 
