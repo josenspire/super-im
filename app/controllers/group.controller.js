@@ -1,32 +1,29 @@
 const GroupService = require("../services/group.service");
-const StringUtil = require("../utils/StringUtil");
+const {stringSubstr} = require("../utils/StringUtil");
 const Constants = require("../utils/Constants");
 const {FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const {success, error} = require('../commons/response.common');
 
 class GroupController {
     async createGroup(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
-
-        const name = StringUtil.stringSubstr(input.name, Constants.GROUP_NAME_MAX_LENGTH);
-        const members = input.members;
-
+        const {params} = req.input;
+        const {name, members} = params;
+        const groupName = stringSubstr(name, Constants.GROUP_NAME_MAX_LENGTH);
+        let result = null;
         if (members.length < 1) {
-            return res.json({
-                status: FAIL,
-                data: {},
-                message: "Group's member count should be greater than 1 at least"
-            })
-        };
-        if (members.length > SERVER_UNKNOW_ERROR) {
-            return res.json({
-                status: FAIL,
-                data: {},
-                message: `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`
-            })
+            result = error(FAIL, "Group's member count should be greater than 1 at least");
         }
-        const result = await GroupService.createGroup(currentUser, {name, members});
-        return res.json(result)
+        if (members.length > SERVER_UNKNOW_ERROR) {
+            result = error(FAIL, `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`);
+        }
+        try {
+            const createResult = await GroupService.createGroup(req.user, {name: groupName, members});
+            result = success(createResult);
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next();
     };
 
     async addGroupMembers(req, res, next) {

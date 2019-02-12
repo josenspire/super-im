@@ -5,39 +5,29 @@ const GroupModel = require("../models/group.model");
 const MemberModel = require("../models/member.model");
 
 const Constants = require("../utils/Constants");
-const {SUCCESS, FAIL} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const TError = require('../commons/error.common');
 
 class GroupRepository {
     /**
      * Create a user contact group
      * @param {Object} currentUser
      * @param {Object} groupInfo
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @returns {Promise<{group: any}>}
      */
     async createGroup(currentUser, groupInfo) {
-        let result = {status: FAIL, data: {}, message: ""};
         const groupID = mongoose.Types.ObjectId();
-
-        try {
-            const isGroupOverflow = await isGroupCountOverflow(currentUser.userID);
-            if (isGroupOverflow) {
-                result.message = `Current user's group count is out of max user group count limit (${Constants.MAX_USER_GROUP_OWN_COUNT})`;
-            } else {
-                let group = generateGroupObject(currentUser, groupID, groupInfo);
-                let members = generateMembersObject(groupID, groupInfo.members, currentUser);
-
-                let _group = JSON.parse(JSON.stringify(await saveGroup(group)));
-                await saveMembers(members);
-                _group.members = await queryMembersByGroupID(groupID);
-
-                result.data.group = convertGroup(_group);
-                result.status = SUCCESS;
-            }
-        } catch (err) {
-            console.log("---[CREATE GROUP ERROR]---", err)
-            result.message = err;
+        const isGroupOverflow = await isGroupCountOverflow(currentUser.userID);
+        if (isGroupOverflow) {
+            throw new TError(FAIL, `Current user's group count is out of max user group count limit (${Constants.MAX_USER_GROUP_OWN_COUNT})`);
         }
-        return result;
+        const group = generateGroupObject(currentUser, groupID, groupInfo);
+        let members = generateMembersObject(groupID, groupInfo.members, currentUser);
+
+        let _group = _.cloneDeep(await saveGroup(group));
+        await saveMembers(members);
+        _group.members = await queryMembersByGroupID(groupID);
+        return {group: convertGroup(_group)};
     };
 
     /**
@@ -303,7 +293,7 @@ class GroupRepository {
     };
 };
 
-var queryUserAllGroupListData = async userID => {
+const queryUserAllGroupListData = async userID => {
     try {
         const groups = await queryGroupList(userID);
         const groupsPromises = groups.map(group => {
@@ -320,7 +310,7 @@ var queryUserAllGroupListData = async userID => {
     }
 };
 
-var queryGroupDataByGroupID = async groupID => {
+const queryGroupDataByGroupID = async groupID => {
     try {
         const result = await Promise.all([queryGroupByID(groupID), queryGroupMembers(groupID)]);
         let group = {};
@@ -333,7 +323,7 @@ var queryGroupDataByGroupID = async groupID => {
     }
 };
 
-var updateGroupProfile = async (groupID, opts) => {
+const updateGroupProfile = async (groupID, opts) => {
     try {
         const group = await GroupModel.findOneAndUpdate({_id: groupID, status: true}, {$set: opts}).lean();
         if (!group) {
@@ -345,7 +335,7 @@ var updateGroupProfile = async (groupID, opts) => {
     }
 };
 
-var updateGroupMemberAlias = async (groupID, userID, alias) => {
+const updateGroupMemberAlias = async (groupID, userID, alias) => {
     try {
         const member = await MemberModel.findOneAndUpdate({groupID, userID}, {
             $set: {alias}
@@ -359,7 +349,7 @@ var updateGroupMemberAlias = async (groupID, userID, alias) => {
     }
 };
 
-var queryGroupList = async userID => {
+const queryGroupList = async userID => {
     const groups = await MemberModel.find({userID: userID, status: 0})
         .select('groupID')
         .exec()
@@ -369,7 +359,7 @@ var queryGroupList = async userID => {
     return groups;
 };
 
-var queryGroupMembers = groupID => {
+const queryGroupMembers = groupID => {
     return MemberModel.find({groupID: groupID})
         .populate("userID")
         .select('-_id')
@@ -379,23 +369,23 @@ var queryGroupMembers = groupID => {
         });
 };
 
-var countUserGroups = currentUserID => {
+const countUserGroups = currentUserID => {
     return GroupModel.count({owner: currentUserID, status: true}).lean()
         .catch(err => {
             throw new Error(err.message);
         });
 };
 
-var isGroupCountOverflow = async currentUserID => {
+const isGroupCountOverflow = async currentUserID => {
     try {
         const groups = await countUserGroups(currentUserID);
         return (groups >= Constants.MAX_USER_GROUP_OWN_COUNT);
     } catch (err) {
-        throw new Error("Error: count user's groups fail");
+        throw new TError(SERVER_UNKNOW_ERROR, "Error: count user's groups fail");
     }
 };
 
-var queryGroupByID = async groupID => {
+const queryGroupByID = async groupID => {
     try {
         const group = await GroupModel.findOne({_id: groupID, status: true}).lean();
         if (!group) {
@@ -408,35 +398,35 @@ var queryGroupByID = async groupID => {
     }
 };
 
-var queryMembersByGroupID = async groupID => {
+const queryMembersByGroupID = async groupID => {
     const members = await MemberModel.find({groupID: groupID, status: 0}).populate("userID").exec()
         .catch(err => {
             console.log('--QUERY MEMBERS ERROR--', err);
-            throw new Error(err.message);
+            throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, get group members fail');
         });
     if (!members) {
-        throw new Error(`The group is not exist, please check your group id`);
+        throw new TError(FAIL, `The group is not exist, please check your group id`);
     } else {
         return members.filter(member => (member.userID !== null));
     }
 };
 
-var isGroupOwnerOrAdmin = (group, userID) => {
+const isGroupOwnerOrAdmin = (group, userID) => {
     return (group.owner.toString() === userID.toString()) ? true : false;
 };
 
-var isMemberExistedGroup = (groupMembers, targetUserID) => {
+const isMemberExistedGroup = (groupMembers, targetUserID) => {
     let index = _.findIndex(groupMembers, o => {
         return _.toString(o.userID._id) === _.toString(targetUserID);
     });
     return (index > -1);
 };
 
-var checkTargetUserIsCurrentUser = (targetUserID, currentUserID) => {
+const checkTargetUserIsCurrentUser = (targetUserID, currentUserID) => {
     return targetUserID.toString() === currentUserID.toString();
 };
 
-var generateGroupObject = (currentUser, groupID, groupInfo) => {
+const generateGroupObject = (currentUser, groupID, groupInfo) => {
     let group = {};
     let currentUserID = currentUser.userID;
     group._id = groupID;
@@ -446,7 +436,7 @@ var generateGroupObject = (currentUser, groupID, groupInfo) => {
     return group;
 };
 
-var generateMembersObject = (groupID, members, currentUser) => {
+const generateMembersObject = (groupID, members, currentUser) => {
     let _members = members.map(member => {
         return {groupID: groupID, userID: member};
     });
@@ -454,25 +444,24 @@ var generateMembersObject = (groupID, members, currentUser) => {
     return _members;
 };
 
-var saveGroup = group => {
-    const groupModel = new GroupModel(group);
+const saveGroup = group => {
     try {
-        return groupModel.save();
+        return new GroupModel(group).save();
     } catch (err) {
         console.log('--[CREATE GROUP FAIL]--', err);
-        throw new Error('Server unknow error, create group fail');
+        throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, create group fail');
     }
 };
 
-var saveMembers = members => {
+const saveMembers = members => {
     try {
         return MemberModel.create(members).lean();
     } catch (err) {
-        throw new Error(`Server error, save group members fail: ${err}`);
+        throw new TError(SERVER_UNKNOW_ERROR, `Server error, save group members fail: ${err}`);
     }
 };
 
-var addMemberToGroup = async (groupID, members) => {
+const addMemberToGroup = async (groupID, members) => {
     try {
         const result = await MemberModel.create(members).lean();
         if (!result) {
@@ -484,7 +473,7 @@ var addMemberToGroup = async (groupID, members) => {
     }
 };
 
-var joinToGroup = (groupID, member) => {
+const joinToGroup = (groupID, member) => {
     try {
         const memberModel = new MemberModel({groupID, userID: member.userID});
         return memberModel.save();
@@ -493,15 +482,15 @@ var joinToGroup = (groupID, member) => {
     }
 };
 
-var removeGroupMember = (groupID, targetUserID) => {
+const removeGroupMember = (groupID, targetUserID) => {
     return MemberModel.remove({groupID, userID: targetUserID});
 };
 
-var removeGroupMembers = groupID => {
+const removeGroupMembers = groupID => {
     return MemberModel.remove({groupID});
 };
 
-var updateGroupOwner = (groupID, ownerUserID) => {
+const updateGroupOwner = (groupID, ownerUserID) => {
     try {
         return GroupModel.findOneAndUpdate({
             _id: groupID,
@@ -516,7 +505,7 @@ var updateGroupOwner = (groupID, ownerUserID) => {
     }
 };
 
-var dismissGroup = async groupID => {
+const dismissGroup = async groupID => {
     try {
         await removeGroup(groupID);
         await removeGroupMembers(groupID);
@@ -526,7 +515,7 @@ var dismissGroup = async groupID => {
     }
 };
 
-var removeGroup = groupID => {
+const removeGroup = groupID => {
     try {
         return GroupModel.findOneAndUpdate({_id: groupID, status: true}, {$set: {status: false}});
     } catch (error) {
@@ -535,7 +524,7 @@ var removeGroup = groupID => {
 };
 
 // data convert opertaion
-var removeDuplicate = (orgMembers, newMembers) => {
+const removeDuplicate = (orgMembers, newMembers) => {
     for (let i = 0; i < newMembers.length; i++) {
         let member = newMembers[i];
         let index = _.findIndex(orgMembers, o => {
@@ -546,7 +535,7 @@ var removeDuplicate = (orgMembers, newMembers) => {
     }
 };
 
-var convertGroup = group => {
+const convertGroup = group => {
     let _group = JSON.parse(JSON.stringify(group));
     _group.groupID = group._id;
 
@@ -557,7 +546,7 @@ var convertGroup = group => {
     return _group;
 };
 
-var convertGroupMembers = members => {
+const convertGroupMembers = members => {
     return members.filter(member => {
         return member.userID != null;
     }).map(member => {
@@ -572,14 +561,14 @@ var convertGroupMembers = members => {
     })
 };
 
-var convertGroupMembersList = members => {
+const convertGroupMembersList = members => {
     return members.map(member => {
         let _member = convertGroupMembers(JSON.parse(JSON.stringify(member)));
         return _member;
     });
 }
 
-var convertGroupList = (groups, members) => {
+const convertGroupList = (groups, members) => {
     let _groups = [];
     for (let i = 0; i < groups.length; i++) {
         let group = {};
@@ -591,7 +580,7 @@ var convertGroupList = (groups, members) => {
     return _groups;
 };
 
-var convertGroupData = group => {
+const convertGroupData = group => {
     let _group = JSON.parse(JSON.stringify(group));
     _group.groupID = group._id;
 
@@ -601,14 +590,14 @@ var convertGroupData = group => {
     return _group;
 };
 
-var convertGroupListData = groups => {
+const convertGroupListData = groups => {
     return groups.map(group => {
         return convertGroupData(group);
     })
 }
 
 
-var convertUser = user => {
+const convertUser = user => {
     let _user = JSON.parse(JSON.stringify(user)) || {};
     _user.userID = user._id;
     delete _user._id;

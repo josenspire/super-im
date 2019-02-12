@@ -7,7 +7,6 @@ const _ = require("lodash");
 
 class GroupService {
     async createGroup(currentUser, groupInfo) {
-        let result = {status: FAIL, data: {}, message: ""};
         const currentUserID = _.toString(currentUser.userID);
         let members = _.cloneDeep(groupInfo.members);
         members.push(currentUserID);

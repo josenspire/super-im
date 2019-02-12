@@ -1,23 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const GroupControl = require('../controllers/group.controller');
-const TempGroupControl = require('../controllers/tempGroup.controller');
-const AsceptControl = require('../controllers/aspect.controller');
-let AESAscept = AsceptControl.AES;
+const {
+    createGroup,
+    addGroupMembers,
+    joinGroup,
+    kickGroupMember,
+    quitGroup,
+    dismissGroup,
+    renameGroup,
+    updateGroupNotice,
+    updateGroupMemberAlias,
+    getGroupList,
+} = require('../controllers/group.controller');
+const {
+    getTempGroupID,
+    getGroupProfileByTempGroupID,
+} = require('../controllers/tempGroup.controller');
+
+const AspectHelper = require('../commons/aspect.common.js');
 
 // group
-router.post('/create', AESAscept.decryptParam, GroupControl.createGroup, AESAscept.encryptParam);
-router.post('/add', AESAscept.decryptParam, GroupControl.addGroupMembers, AESAscept.encryptParam);
-router.post('/join', AESAscept.decryptParam, GroupControl.joinGroup, AESAscept.encryptParam);
-router.post('/kick', AESAscept.decryptParam, GroupControl.kickGroupMember, AESAscept.encryptParam);
-router.post('/quit', AESAscept.decryptParam, GroupControl.quitGroup, AESAscept.encryptParam);
-router.post('/dismiss', AESAscept.decryptParam, GroupControl.dismissGroup, AESAscept.encryptParam);
-router.post('/rename', AESAscept.decryptParam, GroupControl.renameGroup, AESAscept.encryptParam);
-router.post('/updateNotice', AESAscept.decryptParam, GroupControl.updateGroupNotice, AESAscept.encryptParam);
-router.post('/updateAlias', AESAscept.decryptParam, GroupControl.updateGroupMemberAlias, AESAscept.encryptParam);
-router.post('/getGroups', AESAscept.decryptParam, GroupControl.getGroupList, AESAscept.encryptParam);
-// temp group
-router.post('/getTempGroupID', AESAscept.decryptParam, TempGroupControl.getTempGroupID, AESAscept.encryptParam);
-router.post('/getGroupByTempGroupID', AESAscept.decryptParam, TempGroupControl.getGroupProfileByTempGroupID, AESAscept.encryptParam);
+router.post('/create', AspectHelper.handleRequestWithTokenTest, createGroup, AspectHelper.handleResponse);
+// router.post('/add', AESAscept.decryptParam, addGroupMembers, AESAscept.encryptParam);
+// router.post('/join', AESAscept.decryptParam, joinGroup, AESAscept.encryptParam);
+// router.post('/kick', AESAscept.decryptParam, kickGroupMember, AESAscept.encryptParam);
+// router.post('/quit', AESAscept.decryptParam, quitGroup, AESAscept.encryptParam);
+// router.post('/dismiss', AESAscept.decryptParam, dismissGroup, AESAscept.encryptParam);
+// router.post('/rename', AESAscept.decryptParam, renameGroup, AESAscept.encryptParam);
+// router.post('/updateNotice', AESAscept.decryptParam, updateGroupNotice, AESAscept.encryptParam);
+// router.post('/updateAlias', AESAscept.decryptParam, updateGroupMemberAlias, AESAscept.encryptParam);
+// router.post('/getGroups', AESAscept.decryptParam, getGroupList, AESAscept.encryptParam);
+// // temp group
+// router.post('/getTempGroupID', AESAscept.decryptParam, getTempGroupID, AESAscept.encryptParam);
+// router.post('/getGroupByTempGroupID', AESAscept.decryptParam, getGroupProfileByTempGroupID, AESAscept.encryptParam);
 
 module.exports = router;

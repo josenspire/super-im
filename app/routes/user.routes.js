@@ -11,8 +11,8 @@ const {
     getTempUserID,
     getUserProfileByTempUserID,
 } = require('../controllers/tempUser.controller');
-// const {handleRequestTest, handleResponse} = require('../commons/aspect.common.js');
 const AspectHelper = require('../commons/aspect.common.js');
+
 // user
 router.post('/getUserProfile', AspectHelper.handleRequestWithTokenTest, getUserProfile, AspectHelper.handleResponse);
 router.post('/updateUserProfile', AspectHelper.handleRequestWithTokenTest, updateUserProfile, AspectHelper.handleResponse);
