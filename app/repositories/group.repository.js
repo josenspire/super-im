@@ -54,32 +54,24 @@ class GroupRepository {
      * Join to one group
      * @param {Object} member
      * @param {string} groupID
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @returns {Promise<{group: any}>}
      */
     async joinGroup(member, groupID) {
-        let result = {status: FAIL, data: {}, message: ""};
-        try {
-            // TODO 
-            // need to check group is existed ?
-            const groupMembers = await queryMembersByGroupID(groupID);
-            if (isMemberExistedGroup(groupMembers, member.userID)) {
-                result.message = "You are currently group member, please do not repeat";
-            } else {
-                if ((groupMembers.length >= Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT)) {
-                    result.message = `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`;
-                } else {
-                    await joinToGroup(groupID, member);
-
-                    let currentGroupData = await queryGroupDataByGroupID(groupID);
-                    result.data.group = convertGroup(currentGroupData);
-                    result.status = SUCCESS;
-                }
+        // TODO: need to check group is existed ?
+        const groupMembers = await queryMembersByGroupID(groupID);
+        if (isMemberExistedGroup(groupMembers, member.userID)) {
+            throw new TError(FAIL, "You are currently group member, please do not repeat");
+        } else {
+            if ((groupMembers.length >= Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT)) {
+                throw new TError(FAIL, `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`);
             }
-        } catch (err) {
-            console.log("---[JOIN GROUP ERROR]---", err)
-            result.message = err;
+            await joinToGroup(groupID, member);
+
+            const currentGroupData = await queryGroupDataByGroupID(groupID);
+            return {
+                group: convertGroup(currentGroupData),
+            };
         }
-        return result;
     };
 
     /**
@@ -304,9 +296,8 @@ const queryUserAllGroupListData = async userID => {
 const queryGroupDataByGroupID = async groupID => {
     try {
         const result = await Promise.all([queryGroupByID(groupID), queryGroupMembers(groupID)]);
-        let group = {};
-        group = JSON.parse(JSON.stringify(result[0]));
-        group.members = result[1];
+        let group = JSON.parse(JSON.stringify(result[0]))
+        group["members"] = result[1];
         return group;
     } catch (err) {
         console.log(err);
@@ -474,7 +465,7 @@ const joinToGroup = (groupID, member) => {
         const memberModel = new MemberModel({groupID, userID: member.userID});
         return memberModel.save();
     } catch (err) {
-        throw new Error('Server unknow error, add contact fail');
+        throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, add contact fail');
     }
 };
 

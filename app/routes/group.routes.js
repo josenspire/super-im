@@ -22,7 +22,7 @@ const AspectHelper = require('../commons/aspect.common.js');
 // group
 router.post('/create', AspectHelper.handleRequestWithTokenTest, createGroup, AspectHelper.handleResponse);
 router.post('/add', AspectHelper.handleRequestWithTokenTest, addGroupMembers, AspectHelper.handleResponse);
-// router.post('/join', AESAscept.decryptParam, joinGroup, AESAscept.encryptParam);
+router.post('/join', AspectHelper.handleRequestWithTokenTest, joinGroup, AspectHelper.handleResponse);
 // router.post('/kick', AESAscept.decryptParam, kickGroupMember, AESAscept.encryptParam);
 // router.post('/quit', AESAscept.decryptParam, quitGroup, AESAscept.encryptParam);
 // router.post('/dismiss', AESAscept.decryptParam, dismissGroup, AESAscept.encryptParam);

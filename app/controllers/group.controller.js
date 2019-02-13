@@ -40,12 +40,18 @@ class GroupController {
     };
 
     async joinGroup(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
+        const {params} = req.input;
 
-        const {joinType, groupID} = input;
-        const result = await GroupService.joinGroup(currentUser, groupID, joinType);
-        res.json(result);
+        let result = null;
+        const {joinType, groupID} = params;
+        try {
+            await GroupService.joinGroup(req.user, groupID, joinType);
+            result = success(null, "Join group success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next()
     };
 
     async kickGroupMember(req, res, next) {

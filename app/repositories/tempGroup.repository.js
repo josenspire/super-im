@@ -1,7 +1,7 @@
 const TempGroupModel = require('../models/tempGroup.model');
 const MemberModel = require('../models/member.model');
-const {SUCCESS, FAIL} = require("../utils/CodeConstants");
-
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const TError = require('../commons/error.common');
 const uuidv4 = require('uuid/v4');
 
 class TempGroupRepository {
@@ -31,50 +31,46 @@ class TempGroupRepository {
     /**
      * Get group profile by temp group ID
      * @param {string} tempGroupID
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @returns {Promise<Object>}
      */
     async getGroupProfileByTempGroupID(tempGroupID) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            const tempGroup = await queryGroupByTempGroupID(tempGroupID);
-            if (tempGroup) {
-                result.data.group = tempGroup;
-                result.status = SUCCESS;
-            } else {
-                result.message = "This ID is expired, please reacquire";
-            }
-        } catch (err) {
-            console.log('[QUERY TEMP GROUP ERROR]: ', err.message);
-            result.message = err.message;
+        const tempGroup = await queryGroupByTempGroupID(tempGroupID);
+        if (!tempGroup) {
+            throw new TError(FAIL, "This ID is expired, please reacquire");
         }
-        return result;
+        return {group};
     };
-
-};
+}
 
 module.exports = new TempGroupRepository();
 
-var updateTempGroupByGroupID = (groupID, tempGroupID) => {
+const updateTempGroupByGroupID = (groupID, tempGroupID) => {
     return TempGroupModel.findOneAndUpdate({group: groupID}, {$set: {tempGroupID: tempGroupID}})
         .populate("group").exec();
 };
 
-var queryGroupByTempGroupID = async tempGroupID => {
-    let group = await TempGroupModel.findOne({tempGroupID: tempGroupID})
-        .populate("group").exec();
+const queryGroupByTempGroupID = async tempGroupID => {
+    let group = await TempGroupModel
+        .findOne({tempGroupID: tempGroupID})
+        .populate("group")
+        .lean()
+        .exec()
+        .catch(err => {
+            throw new TError(SERVER_UNKNOW_ERROR, "Server error, get group information fail")
+        });
     if (!group) return null;
-    let _group = convertGroupProfile(group.group);
-    let members = await MemberModel.find({groupID: _group.groupID});
-    _group.members = convertMember(members);
+    const _group = convertGroupProfile(group.group);
+    const members = await MemberModel.find({groupID: _group.groupID});
+    _group["members"] = convertMember(members);
     return _group;
 };
 
-var createTempGroup = groupID => {
+const createTempGroup = groupID => {
     let tempGroup = new TempGroupModel({group: groupID, tempGroupID: uuidv4()});
     return tempGroup.save();
 };
 
-var convertGroupProfile = group => {
+const convertGroupProfile = group => {
     let _group = JSON.parse(JSON.stringify(group));
     _group.groupID = group._id;
 
@@ -84,7 +80,7 @@ var convertGroupProfile = group => {
     return _group;
 };
 
-var convertMember = members => {
+const convertMember = members => {
     let _members = JSON.parse(JSON.stringify(members));
     for (let i = 0; i < _members.length; i++) {
         let m = _members[i];

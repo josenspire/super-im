@@ -45,29 +45,18 @@ class GroupService {
     };
 
     async joinGroup(currentUser, groupID, joinType) {
-        let result = {status: FAIL, data: {}, message: ""};
-        let member = {
+        const member = {
             userID: currentUser.userID,
             alias: currentUser.nickname
         };
         let _groupID = groupID;
         if (joinType === 'QrCode') {
-            const groupResult = await TempGroupRepository.getGroupProfileByTempGroupID(groupID);
-            if (groupResult.status === SUCCESS) {
-                _groupID = groupResult.data.group.groupID;
-            } else {
-                return groupResult;
-            }
+            const {group} = await TempGroupRepository.getGroupProfileByTempGroupID(groupID);
+            _groupID = group.groupID;
         }
-        const _result = await GroupRepository.joinGroup(member, _groupID);
-        result = _.cloneDeep(_result);
+        const {group} = await GroupRepository.joinGroup(member, _groupID);
         try {
-            if (result.status != SUCCESS) {
-                return result;
-            }
-            let group = result.data.group;
             await IMProxie.joinGroup(_groupID, {id: member.userID});
-
             const currentUserID = _.toString(currentUser.userID);
             await IMProxie.sendGroupNotification({
                 currentUserID: currentUserID,
@@ -75,13 +64,9 @@ class GroupService {
                 group: group,
                 memberID: currentUserID,
             });
-            result.data = {};
         } catch (err) {
-            result.status = FAIL;
-            result.data = {};
-            result.message = err.message;
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-        return result;
     }
 
     async joinGroupByTempGroupID(currentUser, groupID) {
