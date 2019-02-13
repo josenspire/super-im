@@ -17,8 +17,8 @@ class GroupController {
             result = error(FAIL, `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`);
         }
         try {
-            const createResult = await GroupService.createGroup(req.user, {name: groupName, members});
-            result = success(createResult);
+            await GroupService.createGroup(req.user, {name: groupName, members});
+            result = success(null, "Create new group success");
         } catch (err) {
             result = error(err);
         }

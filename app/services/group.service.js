@@ -1,9 +1,10 @@
+const _ = require("lodash");
 const IMProxie = require('../api/proxies/rongCloud.server.proxies')
 const GroupRepository = require("../repositories/group.repository");
 const TempGroupRepository = require('../repositories/tempGroup.repository');
 const Constants = require("../utils/Constants");
 const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
-const _ = require("lodash");
+const TError = require('../commons/error.common');
 
 class GroupService {
     async createGroup(currentUser, groupInfo) {
@@ -12,26 +13,18 @@ class GroupService {
         members.push(currentUserID);
         
         const createResult = await GroupRepository.createGroup(currentUser, groupInfo);
-        result = _.cloneDeep(createResult);
-        if (result.status != SUCCESS) {
-            return result;
-        }
-        const group = result.data.group;
+        const group = createResult.group;
         try {
             await IMProxie.createGroup(_.toString(group.groupID), group.name, convertMembers(members));
             await IMProxie.sendGroupNotification({
-                currentUserID: currentUserID,
+                currentUserID,
                 operation: Constants.GROUP_OPERATION_CREATE,
-                group: group,
+                group,
             });
-            result.data = {};
         } catch (err) {
-            result.status = FAIL;
-            result.data = {};
-            result.message = err.message;
+            throw new TError(FAIL, err.message);
         }
-        return result;
-    }
+    };
 
     async addGroupMembers(currentUser, groupID, members) {
         let result = {status: FAIL, data: {}, message: ""};
@@ -283,13 +276,12 @@ class GroupService {
     }
 };
 
-module.exports = new GroupService();
-
-
-var convertMembers = members => {
+const convertMembers = members => {
     return _.map(members, e => {
         let item = {};
         item.id = e;
         return item;
     });
 };
+
+module.exports = new GroupService();

@@ -24,7 +24,7 @@ class GroupRepository {
         const group = generateGroupObject(currentUser, groupID, groupInfo);
         let members = generateMembersObject(groupID, groupInfo.members, currentUser);
 
-        let _group = _.cloneDeep(await saveGroup(group));
+        let _group = JSON.parse(JSON.stringify(await saveGroup(group)));
         await saveMembers(members);
         _group.members = await queryMembersByGroupID(groupID);
         return {group: convertGroup(_group)};
@@ -275,6 +275,7 @@ class GroupRepository {
         const member = await MemberModel.findOne({groupID, userID: memberID})
             .populate("userID")
             .select('-_id')
+            .lean()
             .exec()
             .catch(err => {
                 throw new Error(`Server error, query member data fail: ${err.message}`);
@@ -352,6 +353,7 @@ const updateGroupMemberAlias = async (groupID, userID, alias) => {
 const queryGroupList = async userID => {
     const groups = await MemberModel.find({userID: userID, status: 0})
         .select('groupID')
+        .lean()
         .exec()
         .catch(err => {
             throw new Error(`Server error, query user's group fail: ${err.message}`);
@@ -363,6 +365,7 @@ const queryGroupMembers = groupID => {
     return MemberModel.find({groupID: groupID})
         .populate("userID")
         .select('-_id')
+        .lean()
         .exec()
         .catch(err => {
             throw new Error(`Server error, query group data fail: ${err.message}`);
@@ -370,7 +373,7 @@ const queryGroupMembers = groupID => {
 };
 
 const countUserGroups = currentUserID => {
-    return GroupModel.count({owner: currentUserID, status: true}).lean()
+    return GroupModel.countDocuments({owner: currentUserID, status: true}).lean()
         .catch(err => {
             throw new Error(err.message);
         });
@@ -381,7 +384,7 @@ const isGroupCountOverflow = async currentUserID => {
         const groups = await countUserGroups(currentUserID);
         return (groups >= Constants.MAX_USER_GROUP_OWN_COUNT);
     } catch (err) {
-        throw new TError(SERVER_UNKNOW_ERROR, "Error: count user's groups fail");
+        throw new TError(SERVER_UNKNOW_ERROR, "Server unknow error, count user's groups fail");
     }
 };
 
@@ -399,12 +402,15 @@ const queryGroupByID = async groupID => {
 };
 
 const queryMembersByGroupID = async groupID => {
-    const members = await MemberModel.find({groupID: groupID, status: 0}).populate("userID").exec()
+    const members = await MemberModel.find({groupID: groupID, status: 0})
+        .populate("userID")
+        .lean()
+        .exec()
         .catch(err => {
             console.log('--QUERY MEMBERS ERROR--', err);
             throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, get group members fail');
         });
-    if (!members) {
+    if (!members.length) {
         throw new TError(FAIL, `The group is not exist, please check your group id`);
     } else {
         return members.filter(member => (member.userID !== null));
@@ -455,7 +461,7 @@ const saveGroup = group => {
 
 const saveMembers = members => {
     try {
-        return MemberModel.create(members).lean();
+        return MemberModel.create(members);
     } catch (err) {
         throw new TError(SERVER_UNKNOW_ERROR, `Server error, save group members fail: ${err}`);
     }
@@ -536,7 +542,7 @@ const removeDuplicate = (orgMembers, newMembers) => {
 };
 
 const convertGroup = group => {
-    let _group = JSON.parse(JSON.stringify(group));
+    let _group = Object.assign({}, group);
     _group.groupID = group._id;
 
     delete _group._id;
