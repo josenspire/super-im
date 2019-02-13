@@ -11,7 +11,7 @@ class GroupService {
         const currentUserID = _.toString(currentUser.userID);
         let members = _.cloneDeep(groupInfo.members);
         members.push(currentUserID);
-        
+
         const createResult = await GroupRepository.createGroup(currentUser, groupInfo);
         const group = createResult.group;
         try {
@@ -27,14 +27,8 @@ class GroupService {
     };
 
     async addGroupMembers(currentUser, groupID, members) {
-        let result = {status: FAIL, data: {}, message: ""};
+        const {group} = await GroupRepository.addGroupMembers(groupID, members);
         try {
-            const _result = await GroupRepository.addGroupMembers(groupID, members);
-            result = _.cloneDeep(_result);
-            if (result.status !== SUCCESS) {
-                return result;
-            }
-            const group = result.data.group;
             const memberJoin = _.map(members, e => {
                 return IMProxie.joinGroup(groupID, {id: e});
             });
@@ -42,19 +36,15 @@ class GroupService {
             await IMProxie.sendGroupNotification({
                 currentUserID: _.toString(currentUser.userID),
                 operation: Constants.GROUP_OPERATION_ADD,
-                group: group,
+                group,
                 membersID: members,
             });
-            result.data = {};
         } catch (err) {
-            result.status = FAIL;
-            result.data = {};
-            result.message = err.message;
+            throw new TError(FAIL, err.message);
         }
-        return result;
-    }
+    };
 
-    async joinGroup (currentUser, groupID, joinType) {
+    async joinGroup(currentUser, groupID, joinType) {
         let result = {status: FAIL, data: {}, message: ""};
         let member = {
             userID: currentUser.userID,
@@ -151,7 +141,7 @@ class GroupService {
         return result;
     }
 
-    async quitGroup (currentUser, groupID) {
+    async quitGroup(currentUser, groupID) {
         let result = {status: FAIL, data: {}, message: ""};
         const currentUserID = _.toString(currentUser.userID);
         const member = await GroupRepository.queryMemberByGroupIDAndMemberID({groupID, memberID: currentUser.userID});
@@ -187,7 +177,7 @@ class GroupService {
         return result;
     }
 
-    async dismissGroup (currentUser, groupID) {
+    async dismissGroup(currentUser, groupID) {
         let result = {status: FAIL, data: {}, message: ""};
         const currentUserID = _.toString(currentUser.userID);
 

@@ -27,11 +27,16 @@ class GroupController {
     };
 
     async addGroupMembers(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
-
-        const result = await GroupService.addGroupMembers(currentUser, input.groupID, input.members);
-        res.json(result);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await GroupService.addGroupMembers(req.user, params.groupID, params.members);
+            result = success(null, "Add group member success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next()
     };
 
     async joinGroup(req, res, next) {

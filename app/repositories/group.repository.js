@@ -34,31 +34,21 @@ class GroupRepository {
      * Add members to group
      * @param {string} groupID
      * @param {Array} members
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @returns {Promise<{group: *}>}
      */
     async addGroupMembers(groupID, members) {
-        let result = {status: FAIL, data: {}, message: ""};
-        try {
-            let groupMembers = await queryMembersByGroupID(groupID);
-            // TODO: need to check group is existed ?
-            if ((groupMembers.length + members.length) > Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT) {
-                result.message = `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`;
-                result.status = FAIL;
-            } else {
-                const membersObject = generateMembersObject(groupID, members);
-                await addMemberToGroup(groupID, membersObject);
-                // TODO
-                // need to check and remove dulplicate members
-                let group = await queryGroupDataByGroupID(groupID);
-                result.data.group = convertGroup(group);
-                result.status = SUCCESS;
-            }
-        } catch (err) {
-            console.log("---[ADD GROUP ERROR]---", err)
-            result.message = err;
+        const groupMembers = await queryMembersByGroupID(groupID);
+        // TODO: need to check group is existed ?
+        if ((groupMembers.length + members.length) > Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT) {
+            throw new TError(FAIL, `Group's member count is out of max group member count limit (${Constants.DEFAULT_MAX_GROUP_MEMBER_COUNT})`);
+        } else {
+            const membersObject = generateMembersObject(groupID, members);
+            await addMemberToGroup(groupID, membersObject);
+            // TODO: need to check and remove dulplicate members
+            const group = await queryGroupDataByGroupID(groupID);
+            return {group: convertGroup(group)}
         }
-        return result;
-    }
+    };
 
     /**
      * Join to one group
@@ -320,7 +310,7 @@ const queryGroupDataByGroupID = async groupID => {
         return group;
     } catch (err) {
         console.log(err);
-        throw new Error(err);
+        throw new TError(SERVER_UNKNOW_ERROR, err.message);
     }
 };
 
@@ -469,7 +459,7 @@ const saveMembers = members => {
 
 const addMemberToGroup = async (groupID, members) => {
     try {
-        const result = await MemberModel.create(members).lean();
+        const result = await MemberModel.create(members);
         if (!result) {
             throw new Error('Current group is not exist, join group fail');
         }
