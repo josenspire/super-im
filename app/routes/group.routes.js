@@ -23,15 +23,15 @@ const AspectHelper = require('../commons/aspect.common.js');
 router.post('/create', AspectHelper.handleRequestWithTokenTest, createGroup, AspectHelper.handleResponse);
 router.post('/add', AspectHelper.handleRequestWithTokenTest, addGroupMembers, AspectHelper.handleResponse);
 router.post('/join', AspectHelper.handleRequestWithTokenTest, joinGroup, AspectHelper.handleResponse);
-// router.post('/kick', AESAscept.decryptParam, kickGroupMember, AESAscept.encryptParam);
-// router.post('/quit', AESAscept.decryptParam, quitGroup, AESAscept.encryptParam);
-// router.post('/dismiss', AESAscept.decryptParam, dismissGroup, AESAscept.encryptParam);
-// router.post('/rename', AESAscept.decryptParam, renameGroup, AESAscept.encryptParam);
-// router.post('/updateNotice', AESAscept.decryptParam, updateGroupNotice, AESAscept.encryptParam);
-// router.post('/updateAlias', AESAscept.decryptParam, updateGroupMemberAlias, AESAscept.encryptParam);
-// router.post('/getGroups', AESAscept.decryptParam, getGroupList, AESAscept.encryptParam);
+router.post('/kick', AspectHelper.handleRequestWithTokenTest, kickGroupMember, AspectHelper.handleResponse);
+router.post('/quit', AspectHelper.handleRequestWithTokenTest, quitGroup, AspectHelper.handleResponse);
+router.post('/dismiss', AspectHelper.handleRequestWithTokenTest, dismissGroup, AspectHelper.handleResponse);
+router.post('/rename', AspectHelper.handleRequestWithTokenTest, renameGroup, AspectHelper.handleResponse);
+router.post('/updateNotice', AspectHelper.handleRequestWithTokenTest, updateGroupNotice, AspectHelper.handleResponse);
+router.post('/updateAlias', AspectHelper.handleRequestWithTokenTest, updateGroupMemberAlias, AspectHelper.handleResponse);
+router.post('/getGroups', AspectHelper.handleRequestWithTokenTest, getGroupList, AspectHelper.handleResponse);
 // // temp group
-// router.post('/getTempGroupID', AESAscept.decryptParam, getTempGroupID, AESAscept.encryptParam);
-// router.post('/getGroupByTempGroupID', AESAscept.decryptParam, getGroupProfileByTempGroupID, AESAscept.encryptParam);
+router.post('/getTempGroupID', AspectHelper.handleRequestWithTokenTest, getTempGroupID, AspectHelper.handleResponse);
+router.post('/getGroupByTempGroupID', AspectHelper.handleRequestWithTokenTest, getGroupProfileByTempGroupID, AspectHelper.handleResponse);
 
 module.exports = router;

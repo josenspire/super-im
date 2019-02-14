@@ -97,150 +97,100 @@ class GroupService {
             result.message = err.message;
         }
         return result;
-    }
+    };
 
     async kickGroupMember(currentUser, groupID, targetUserID) {
-        let result = {status: FAIL, data: {}, message: ""};
-        const _result = await GroupRepository.kickGroupMember(currentUser, groupID, targetUserID);
-        result = _.cloneDeep(_result);
+        const {group} = await GroupRepository.kickGroupMember(currentUser, groupID, targetUserID);
         try {
-            if (result.status != SUCCESS) {
-                return result;
-            }
-            const group = result.data.group;
             await IMProxie.quitGroup(groupID, {id: targetUserID});
-
-            let content = {
-                operatorNickname: currentUser.nickname,
-                targetUserIds: targetUserID,
-                targetUserDisplayNames: targetUserID || "",
-                timestamp: Date.now()
-            };
-            await IMProxie.sendGroupNotification(currentUser.userID, Constants.GROUP_OPERATION_KICKED, content, group);
-            result.data = {};
+            // const content = {
+            //     operatorNickname: currentUser.nickname,
+            //     targetUserIds: targetUserID,
+            //     targetUserDisplayNames: targetUserID || "",
+            //     timestamp: Date.now()
+            // };
+            await IMProxie.sendGroupNotification({
+                currentUserID: currentUser.userID,
+                operation: Constants.GROUP_OPERATION_KICKED,
+                group,
+                memberID: _.toString(currentUser.userID),
+            });
         } catch (err) {
-            result.status = FAIL;
-            result.data = {};
-            result.message = err.message;
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-        return result;
-    }
+    };
 
     async quitGroup(currentUser, groupID) {
-        let result = {status: FAIL, data: {}, message: ""};
         const currentUserID = _.toString(currentUser.userID);
         const member = await GroupRepository.queryMemberByGroupIDAndMemberID({groupID, memberID: currentUser.userID});
-        if (!member) {
-            result.message = 'Invalid operation, your have not join into this group'
-            return result;
+        if (_.isEmpty(member)) {
+            throw new TError(FAIL, 'Operation failure, your have not join into this group');
         }
-        const _result = await GroupRepository.quitGroup(currentUserID, groupID);
-        result = _.cloneDeep(_result);
+        const {isDismiss, group} = await GroupRepository.quitGroup(currentUserID, groupID);
         try {
-            if (result.status != SUCCESS) {
-                return result;
-            }
             await IMProxie.quitGroup(groupID, {id: currentUserID});
-            if (result.data.isDismiss) {
-                return result;
+            if (isDismiss) {
+                // TODO: group dismiss
             } else {
-                const group = result.data.group;
                 await IMProxie.sendGroupNotification({
                     currentUserID: currentUserID,
                     operation: Constants.GROUP_OPERATION_QUIT,
-                    group: group,
-                    member: member,
+                    group,
+                    member,
                     isIncludeSender: 0,
                 });
             }
-            delete result.data.group;
         } catch (err) {
-            result.status = FAIL;
-            result.data = {};
-            result.message = err.message;
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-        return result;
-    }
+    };
 
     async dismissGroup(currentUser, groupID) {
-        let result = {status: FAIL, data: {}, message: ""};
         const currentUserID = _.toString(currentUser.userID);
 
         const member = await GroupRepository.queryMemberByGroupIDAndMemberID({groupID, memberID: currentUser.userID});
-        const _result = await GroupRepository.dismissGroup(currentUserID, groupID);
-        result = _.cloneDeep(_result);
+        const {group} = await GroupRepository.dismissGroup(currentUserID, groupID);
         try {
-            if (result.status != SUCCESS) {
-                return result;
-            }
-            const group = result.data.group;
             await IMProxie.dismissGroup(groupID, {id: currentUserID});
-
             await IMProxie.sendGroupNotification({
                 currentUserID: currentUserID,
                 operation: Constants.GROUP_OPERATION_QUIT,
-                group: group,
-                member: member,
+                group,
+                member,
             });
-            result.data = {};
         } catch (err) {
-            result.status = FAIL;
-            result.data = {};
-            result.message = err.message;
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-        return result;
-    }
+    };
 
-    async renameGroup(currentUser, groupID, name, cb) {
-        let result = {status: FAIL, data: {}, message: ""};
+    async renameGroup(currentUser, groupID, name) {
+        const {group} = await GroupRepository.renameGroup(groupID, name);
         try {
-            const _result = await GroupRepository.renameGroup(groupID, name);
-            result = _.cloneDeep(_result);
-            if (result.status != SUCCESS) {
-                return result;
-            }
-            const group = result.data.group;
             await IMProxie.renameGroup(groupID, name);
-
             await IMProxie.sendGroupNotification({
                 currentUserID: currentUser.userID,
                 operation: Constants.GROUP_OPERATION_RENAME,
                 group: group,
                 name: name,
             });
-            result.data = {};
         } catch (err) {
-            result.status = FAIL;
-            result.data = {};
-            result.message = err.message;
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-        return result;
     };
 
     async updateGroupNotice(currentUser, groupID, notice) {
-        let result = {status: FAIL, data: {}, message: ""};
+        const {group} = await GroupRepository.updateGroupNotice(groupID, notice);
         try {
-            const _result = await GroupRepository.updateGroupNotice(groupID, notice);
-            result = _.cloneDeep(_result);
-            if (result.status != SUCCESS) {
-                return result;
-            }
-            const group = result.data.group;
             await IMProxie.renameGroup(currentUser.userID, groupID);
-
             await IMProxie.sendGroupNotification({
                 currentUserID: currentUser.userID,
                 operation: Constants.GROUP_OPERATION_BULLETIN,
                 group: group,
             });
-            result.data = {};
         } catch (err) {
-            result.status = FAIL;
-            result.data = {};
-            result.message = err.message;
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-        return result;
-    }
+    };
 
     updateGroupMemberAlias(currentUser, groupID, alias) {
         return GroupRepository.updateGroupMemberAlias(groupID, currentUser.userID, alias);
@@ -248,8 +198,8 @@ class GroupService {
 
     getGroupList(userID) {
         return GroupRepository.queryGroupList(userID);
-    }
-};
+    };
+}
 
 const convertMembers = members => {
     return _.map(members, e => {

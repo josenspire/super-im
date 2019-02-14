@@ -1,9 +1,9 @@
+const _ = require('lodash');
 const GroupService = require("../services/group.service");
 const {stringSubstr} = require("../utils/StringUtil");
 const Constants = require("../utils/Constants");
 const {FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
-const {success, error} = require('../commons/response.common');
-
+const {success, fail, error} = require('../commons/response.common');
 class GroupController {
     async createGroup(req, res, next) {
         const {params} = req.input;
@@ -55,65 +55,105 @@ class GroupController {
     };
 
     async kickGroupMember(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
-
-        const result = await GroupService.kickGroupMember(currentUser, input.groupID, input.targetUserID);
-        res.json(result);
+        const {params} = req.input || {};
+        let result = null;
+        const {groupID, targetUserID} = params;
+        try {
+            await GroupService.kickGroupMember(req.user, groupID, targetUserID);
+            result = success(null, "Kick member success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next();
     };
 
     async quitGroup(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
-
-        const result = await GroupService.quitGroup(currentUser, input.groupID);
-        res.json(result);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await GroupService.quitGroup(req.user, params.groupID);
+            result = success(null, "Quit group success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next();
     };
 
     async dismissGroup(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
-
-        const result = await GroupService.dismissGroup(currentUser, input.groupID);
-        res.json(result);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await GroupService.dismissGroup(req.user, params.groupID);
+            result = success(null, "Dismiss group success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next();
     };
 
     async renameGroup(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
-
-        const result = await GroupService.renameGroup(currentUser, input.groupID, input.name);
-        res.json(result);
+        const {params} = req.input;
+        let result = null;
+        try {
+            if (_.isEmpty(params.name)) {
+                result = fail(FAIL, `Parameters are missing, please input the new group name`);
+            } else {
+                await GroupService.renameGroup(req.user, params.groupID, params.name);
+                result = success(null, "Group rename success");
+            }
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next();
     };
 
     async updateGroupNotice(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
+        const {params} = req.input;
 
-        if (input.notice.length > 100) {
-            return res.json({
-                status: FAIL,
-                data: {},
-                message: `Group's notice is out of max length limit (${Constants.GROUP_NOTICE_MAX_LENGTH})`
-            })
+        if (params.notice.length > 100) {
+            req.output = fail(FAIL, `Group's notice is out of max length limit (${Constants.GROUP_NOTICE_MAX_LENGTH})`);
+            return next()
         }
-        const result = await GroupService.updateGroupNotice(currentUser, input.groupID, input.notice);
-        res.json(result);
-    }
+        let result = null;
+        try {
+            await GroupService.updateGroupNotice(req.user, params.groupID, params.notice || "");
+            result = success(null, "Update group notice success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next();
+    };
 
     async updateGroupMemberAlias(req, res, next) {
-        const input = req.data.input || {};
-        const currentUser = req.data.user;
-
-        const result = await GroupService.updateGroupMemberAlias(currentUser, input.groupID, input.alias);
-        res.json(result);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await GroupService.updateGroupMemberAlias(req.user, params.groupID, params.alias);
+            result = success(null, "Alias update success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next();
     };
 
     async getGroupList(req, res, next) {
-        const input = req.data.input || {};
-        const result = await GroupService.getGroupList(input.userID);
-        res.json(result);
-    }
-};
+        const {params} = req.input;
+        let result = null;
+        try {
+            const groups = await GroupService.getGroupList(params.userID);
+            result = success(groups, "Alias update success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
+        next();
+    };
+}
 
 module.exports = new GroupController();
