@@ -1,14 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const UserControl = require('../controllers/user.controller');
-const AsceptControl = require('../controllers/aspect.controller');
-let AESAscept = AsceptControl.AES;
+const {
+    requestAddContact,
+    acceptAddContact,
+    rejectAddContact,
+    deleteContact,
+    updateRemark,
+    getUserContacts,
+} = require('../controllers/user.controller');
+const AspectHelper = require('../commons/aspect.common.js');
 
-router.post('/requestContact', AESAscept.decryptParam, UserControl.requestAddContact, AESAscept.encryptParam);
-router.post('/acceptContact', AESAscept.decryptParam, UserControl.acceptAddContact, AESAscept.encryptParam);
-router.post('/rejectContact', AESAscept.decryptParam, UserControl.rejectAddContact, AESAscept.encryptParam);
-router.post('/deleteContact', AESAscept.decryptParam, UserControl.deleteContact, AESAscept.encryptParam);
-router.post('/updateRemark', AESAscept.decryptParam, UserControl.updateRemark, AESAscept.encryptParam);
-router.post('/getContacts', AESAscept.decryptParam, UserControl.getUserContacts, AESAscept.encryptParam);
+router.post('/requestContact', AspectHelper.handleRequestWithTokenTest, requestAddContact, AspectHelper.handleResponse);
+router.post('/acceptContact', AspectHelper.handleRequestWithTokenTest, acceptAddContact, AspectHelper.handleResponse);
+router.post('/rejectContact', AspectHelper.handleRequestWithTokenTest, rejectAddContact, AspectHelper.handleResponse);
+router.post('/deleteContact', AspectHelper.handleRequestWithTokenTest, deleteContact, AspectHelper.handleResponse);
+router.post('/updateRemark', AspectHelper.handleRequestWithTokenTest, updateRemark, AspectHelper.handleResponse);
+router.post('/getContacts', AspectHelper.handleRequestWithTokenTest, getUserContacts, AspectHelper.handleResponse);
 
 module.exports = router;

@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const UserRepository = require('../repositories/user.repository');
 const DaoManager = require('../daoManager/dao.manager');
 const Constants = require("../utils/Constants");
@@ -74,107 +75,92 @@ class UserService {
         const fileName = telephone + '-' + uuidv4() + '.jpg';
         try {
             return await QiniuProxie.uploadAvatar(fileName, '/avatar/avatar.jpg');
-        }
-        catch (err) {
+        } catch (err) {
             throw new Error(err);
         }
-    }
+    };
 
     /** User Contacts Part */
     async requestAddContact(currentUser, contactID, message) {
-        let result = {status: FAIL, data: {}, message: ""};
-        let userID = currentUser.userID.toString();
+        const userID = _.toString(currentUser.userID);
         if (userID === contactID) {
-            result.message = 'You can\'t add yourself to a contact';
-            return result;
+            throw new TError(FAIL, 'You can\'t add yourself to a contact');
         }
-        const user = await UserRepository.queryByUserID(contactID);
-        if (user.status === SUCCESS) {
-            try {
-                const isContact = await UserRepository.checkContactIsExistByUserIDAndContactID(userID, contactID);
-                if (isContact) {
-                    result.message = "This user is already your contact";
-                } else {
-                    result.status = SUCCESS;
-                    await IMProxie.sendContactNotification({
-                        currentUser: currentUser,
-                        contactID: contactID,
-                        message: message,
-                        operation: Constants.CONTACT_OPERATION_REQUEST,
-                        userProfile: currentUser
-                    });
-                }
-                return result;
-            } catch (err) {
-                console.log(err);
-            }
+        await UserRepository.queryByUserID(contactID);
+        const isContact = await UserRepository.checkContactIsExistByUserIDAndContactID(userID, contactID);
+        if (isContact) {
+            throw new TError(FAIL, "This user is already your contact");
         } else {
-            return user;
-        }
-    }
-
-    async acceptAddContact(currentUser, contactID, remarkName) {
-        let userID = currentUser.userID.toString();
-        let result = await UserRepository.acceptAddContact(userID, contactID, remarkName || '');
-        if (result.status === SUCCESS) {
             try {
-                const message = "You've added him to be a contact";
                 await IMProxie.sendContactNotification({
                     currentUser: currentUser,
                     contactID: contactID,
                     message: message,
-                    operation: Constants.CONTACT_OPERATION_ACCEPT,
-                    userProfile: currentUser,
-                    // objectName: 'RC:ContactNtf',
-                    // isIncludeSender: 1,
+                    operation: Constants.CONTACT_OPERATION_REQUEST,
+                    userProfile: currentUser
                 });
             } catch (err) {
-                result.status = FAIL;
-                result.data = {};
-                result.message = err;
+                throw new TError(SERVER_UNKNOW_ERROR, `Server error, ${err.message}`);
             }
         }
-        return result;
-    }
+    };
+
+    async acceptAddContact(currentUser, contactID, remarkName) {
+        const userID = _.toString(currentUser.userID);
+        await UserRepository.acceptAddContact(userID, contactID, remarkName || '');
+        try {
+            const message = "You've added him to be a contact";
+            await IMProxie.sendContactNotification({
+                currentUser: currentUser,
+                contactID: contactID,
+                message: message,
+                operation: Constants.CONTACT_OPERATION_ACCEPT,
+                userProfile: currentUser,
+                // objectName: 'RC:ContactNtf',
+                // isIncludeSender: 1,
+            });
+        } catch (err) {
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
+        }
+    };
 
     async rejectAddContact(currentUser, contactID, rejectReason) {
-        let result = {status: FAIL, data: {}, message: ""};
-        const userID = currentUser.userID.toString();
+        const userID = _.toString(currentUser.userID);
         const isContact = await UserRepository.checkContactIsExistByUserIDAndContactID(userID, contactID);
         if (isContact) {
-            result.message = "Error operating, this user is not your contact";
-            return result;
+            throw new TError(FAIL, "Error operating, this user is not your contact");
         }
-        const rejectResult = await IMProxie.sendContactNotification({
-            currentUser: currentUser,
-            contactID: contactID,
-            message: rejectReason,
-            operation: Constants.CONTACT_OPERATION_REJECT,
-            userProfile: currentUser,
-        });
-
-        if (rejectResult === SUCCESS) {
-            result.status = SUCCESS;
-        } else {
-            console.log(rejectResult);
-            result.message = `Server Busy, Please checking your options and try again later`;
+        try {
+            const rejectResult = await IMProxie.sendContactNotification({
+                currentUser: currentUser,
+                contactID: contactID,
+                message: rejectReason,
+                operation: Constants.CONTACT_OPERATION_REJECT,
+                userProfile: currentUser,
+            });
+            if (rejectResult !== SUCCESS) {
+                throw new TError(FAIL, `Server Busy, Please checking your options and try again later`);
+            }
+        } catch (err) {
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
-        return result;
-    }
+    };
 
     async deleteContact(currentUser, contactID) {
-        const userID = currentUser.userID.toString();
-
-        const result = await UserRepository.deleteContact(userID, contactID);
-        await IMProxie.sendContactNotification({
-            currentUser: currentUser,
-            contactID: contactID,
-            message: null,
-            operation: Constants.CONTACT_OPERATION_DELETE,
-            userProfile: currentUser,
-        });
-        return result;
-    }
+        const userID = _.toString(currentUser.userID);
+        await UserRepository.deleteContact(userID, contactID);
+        try {
+            await IMProxie.sendContactNotification({
+                currentUser: currentUser,
+                contactID: contactID,
+                message: null,
+                operation: Constants.CONTACT_OPERATION_DELETE,
+                userProfile: currentUser,
+            });
+        } catch (err) {
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
+        }
+    };
 
     updateRemark(userID, contactID, remark) {
         return UserRepository.updateRemark(userID, contactID, remark);

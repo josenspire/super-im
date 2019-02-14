@@ -207,8 +207,7 @@ class UserRepository {
             } else {
                 result.message = 'This telephone is no exist'
             }
-        }
-        catch (err) {
+        } catch (err) {
             result.status = SERVER_UNKNOW_ERROR;
             result.message = 'Sorry, server unknow error';
         }
@@ -217,79 +216,56 @@ class UserRepository {
 
     /**
      * Accept add contact
-     * @param userID
-     * @param contactID
-     * @param remarkName
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @param {string} userID
+     * @param {string} contactID
+     * @param {string} remarkName
+     * @returns {Promise<{user: any | {}}>}
      */
     async acceptAddContact(userID, contactID, remarkName) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            const isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
-            if (isCurrentUser) {
-                result.message = 'You can\'t add yourself to a contact';
-            }
-            else {
-                let user = await queryByUserID(contactID);
-                if (!user) {
-                    result.message = 'This user is not exist';
-                }
-                else {
-                    let isExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
-                    if (isExist) {
-                        result.message = 'This user is already your contact';
-                    }
-                    else {
-                        await acceptAddContact(userID, contactID, remarkName);
-                        result.data.user = convertUserProfile(user);
-                        result.status = SUCCESS;
-                    }
+        const isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
+        if (isCurrentUser) {
+            throw new TError(FAIL, 'You can\'t add yourself to a contact');
+        } else {
+            const user = await queryByUserID(contactID);
+            if (!user) {
+                throw new TError(FAIL, 'This user is not exist');
+            } else {
+                let isExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
+                if (isExist) {
+                    throw new TError(FAIL, 'This user is already your contact');
+                } else {
+                    await acceptAddContact(userID, contactID, remarkName);
+                    return {
+                        user: convertUserProfile(user),
+                    };
                 }
             }
-        } catch (err) {
-            console.log('---[ADD CONTACT FAIL]---', err);
-            result.message = err;
-            result.data = {};
         }
-        return result;
     };
 
     /**
      * Delete contact
-     * @param userID
-     * @param contactID
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @param {string} userID
+     * @param {string} contactID
+     * @returns {Promise<void>}
      */
     async deleteContact(userID, contactID) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            let isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
-            if (isCurrentUser) {
-                result.message = 'You can\'t delete yourself as a contact';
-            }
-            else {
-                let contactUser = await queryByUserID(contactID);
-                if (!contactUser) {
-                    result.message = 'This user is not exist';
-                }
-                else {
-                    let isContactExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
-                    if (!isContactExist) {
-                        result.message = 'This user is not your contact';
-                    }
-                    else {
-                        await deleteContact(userID, contactID);
-                        result.status = SUCCESS;
-                        result.data.contactUser = convertUserProfile(contactUser);
-                    }
+        const isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
+        if (isCurrentUser) {
+            throw new TError(FAIL, 'You can\'t delete yourself as a contact');
+        } else {
+            const contactUser = await queryByUserID(contactID);
+            if (!contactUser) {
+                throw new TError(FAIL, 'This user is not exist');
+            } else {
+                let isContactExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
+                if (!isContactExist) {
+                    throw new TError(FAIL, 'This user is not your contact');
+                } else {
+                    await deleteContact(userID, contactID);
                 }
             }
-        } catch (err) {
-            console.log('---[DELETE CONTACT FAIL]---', err);
-            result.message = err;
-            result.data = {};
         }
-        return result;
     };
 
     /**
@@ -300,28 +276,15 @@ class UserRepository {
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
     async updateRemark(userID, contactID, remark) {
-        let result = {status: FAIL, data: {}, message: ''};
-        try {
-            let isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
-            if (isCurrentUser) {
-                result.message = 'You can\'t set yourself a remark'
-            }
-            else {
-                let isExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
-                if (!isExist) {
-                    result.message = 'This user is not your contact';
-                }
-                else {
-                    await updateRemark(userID, contactID, remark);
-                    result.status = SUCCESS;
-                }
-            }
-        } catch (err) {
-            console.log('---[UPDATE CONTACT REMARK FAIL]---', err);
-            result.message = err;
-            result.data = {};
+        const isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
+        if (isCurrentUser) {
+            throw new TError(FAIL, 'You can\'t set yourself a remark');
         }
-        return result;
+        let isExist = await checkContactIsExistByUserIDAndContactID(userID, contactID);
+        if (!isExist) {
+            throw new TError(FAIL, 'This user is not your contact');
+        }
+        await updateRemark(userID, contactID, remark);
     };
 
     /**
@@ -330,13 +293,8 @@ class UserRepository {
      * @returns {Promise<Array>}
      */
     async queryUserContactsByUserID(userID) {
-        try {
-            let contactsInfo = await queryUserContactsByUserID(userID);
-            return _.isEmpty(contactsInfo) ? [] : convertContacts(contactsInfo);
-        } catch (err) {
-            console.log('---[QUERY CONTACTS FAIL]---', err);
-            throw new TError(FAIL, err.message);
-        }
+        const contactsInfo = await queryUserContactsByUserID(userID);
+        return _.isEmpty(contactsInfo) ? [] : convertContacts(contactsInfo);
     }
 
     /**
@@ -406,7 +364,7 @@ const queryByTelephone = async telephone => {
     const user = await UserModel.findOne({telephone: telephone})
         .lean().catch(err => {
             console.log('---[QUERY BY TELEPHONE]---');
-            throw new Error(err.message);
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
         });
     return convertUser(user);
 };
@@ -415,7 +373,7 @@ const queryByUserID = userID => {
     return UserModel.findOne({_id: userID}).lean()
         .catch(err => {
             console.log('---[QUERY BY USERID]---', err);
-            throw new Error('Server unknow error, query user fail');
+            throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, query user fail');
         });
 };
 
@@ -436,55 +394,39 @@ const queryUserByTelephoneAndPassword = async (telephone, password) => {
 };
 
 /** User Contact Part */
-const acceptAddContact = (userID, contactID, remarkName) => {
-    return new Promise((resolve, reject) => {
-        try {
-            let contact = {
-                userID: contactID,     // current user add other contact
-                remarkName: remarkName
-            };
-            let _contact = {
-                userID: userID,        // other contact add current user
-                remarkName: ''
-            };
-            Promise.all([addContactToEachOther(userID, contact), addContactToEachOther(contactID, _contact)])
-                .then(result => {
-                    resolve(result)
-                })
-                .catch(err => {
-                    reject('Server unknow error, add contact fail')
-                })
-        } catch (err) {
-            console.log(err);
-            reject('Server unknow error, add contact fail')
-        }
-    });
+const acceptAddContact = async (userID, contactID, remarkName) => {
+    let contact = {
+        userID: contactID,     // current user add other contact
+        remark: {
+            remarkName: remarkName
+        },
+    };
+    let _contact = {
+        userID: userID,        // other contact add current user
+        remark: {
+            remarkName: ''
+        },
+    };
+    return await Promise.all([addContactToEachOther(userID, contact), addContactToEachOther(contactID, _contact)])
 };
 
-const addContactToEachOther = (userID, contact) => {
-    return new Promise((resolve, reject) => {
-        ContactModel.findOneAndUpdate({userID: userID}, {$addToSet: {contacts: contact}}, (err, result) => {
-            if (err) {
-                reject('Server unknow error, add contact fail');
-            } else if (result) {
-                resolve(result);
-            } else {
-                reject('Current user is not exist, add contact fail');
-            }
-        })
-    })
+const addContactToEachOther = async (userID, contact) => {
+    const updateResult = await ContactModel.findOneAndUpdate({userID}, {$addToSet: {contacts: contact}}).lean()
+        .catch(err => {
+            throw new TError(SERVER_UNKNOW_ERROR, `Server error, ${err.message}`);
+        });
+    if (_.isEmpty(updateResult)) {
+        throw new TError(FAIL, 'Current user is not exist, add contact fail');
+    }
+    return updateResult;
 };
 
 const deleteContact = (userID, contactID) => {
-    return new Promise(async (resolve, reject) => {
-        Promise.all([deleteContactToEachOther(userID, contactID), deleteContactToEachOther(contactID, userID)])
-            .then(result => {
-                resolve(result)
-            })
-            .catch(err => {
-                reject('Server unknow error, delete contact fail')
-            })
-    })
+    return Promise.all([deleteContactToEachOther(userID, contactID), deleteContactToEachOther(contactID, userID)])
+        .catch(err => {
+            console.log(err);
+            throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, delete contact fail');
+        });
 };
 
 const deleteContactToEachOther = (userID, contactID) => {
@@ -501,23 +443,18 @@ const deleteContactToEachOther = (userID, contactID) => {
 
 const checkContactIsExistByUserIDAndContactID = async (userID, contactID) => {
     let isExist = false;
-    try {
-        let userContacts = await queryUserContactsByUserID(userID);
-        if (!userContacts) {
-            isExist = false;
-        } else {
-            let contacts = userContacts.contacts;
-            for (let index = 0; index < contacts.length; index++) {
-                let contact = contacts[index];
-                if (contact.userID._id.toString() === contactID) {
-                    isExist = true;
-                    break;
-                }
+    let userContacts = await queryUserContactsByUserID(userID);
+    if (!userContacts) {
+        isExist = false;
+    } else {
+        let contacts = userContacts.contacts;
+        for (let index = 0; index < contacts.length; index++) {
+            let contact = contacts[index];
+            if (_.toString(contact.userID._id) === contactID) {
+                isExist = true;
+                break;
             }
         }
-    } catch (err) {
-        console.log(err);
-        isExist = false;
     }
     return isExist;
 };
@@ -525,31 +462,31 @@ const checkContactIsExistByUserIDAndContactID = async (userID, contactID) => {
 const checkContactIDIsCurrentUserID = (userID, contactID) => {
     let _userID = JSON.parse(JSON.stringify(userID));
     if (_userID) {
-        if (_userID.toString() === contactID) return true;
+        if (_.toString(_userID) === contactID) return true;
     }
     return false;
 };
 
-const updateRemark = (userID, contactID, remark) => {
-    return new Promise(async (resolve, reject) => {
-        ContactModel.findOne({userID: userID}, (err, contactList) => {
-            if (err) {
-                reject(err.message);
-            } else if (contactList) {
-                let contacts = contactList.contacts;
-                for (let i = 0; i < contacts.length; i++) {
-                    if (contacts[i].userID == contactID) {
-                        contacts[i].remark = remark;
-                        contactList.markModified('remark');
-                        contactList.save((err, newContactProfile) => {
-                            if (err) reject('Server unknow error, update remark name fail');
-                            else resolve(newContactProfile);
-                        });
-                    }
-                }
-            }
-        })
-    })
+const updateRemark = async (userID, contactID, remark) => {
+    let contactList = await ContactModel.findOne({userID: userID})
+        .catch(err => {
+            throw new TError(SERVER_UNKNOW_ERROR, `Server error, ${err.message}`);
+        });
+    if (!_.isEmpty(contactList)) {
+        let contacts = contactList.contacts;
+        let targetContact = _.find(contacts, contact => _.toString(contact.userID) === contactID);
+        targetContact.remark = {
+            remarkName: remark,
+        };
+        contactList.markModified('remark');
+        try {
+            await contactList.save();
+        } catch (err) {
+            // TODO: need rollback
+            console.log(err.message);
+            throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, update remark name fail');
+        }
+    }
 };
 
 const queryUserContactsByUserID = userID => {
@@ -558,7 +495,7 @@ const queryUserContactsByUserID = userID => {
         .exec()
         .catch(err => {
             console.log(err);
-            throw new Error('Server unknow error, get user contact list fail');
+            throw new TError(SERVER_UNKNOW_ERROR, 'Server unknow error, get user contact list fail');
         });
 };
 

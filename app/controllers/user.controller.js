@@ -11,7 +11,6 @@ const Constants = require('../utils/Constants');
 const multiparty = require('multiparty');
 const atavarUpload = require('../api/commons/upload.server.common');
 const QiniuProxie = require('../api/proxies/qiniu.server.proxies');
-const TError = require('../commons/error.common');
 const {success, fail, error} = require('../commons/response.common');
 
 class UserController {
@@ -231,62 +230,80 @@ class UserController {
 
     /** User Contact Part */
     async requestAddContact(req, res, next) {
-        const currentUser = req.data.user;
-        const input = req.data.input;
-
-        const contactID = input.contactID;
-        const message = input.reason || "";
-        req.data.output = await UserService.requestAddContact(currentUser, contactID, message);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await UserService.requestAddContact(req.user, params.contactID, params.reason || "");
+            result = success(null, "Send request success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
         next();
     };
 
     async acceptAddContact(req, res, next) {
-        let currentUser = req.data.user;
-        let input = req.data.input;
-
-        let userID = input.userID;
-        let contactID = input.contactID;
-        let remarkName = input.remarkName;
-
-        req.data.output = await UserService.acceptAddContact(currentUser, contactID, remarkName);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await UserService.acceptAddContact(req.user, params.contactID, params.remarkName);
+            result = success(null, "Contact request accepted");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
         next();
     };
 
     async rejectAddContact(req, res, next) {
-        const currentUser = req.data.user;
-        const input = req.data.input;
-
-        const contactID = input.contactID;
-        const rejectReason = input.reason || "";
-
-        req.data.output = await UserService.rejectAddContact(currentUser, contactID, rejectReason);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await UserService.rejectAddContact(req.user, params.contactID, params.reason || "");
+            result = success(null, "Rejected contact request success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
         next();
     };
 
     async deleteContact(req, res, next) {
-        const currentUser = req.data.user;
-        const input = req.data.input;
-
-        const contactID = input.contactID;
-        req.data.output = await UserService.deleteContact(currentUser, contactID);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await UserService.deleteContact(req.user, params.contactID);
+            result = success(null, "Delete contact success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
         next();
     };
 
     async updateRemark(req, res, next) {
-        let input = req.data.input;
-
-        let userID = input.userID;
-        let contactID = input.contactID;
-        let remark = input.remark;
-
-        req.data.output = await UserService.updateRemark(userID, contactID, remark);
+        const {params} = req.input;
+        let result = null;
+        try {
+            await UserService.updateRemark(params.userID, params.contactID, params.remark);
+            result = success(null, "Update contact remark success");
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
         next();
     };
 
     async getUserContacts(req, res, next) {
-        let userID = req.data.input.userID;
-        const data = await UserService.getUserContacts(userID);
-        req.data.output = data;
+        const {params} = req.input;
+        let result = null;
+        try {
+            const contacts = await UserService.getUserContacts(params.userID);
+            result = success(contacts);
+        } catch (err) {
+            result = error(err);
+        }
+        req.output = result;
         next();
     };
 
