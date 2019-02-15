@@ -1,19 +1,18 @@
 const _ = require('lodash');
-const {fail, error} = require('../commons/response.common');
+const {tokenVerify} = require('../services/user.service.js');
 const ECDHHelper = require('../utils/ECDHHelper.js');
 const {cipher, decipher} = require('../utils/AESHelper.js');
-const {tokenVerify} = require('../services/user.service.js');
-const {SUCCESS, FAIL, SIGNATURE_VERIFY_FAIL} = require('../utils/CodeConstants.js');
-
+const {fail, error} = require('../commons/response.common');
+const {FAIL, SIGNATURE_VERIFY_FAIL} = require('../utils/CodeConstants.js');
 const ecdhHelper = ECDHHelper.getInstance();
 
+let secret = "";
 class AspectControl {
     static async handleRequest(req, res, next) {
         const {data, secretKey, signature} = req.body;
         console.log('---[REQUEST DATA]---', data, secretKey, signature);
-
         try {
-            const secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
+            secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
             const decipherText = decipher({cipherText: data, secret});
             const isVerifySuccess = ecdhHelper.verifySignatureByKJUR({
                 data: decipherText,
@@ -21,8 +20,8 @@ class AspectControl {
                 publicKey: secretKey,
             });
             if (!isVerifySuccess) {
-                const requestResult = buildRequestResult({status: SIGNATURE_VERIFY_FAIL});
-                return res.json(buildResponseBody(requestResult, secret));
+                req.output = (fail(SIGNATURE_VERIFY_FAIL, "Signature invalid"), secret);
+                return AspectControl.handleResponse(req, res);
             }
             else {
                 // should use token + deviceID verify, order to Prevent application of double opening
@@ -33,27 +32,20 @@ class AspectControl {
                  * @params {Object} extension
                  */
                 const {token, deviceID, params, extension} = JSON.parse(decipherText);
-                const isValid = await tokenVerify(token);
-                if (isValid.status != SUCCESS) {
-                    return res.json(isValid);
-                } else {
-                    req.input = {};
-                    const {userProfile} = isValid.data;
-                    params['currentUserID'] = userProfile.userID;
-                    req.input = {params, extension};
-                    req.user = userProfile;
-                    next();
-                }
+                const currentUserProfile = await tokenVerify(token);
+                req.input = {
+                    params,
+                    extension,
+                };
+                req.user = currentUserProfile;
+                next();
             }
         }
         catch (err) {
             console.log(err);
-            // return res.json(buildResponseBody(buildRequestResult({status: SERVER_ERROR, message: err.message}), ));
-            return res.json({
-                status: 401,
-                data: {},
-                message: err.message
-            });
+            // return res.json(buildResponseBody(buildRequestResult({status: SERVER_UNKNOW_ERROR, message: err.message}), ));
+            req.output = error(err);
+            return AspectControl.handleResponse(req, res);
         }
     };
 
@@ -71,7 +63,7 @@ class AspectControl {
         }
         try {
             const currentUserProfile = await tokenVerify(token);
-            requestData['params'].userID = currentUserProfile.userID;
+            requestData['params'].currentUserID = currentUserProfile.userID;
 
             req.user = currentUserProfile;
         } catch (err) {
@@ -83,23 +75,18 @@ class AspectControl {
     };
 
     static handleResponse(req, res) {
-        const output = req.output;
-        console.log('---[RESPONSE DATA]---', output);
-        return res.json(output);
-        // return res.json(buildResponseBody(buildRequestResult({status: SERVER_ERROR, message: err.message}), ));
+        const responseData = req.output;
+        console.log('---[RESPONSE DATA]---', responseData);
+        // return res.json(output);
+        return res.json(buildResponseBody(responseData, secret));
     };
 }
 
-const buildRequestResult = ({status = SUCCESS, data = {}, message = ''}) => {
-    return JSON.stringify({status, data, message});
-};
-
 const buildResponseBody = (requestResult, secret) => {
-    const response = {
+    return {
         data: cipher({plainData: requestResult, secret}),
         signature: ecdhHelper.signatureByKJUR(requestResult),
     };
-    return response;
 };
 
 module.exports = AspectControl;

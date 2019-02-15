@@ -11,4 +11,4 @@ module.exports = initRouter = app => {
   app.use('/v1/api/user/', user);
   app.use('/v1/api/contact/', contact);
   app.use('/v1/api/group/', group);
-}
+};

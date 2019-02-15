@@ -26,7 +26,7 @@ class TempGroupController {
         }
         req.output = result;
         next();
-    }
+    };
 }
 
 module.exports = new TempGroupController();

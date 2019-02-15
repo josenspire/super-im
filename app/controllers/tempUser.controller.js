@@ -3,9 +3,9 @@ const {success, error} = require('../commons/response.common');
 
 class TempUserController {
     async getTempUserID(req, res, next) {
-        const {params} = req.input;
+        const {userID} = req.user;
         try {
-            const result = await TempUserService.getTempUserID(params.userID);
+            const result = await TempUserService.getTempUserID(userID);
             req.output = success(result);
         } catch (err) {
             req.output = error(err);

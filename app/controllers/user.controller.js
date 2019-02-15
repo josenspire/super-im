@@ -156,15 +156,11 @@ class UserController {
                 result.message = "Parameters is incompleteness";
                 return res.json(result);
             }
-            const tokenValid = await UserService.tokenVerify(data.token);
-            if (tokenValid.status != SUCCESS) {
-                return res.json(tokenValid);
-            }
-            const userProfile = tokenValid.data.userProfile;
             try {
+                const {userID} = await UserService.tokenVerify(data.token);
                 const uploadAvatarResult = await QiniuProxie.uploadAvatar(fileName, file.path);
                 const avatarUrl = `${Constants.QN_DEFAULT_EXTERNAL_LINK}${uploadAvatarResult.key}`;
-                const updateResult = await UserService.updateUserAvatar(userProfile.userID, avatarUrl);
+                const updateResult = await UserService.updateUserAvatar(userID, avatarUrl);
                 result.status = updateResult.status;
                 result.data = {
                     avatarUrl,
@@ -283,9 +279,10 @@ class UserController {
 
     async updateRemark(req, res, next) {
         const {params} = req.input;
+        const {userID} = req.user;
         let result = null;
         try {
-            await UserService.updateRemark(params.userID, params.contactID, params.remark);
+            await UserService.updateRemark(userID, params.contactID, params.remark);
             result = success(null, "Update contact remark success");
         } catch (err) {
             result = error(err);
@@ -295,10 +292,10 @@ class UserController {
     };
 
     async getUserContacts(req, res, next) {
-        const {params} = req.input;
+        const {userID} = req.user;
         let result = null;
         try {
-            const contacts = await UserService.getUserContacts(params.userID);
+            const contacts = await UserService.getUserContacts(userID);
             result = success(contacts);
         } catch (err) {
             result = error(err);
@@ -308,8 +305,7 @@ class UserController {
     };
 
     async getBlackList(req, res, next) {
-        let input = req.data.input;
-        let userID = input.userID;
+        const {userID} = req.user;
         req.data.output = await UserService.getBlackList(userID);
         next();
     };

@@ -143,10 +143,10 @@ class GroupController {
     };
 
     async getGroupList(req, res, next) {
-        const {params} = req.input;
+        const {userID} = req.user;
         let result = null;
         try {
-            const groups = await GroupService.getGroupList(params.userID);
+            const groups = await GroupService.getGroupList(userID);
             result = success(groups, "Alias update success");
         } catch (err) {
             result = error(err);
