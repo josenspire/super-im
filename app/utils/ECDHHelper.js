@@ -5,13 +5,16 @@ const {KEYUTIL, KJUR, hextob64, b64tohex} = require('jsrsasign');
 const {join} = require('path');
 const dirPath = join(__dirname, '../../configs');
 
+const SECP256K1 = "secp256k1";
+const PRIME256V1 = "prime256v1";
+
 class ECDHHelper {
     static getInstance() {
         if (!this.instance) {
             this.instance = new ECDHHelper();
         }
         return this.instance;
-    }
+    };
 
     constructor() {
         const privateKey = readFileSync(`${dirPath}/ecdh_priv.pem`).toString();
@@ -25,12 +28,12 @@ class ECDHHelper {
 
     /**
      * Generate ECC key pair
-     * @param {string} namedCurve   curve secp256k1/secp256v1/...
+     * @param {string} namedCurve   curve secp256k1/secp256k1/...
      */
     generateKeyPair(namedCurve) {
         const {publicKey, privateKey} = generateKeyPairSync('ec', {
             publicExponent: 0x10001,
-            namedCurve: namedCurve || 'secp256k1',
+            namedCurve: namedCurve || 'prime256v1',
             publicKeyEncoding: {
                 type: 'spki',
                 format: 'pem'
@@ -76,7 +79,7 @@ class ECDHHelper {
      */
     computeSecretByPEM(otherPublicKeyPEM) {
         const {pubKeyHex} = KEYUTIL.getKey(otherPublicKeyPEM);
-        const ecdh = createECDH('secp256k1');
+        const ecdh = createECDH(PRIME256V1);
         ecdh.setPrivateKey(this.privateKeyPoint, 'base64');
         const secret = ecdh.computeSecret(hextob64(pubKeyHex), 'base64', 'base64');
         console.log('[secret]：', secret);
