@@ -10,7 +10,6 @@ let secret = "";
 class AspectControl {
     static async handleRequest(req, res, next) {
         const {data, secretKey, signature} = req.body;
-        console.log('---[REQUEST DATA]---', data, secretKey, signature);
         try {
             secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
             const decipherText = decipher({cipherText: data, secret});
@@ -25,6 +24,7 @@ class AspectControl {
             }
             else {
                 const {deviceID, params, extension} = JSON.parse(decipherText);
+                console.log('---[REQUEST DATA]---', data, secretKey, signature);
                 req.input = {
                     params,
                     extension,
@@ -111,7 +111,7 @@ class AspectControl {
         const responseData = req.output;
         console.log('---[RESPONSE DATA]---', responseData);
         // return res.json(output);
-        return res.json(buildResponseBody(responseData, secret));
+        return res.json(buildResponseBody(_.toString(responseData), secret));
     };
 }
 

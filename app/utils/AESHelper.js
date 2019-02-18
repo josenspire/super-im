@@ -6,8 +6,7 @@ const cipherEncoding = 'base64';
 const algorithm = 'aes-256-cbc';
 
 class AESHelper {
-    constructor() {
-    };
+    constructor() {};
 
     /**
      * AES Cipher
