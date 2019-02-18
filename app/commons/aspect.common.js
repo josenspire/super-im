@@ -24,6 +24,39 @@ class AspectControl {
                 return AspectControl.handleResponse(req, res);
             }
             else {
+                const {deviceID, params, extension} = JSON.parse(decipherText);
+                req.input = {
+                    params,
+                    extension,
+                };
+                req.user = {};
+                next();
+            }
+        }
+        catch (err) {
+            console.log(err);
+            // return res.json(buildResponseBody(buildRequestResult({status: SERVER_UNKNOW_ERROR, message: err.message}), ));
+            req.output = error(err);
+            return AspectControl.handleResponse(req, res);
+        }
+    };
+
+    static async handleRequestWithTokenVerify (req, res, next) {
+        const {data, secretKey, signature} = req.body;
+        console.log('---[REQUEST DATA]---', data, secretKey, signature);
+        try {
+            secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
+            const decipherText = decipher({cipherText: data, secret});
+            const isVerifySuccess = ecdhHelper.verifySignatureByKJUR({
+                data: decipherText,
+                signature,
+                publicKey: secretKey,
+            });
+            if (!isVerifySuccess) {
+                req.output = (fail(SIGNATURE_VERIFY_FAIL, "Signature invalid"), secret);
+                return AspectControl.handleResponse(req, res);
+            }
+            else {
                 // should use token + deviceID verify, order to Prevent application of double opening
                 /**
                  * @params {string} token
@@ -32,12 +65,15 @@ class AspectControl {
                  * @params {Object} extension
                  */
                 const {token, deviceID, params, extension} = JSON.parse(decipherText);
-                const currentUserProfile = await tokenVerify(token);
+                if (!token) {
+                    req.output = fail(FAIL, "Parameters is incompleteness");
+                    return AspectControl.handleResponse(req, res);
+                }
                 req.input = {
                     params,
                     extension,
                 };
-                req.user = currentUserProfile;
+                req.user = await tokenVerify(token);
                 next();
             }
         }
@@ -54,7 +90,7 @@ class AspectControl {
         next();
     };
 
-    static async handleRequestWithTokenTest(req, res, next) {
+    static async handleRequestWithTokenVerifyTest(req, res, next) {
         const requestData = req.body;
         const token = _.get(requestData, 'token');
         if (!token) {
@@ -62,10 +98,7 @@ class AspectControl {
             return AspectControl.handleResponse(req, res);
         }
         try {
-            const currentUserProfile = await tokenVerify(token);
-            requestData['params'].currentUserID = currentUserProfile.userID;
-
-            req.user = currentUserProfile;
+            req.user = await tokenVerify(token);
         } catch (err) {
             req.output = error(err);
             return AspectControl.handleResponse(req, res);

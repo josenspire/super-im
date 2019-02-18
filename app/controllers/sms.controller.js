@@ -38,7 +38,7 @@ class SMSController {
 
     async verifyCode(req, res, next) {
         const {params} = req.input;
-        const {telephone, verifyCode, codeType} = params.telephone;
+        const {telephone, verifyCode, codeType} = params;
         try {
             const verifyResult = await SMSService.validateRecord(telephone, verifyCode, codeType.toUpperCase());
             res.output = success(verifyResult);

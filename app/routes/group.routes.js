@@ -20,18 +20,18 @@ const {
 const AspectHelper = require('../commons/aspect.common.js');
 
 // group
-router.post('/create', AspectHelper.handleRequestWithTokenTest, createGroup, AspectHelper.handleResponse);
-router.post('/add', AspectHelper.handleRequestWithTokenTest, addGroupMembers, AspectHelper.handleResponse);
-router.post('/join', AspectHelper.handleRequestWithTokenTest, joinGroup, AspectHelper.handleResponse);
-router.post('/kick', AspectHelper.handleRequestWithTokenTest, kickGroupMember, AspectHelper.handleResponse);
-router.post('/quit', AspectHelper.handleRequestWithTokenTest, quitGroup, AspectHelper.handleResponse);
-router.post('/dismiss', AspectHelper.handleRequestWithTokenTest, dismissGroup, AspectHelper.handleResponse);
-router.post('/rename', AspectHelper.handleRequestWithTokenTest, renameGroup, AspectHelper.handleResponse);
-router.post('/updateNotice', AspectHelper.handleRequestWithTokenTest, updateGroupNotice, AspectHelper.handleResponse);
-router.post('/updateAlias', AspectHelper.handleRequestWithTokenTest, updateGroupMemberAlias, AspectHelper.handleResponse);
-router.post('/getGroups', AspectHelper.handleRequestWithTokenTest, getGroupList, AspectHelper.handleResponse);
+router.post('/create', AspectHelper.handleRequestWithTokenVerify, createGroup, AspectHelper.handleResponse);
+router.post('/add', AspectHelper.handleRequestWithTokenVerify, addGroupMembers, AspectHelper.handleResponse);
+router.post('/join', AspectHelper.handleRequestWithTokenVerify, joinGroup, AspectHelper.handleResponse);
+router.post('/kick', AspectHelper.handleRequestWithTokenVerify, kickGroupMember, AspectHelper.handleResponse);
+router.post('/quit', AspectHelper.handleRequestWithTokenVerify, quitGroup, AspectHelper.handleResponse);
+router.post('/dismiss', AspectHelper.handleRequestWithTokenVerify, dismissGroup, AspectHelper.handleResponse);
+router.post('/rename', AspectHelper.handleRequestWithTokenVerify, renameGroup, AspectHelper.handleResponse);
+router.post('/updateNotice', AspectHelper.handleRequestWithTokenVerify, updateGroupNotice, AspectHelper.handleResponse);
+router.post('/updateAlias', AspectHelper.handleRequestWithTokenVerify, updateGroupMemberAlias, AspectHelper.handleResponse);
+router.post('/getGroups', AspectHelper.handleRequestWithTokenVerify, getGroupList, AspectHelper.handleResponse);
 // // temp group
-router.post('/getTempGroupID', AspectHelper.handleRequestWithTokenTest, getTempGroupID, AspectHelper.handleResponse);
-router.post('/getGroupByTempGroupID', AspectHelper.handleRequestWithTokenTest, getGroupProfileByTempGroupID, AspectHelper.handleResponse);
+router.post('/getTempGroupID', AspectHelper.handleRequestWithTokenVerify, getTempGroupID, AspectHelper.handleResponse);
+router.post('/getGroupByTempGroupID', AspectHelper.handleRequestWithTokenVerify, getGroupProfileByTempGroupID, AspectHelper.handleResponse);
 
 module.exports = router;
