@@ -5,7 +5,7 @@ const contact = require('./contact.routes');
 const group = require('./group.routes');
 
 module.exports = initRouter = app => {
-  app.use('/', index);
+  // app.use('/', index);
   
   app.use('/v1/api/auth/', auth);
   app.use('/v1/api/user/', user);

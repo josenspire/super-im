@@ -1,7 +1,7 @@
-const AESUtil = require('../utils/AESHelper')
-
 exports.index = (req, res) => {
-    return res.render('index', {
-        title: 'Hello IM'
-    })
+    console.log('=========');
+    // return res.render('index2', {
+    //     title: 'Hello IM'
+    // });
+    return res.sendFile('index.html');
 }
