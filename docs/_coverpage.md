@@ -1,4 +1,4 @@
-![logo](_media/icon.svg)
+<!-- ![logo](_media/icon.svg) -->
 
 # 超级闲聊 API <small>1.0.5</small>
 

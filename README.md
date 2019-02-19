@@ -126,4 +126,4 @@ $ docker run -d -p 3001:3000 --net=host [image ID]
 
 ```
 
-For detailed explanation on how things work, checkout the [Documentation](https://josenspire.github.com/superim "Documentation")
+For detailed explanation on how things work, checkout the [Documentation](https://josenspire.github.io/super-im/ "Documentation")
