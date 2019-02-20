@@ -42,6 +42,10 @@ class UserService {
         return UserRepository.tokenVerify(token);
     };
 
+    tokenExpire(token) {
+        return UserRepository.tokenExpire(token);
+    };
+
     tokenVerifyLogin(token) {
         return DaoManager.getUserProfileAndContactsAndGroups(token);
     }

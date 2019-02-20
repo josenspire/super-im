@@ -5,13 +5,14 @@ const uuidv4 = require('uuid/v4');
 const UserService = require('../services/user.service');
 const SMSService = require('../services/sms.service');
 const RSAUtil = require('../utils/RSAUtil');
-const {SUCCESS, FAIL} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL, USER_IDENTIFY_VERIFY} = require("../utils/CodeConstants");
 const Constants = require('../utils/Constants');
 
 const multiparty = require('multiparty');
 const atavarUpload = require('../api/commons/upload.server.common');
 const QiniuProxie = require('../api/proxies/qiniu.server.proxies');
 const {success, fail, error} = require('../commons/response.common');
+const TError = require('../commons/error.common');;
 
 class UserController {
     getPublicKey(req, res, next) {
@@ -25,18 +26,28 @@ class UserController {
     };
 
     async login(req, res, next) {
-        const {params, extension} = req.input || {};
-        const {user, verifyCode} = params;
+        const {params, deviceID, extension} = req.input || {};
+        const {telephone, password, verifyCode} = params;
+        if (!telephone) {
+            throw new TError(FAIL, `Parameters is incompleteness, please input your telephone`);
+        }
+        if (!password) {
+            throw new TError(FAIL, `Parameters is incompleteness, please input your password`);
+        }
         // TODO: to save the information about OS etc.
         // let extension = {};
         let result = {};
         try {
             if (_.isEmpty(verifyCode)) {
-                result = await UserService.queryUserWithoutVerify(user.telephone, user.password);
+                result = await UserService.queryUserWithoutVerify(telephone, password);
+                if (result.deviceID !== deviceID) {
+                    req.output = fail(USER_IDENTIFY_VERIFY, `System needs to verify your identity`);
+                    return next();
+                }
             } else {
-                const validateResult = await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
+                const validateResult = await SMSService.validateRecord(telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
                 if (validateResult) {
-                    result = await UserService.updateDeviceID(user.telephone, user.password, user.deviceID);
+                    result = await UserService.updateDeviceID(telephone, password, deviceID);
                 } else {
                     result = validateResult;
                 }

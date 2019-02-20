@@ -1,9 +1,9 @@
 const _ = require('lodash');
-const {tokenVerify} = require('../services/user.service.js');
+const {tokenVerify, tokenExpire} = require('../services/user.service.js');
 const ECDHHelper = require('../utils/ECDHHelper.js');
 const {cipher, decipher} = require('../utils/AESHelper.js');
 const {fail, error} = require('../commons/response.common');
-const {FAIL, SIGNATURE_VERIFY_FAIL} = require('../utils/CodeConstants.js');
+const {FAIL, SIGNATURE_VERIFY_FAIL, TOKEN_INVALID_OR_EXPIRED} = require('../utils/CodeConstants.js');
 const ecdhHelper = ECDHHelper.getInstance();
 
 let secret = "";
@@ -27,6 +27,7 @@ class AspectControl {
                 console.log('---[REQUEST DATA]---', data, secretKey, signature);
                 req.input = {
                     params,
+                    deviceID,
                     extension,
                 };
                 req.user = {};
@@ -71,9 +72,17 @@ class AspectControl {
                 }
                 req.input = {
                     params,
+                    deviceID,
                     extension,
                 };
-                req.user = await tokenVerify(token);
+                const user = await tokenVerify(token);
+                if (user.deviceID != deviceID) {
+                    // taking token expires
+                    await tokenExpire(token);
+                    req.output = fail(TOKEN_INVALID_OR_EXPIRED, `This token is invalid, please login again`);
+                } else{
+                    req.user = user;
+                }
                 next();
             }
         }

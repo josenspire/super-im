@@ -4,7 +4,7 @@ const ContactModel = require('../models/contact.model');
 
 const DateUtils = require('../utils/DateUtils');
 const JWT_SECRET = require('../utils/Constants');   // secret key
-const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR, TOKEN_INVALID_OR_EXPIRED} = require("../utils/CodeConstants");
 
 const TError = require('../commons/error.common');
 
@@ -186,9 +186,17 @@ class UserRepository {
                 throw new TError(SERVER_UNKNOW_ERROR, 'Sorry, server unknow error');
             });
         if (!user) {
-            throw new TError(FAIL, 'This token is invalid, please login again');
+            throw new TError(TOKEN_INVALID_OR_EXPIRED, 'This token is invalid, please login again');
         }
         return convertTokenInfo(user);
+    };
+
+    tokenExpire(token) {
+        TokenModel.findOneAndRemove({token})
+            .catch(err => {
+                console.log(err);
+                throw new TError(SERVER_UNKNOW_ERROR, 'Sorry, server unknow error');
+            });
     };
 
     /**
