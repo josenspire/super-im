@@ -111,7 +111,7 @@ class AspectControl {
         const responseData = req.output;
         console.log('---[RESPONSE DATA]---', responseData);
         // return res.json(output);
-        return res.json(buildResponseBody(_.toString(responseData), secret));
+        return res.json(buildResponseBody(JSON.stringify(responseData), secret));
     };
 }
 
