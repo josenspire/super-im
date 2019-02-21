@@ -59,14 +59,14 @@ let UserSchema = new mongoose.Schema({
     password: {
         type: String,
         required: 'Please fill in password',
-        validate: [validatePassword, "Password's length should be 6-16 bits"],
+        // validate: [validatePassword, "Password's length could not more than 6-16 bits"],
         trim: true
     },
 
     nickname: {
         type: String,
         required: 'Please fill in a nickname',
-        validate: [validateNickname, "Nickname's length should be 1-12 bits"],
+        validate: [validateNickname, "Nickname's length could not more that 12"],
         trim: false
     },
 

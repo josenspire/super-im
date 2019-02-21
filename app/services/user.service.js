@@ -20,20 +20,6 @@ class UserService {
     };
 
     // user login
-    async queryUserByTelephoneAndPassword(telephone, password, deviceID) {
-        const user = await UserRepository.queryUserByTelephoneAndPassword(telephone, password);
-        if (user.status === SUCCESS) {
-            if (user.data.userProfile.deviceID != deviceID) {
-                user.data.userProfile = {};
-                user.data.verifyTelephone = true;
-            } else {
-                user.data.verifyTelephone = false;
-            }
-        }
-        return user;
-    };
-
-    // user login
     queryUserWithoutVerify(telephone, password) {
         return DaoManager.getUserProfileAndContactsAndGroupsByUserInfo(telephone, password);
     };

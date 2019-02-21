@@ -24,7 +24,7 @@ class SMSController {
                     if (!req.user) {
                         throw new TError(FAIL, `User information missing, please input your username and password`);
                     }
-                    result = await login(req.user, telephone, verifyCode);
+                    result = await login(telephone, verifyCode);
                     break;
                 case Constants.SMS_TYPE_OTHERS:
                     return res.json('Others Type SMS')
@@ -58,24 +58,14 @@ const register = async (telephone, verifyCode) => {
     }
 };
 
-const login = async (user, telephone, verifyCode) => {
-    const queryResult = await UserService.queryUserByTelephoneAndPassword(user.telephone, user.password, user.deviceID);
-    if (queryResult.status === SUCCESS) {
-        if (queryResult.data.verifyTelephone === true) {       // need to verify telephone
-            const sms = await SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
-            return sms;
-        } else {
-            return {
-                status: SUCCESS,
-                data: {
-                    verifyCode: "",
-                    skipVerify: true
-                },
-                message: ''
-            };
-        }
+const login = async (telephone, verifyCode) => {
+    const isTelephoneExist = await UserService.isTelephoneExist(telephone);
+    if (isTelephoneExist) {
+        // need to check sendSMS is in 60s ?
+        await SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
+    } else {
+        throw new TError(FAIL, `Current account does not exist`);
     }
-    return queryResult;
 };
 
 module.exports = new SMSController();
