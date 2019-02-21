@@ -13,6 +13,7 @@ class AspectControl {
         try {
             secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
         } catch (err) {
+            console.log(err);
             return res.status(SERVER_DENIED_ACCESS).json();
         }
 

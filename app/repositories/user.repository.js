@@ -386,7 +386,7 @@ const queryByUserID = userID => {
 };
 
 const queryUserByTelephoneAndPassword = async (telephone, password) => {
-    const user = await UserModel.findOne({telephone})
+    let user = await UserModel.findOne({telephone})
         .populate('token')
         .exec()
         .catch(err => {

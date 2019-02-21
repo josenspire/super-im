@@ -149,6 +149,7 @@ UserSchema.pre('save', function (next) {
     }
     //encode password
     user.password = jwt.encode(user.password, SECRET);
+    console.log('[ENCODE PASSWORD]', user.password);
     next()
 });
 
