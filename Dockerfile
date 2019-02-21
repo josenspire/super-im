@@ -14,7 +14,5 @@ RUN rm -rf .idea \
     ; npm config set registry "https://registry.npm.taobao.org/" \
     && npm install
 
-EXPOSE 3001
-
 # CMD ["/bin/bash"];
 CMD npm run prod
