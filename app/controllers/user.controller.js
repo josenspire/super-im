@@ -39,11 +39,7 @@ class UserController {
         let result = {};
         try {
             if (_.isEmpty(verifyCode)) {
-                result = await UserService.queryUserWithoutVerify(telephone, password);
-                if (result.deviceID !== deviceID) {
-                    req.output = fail(USER_IDENTIFY_VERIFY, `System needs to verify your identity`);
-                    return next();
-                }
+                result = await UserService.queryUserWithoutVerify(telephone, password, deviceID);
             } else {
                 const validateResult = await SMSService.validateRecord(telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
                 if (validateResult) {

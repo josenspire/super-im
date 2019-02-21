@@ -62,7 +62,7 @@ const login = async (telephone, verifyCode) => {
     const isTelephoneExist = await UserService.isTelephoneExist(telephone);
     if (isTelephoneExist) {
         // need to check sendSMS is in 60s ?
-        await SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
+        return await SMSService.sendSMS(telephone, verifyCode, Constants.SMS_TYPE_LOGIN);
     } else {
         throw new TError(FAIL, `Current account does not exist`);
     }

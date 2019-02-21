@@ -9,8 +9,11 @@ class DAOManager {
     };
 
     async getUserProfileAndContactsAndGroupsByUserInfo(telephone, password) {
-        const queryResult = await UserRepository.queryUserByTelephoneAndPassword(telephone, password);
-        return _.merge({}, queryResult, await convertContactsAndGroups(queryResult.userProfile));
+        const {user, deviceID} = await UserRepository.queryUserByTelephoneAndPassword(telephone, password);
+        return {
+            user: _.merge({}, user, await convertContactsAndGroups(user.userProfile)),
+            deviceID,
+        };
     };
 
     async createUserAndGetAllInfo(user, token) {

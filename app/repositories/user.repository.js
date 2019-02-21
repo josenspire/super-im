@@ -50,7 +50,7 @@ class UserRepository {
         } else {
             throw new TError(FAIL, 'Sorry, Your telephone or password is invalid');
         }
-        return result;
+        return {user: result, deviceID: user.deviceID};
     };
 
     /**

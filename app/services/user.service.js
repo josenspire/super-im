@@ -20,8 +20,13 @@ class UserService {
     };
 
     // user login
-    queryUserWithoutVerify(telephone, password) {
-        return DaoManager.getUserProfileAndContactsAndGroupsByUserInfo(telephone, password);
+    async queryUserWithoutVerify(telephone, password, newDviceID) {
+        const {user, deviceID} = await DaoManager.getUserProfileAndContactsAndGroupsByUserInfo(telephone, password);
+        if (deviceID !== newDviceID) {
+            throw new TError(USER_IDENTIFY_VERIFY, `System needs to verify your identity`);
+        } else {
+            return user;
+        }
     };
 
     tokenVerify(token) {

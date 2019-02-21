@@ -8,13 +8,12 @@ class SMSRepository {
      * @param {string} telephone
      * @param {string} verifyCode
      * @param {string} codeType
-     * @returns {Promise<{verifyCode: string, expiresAt: null, skipVerify: boolean}>}
+     * @returns {Promise<{verifyCode: string, expiresAt: null}>}
      */
     async saveSMS(telephone, verifyCode, codeType) {
         let result = {
             verifyCode: "",
             expiresAt: null,
-            skipVerify: false,
         };
         const newDate = Date.now();
         const opts = {verifyCode: verifyCode, expiresAt: newDate};
