@@ -60,22 +60,18 @@ class UserController {
     };
 
     async register(req, res, next) {
-        const {user, verifyCode} = req.input.params || {};
-        const _user = {
-            telephone: user.telephone,
-            password: user.password,
-            nickname: user.nickname,
-            sex: user.sex || 0,
-            birthday: user.birthday || '',
-            location: user.location || '',
-            signature: user.signature || '',
-            countryCode: user.countryCode || '',
-            deviceID: user.deviceID,
+        const {params, deviceID} = req.input;
+        const {telephone, password, nickname, verifyCode} = params;
+        const user = {
+            telephone: telephone,
+            password: password,
+            nickname: nickname,
+            deviceID: deviceID,
         };
         console.log('[--REGISTER--]: ', user);
         let result = {};
         try {
-            const isExist = await UserService.isTelephoneExist(_user.telephone);
+            const isExist = await UserService.isTelephoneExist(user.telephone);
             if (!isExist) {
                 await SMSService.validateRecord(user.telephone, verifyCode, Constants.SMS_TYPE_REGISTER);
                 await UserService.createUser(user);

@@ -1,5 +1,5 @@
 import test from 'ava';
-import UserDao from '../../app/repositories/user.repository';
+import UserRepository from '../../app/repositories/user.repository';
 import UserModel from '../../app/models/user.model';
 import TokenModel from '../../app/models/token.model';
 
@@ -16,14 +16,14 @@ test.before(async () => {
 
 const token = '1234567890';
 const user = {
-    telephone: "13600088866",
-    password: "123456",
-    nickname: "德玛西亚",
+    telephone: "13631210001",
+    password: "12345678",
+    nickname: "德玛西亚22",
     deviceID: "xiaomi-5s"
 };
 
 test.before(async t => {
-    await UserDao.createUser(user, token);
+    await UserRepository.createUser(user, token);
 });
 test.afterEach(async t => {
     await UserModel.remove({});
@@ -38,18 +38,22 @@ test.after.always(t => {
 
 test(`should create a new User and return the create user with user information`, async t => {
     const user2 = {
-        telephone: "13600088877",
-        password: "123456",
+        telephone: "13631210001",
+        password: "12345678",
         nickname: "德玛西亚22",
         deviceID: "xiaomi-5s"
     };
     const token2 = "123456000";
-    const result = await UserDao.createUser(user2, token2);
-    t.is(result.status, SUCCESS);
-    t.is(result.data.userProfile.telephone, '13600088877');
+    const {userProfile} = await UserRepository.createUser(user2, token2);
+    t.is(userProfile.telephone, '13631210001');
 });
 
 test(`should return user information when given token then return result`, async t => {
-    const result = await UserDao.tokenVerifyTest('1234567890');
+    const result = await UserRepository.tokenVerifyTest('1234567890');
     t.is(result.data.token, '1234567890');
+});
+
+test.only(`should verify telephone and password then return the query verify result`, async t => {
+    const result = await UserRepository.queryUserByTelephoneAndPassword("13631210001", "12345678");
+    t.is(result.userProfile.telephone, "13631210001");
 });
