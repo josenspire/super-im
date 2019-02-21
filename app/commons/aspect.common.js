@@ -3,15 +3,20 @@ const {tokenVerify, tokenExpire} = require('../services/user.service.js');
 const ECDHHelper = require('../utils/ECDHHelper.js');
 const {cipher, decipher} = require('../utils/AESHelper.js');
 const {fail, error} = require('../commons/response.common');
-const {FAIL, SIGNATURE_VERIFY_FAIL, TOKEN_INVALID_OR_EXPIRED} = require('../utils/CodeConstants.js');
+const {FAIL, SIGNATURE_VERIFY_FAIL, TOKEN_INVALID_OR_EXPIRED, SERVER_DENIED_ACCESS} = require('../utils/CodeConstants.js');
 const ecdhHelper = ECDHHelper.getInstance();
 
-let secret = "";
+let secret = null;
 class AspectControl {
     static async handleRequest(req, res, next) {
         const {data, secretKey, signature} = req.body;
         try {
             secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
+        } catch (err) {
+            return res.status(SERVER_DENIED_ACCESS).json();
+        }
+
+        try {
             const decipherText = decipher({cipherText: data, secret});
             const isVerifySuccess = ecdhHelper.verifySignatureByKJUR({
                 data: decipherText,
@@ -119,7 +124,9 @@ class AspectControl {
     static handleResponse(req, res) {
         const responseData = req.output;
         console.log('---[RESPONSE DATA]---', responseData);
-        // return res.json(output);
+        if (!secret) {
+            return res.status(SERVER_DENIED_ACCESS).json();
+        }
         return res.json(buildResponseBody(JSON.stringify(responseData), secret));
     };
 }
