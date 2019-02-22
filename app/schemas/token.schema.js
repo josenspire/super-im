@@ -13,7 +13,7 @@ let TokenSchema = new mongoose.Schema({
 
     expires: {
         type: Date,
-        default: DateUtils.formatCommonUTCDate(Date.now() + (1000 * 60 * 60 * 24))
+        default: DateUtils.formatCommonUTCDate(Date.now() + (1000 * 60 * 60 * 24 * 30))
     },
 
     loginTime: {
