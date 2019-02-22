@@ -2,7 +2,7 @@ const _ = require('lodash');
 const UserRepository = require('../repositories/user.repository');
 const DaoManager = require('../daoManager/dao.manager');
 const Constants = require("../utils/Constants");
-const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL, SERVER_UNKNOW_ERROR, USER_IDENTIFY_VERIFY} = require("../utils/CodeConstants");
 const TError = require('../commons/error.common');
 
 const IMProxie = require('../api/proxies/rongCloud.server.proxies');

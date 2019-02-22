@@ -5,7 +5,7 @@ const uuidv4 = require('uuid/v4');
 const UserService = require('../services/user.service');
 const SMSService = require('../services/sms.service');
 const RSAUtil = require('../utils/RSAUtil');
-const {SUCCESS, FAIL, USER_IDENTIFY_VERIFY} = require("../utils/CodeConstants");
+const {SUCCESS, FAIL} = require("../utils/CodeConstants");
 const Constants = require('../utils/Constants');
 
 const multiparty = require('multiparty');
