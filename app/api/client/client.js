@@ -1,4 +1,4 @@
-let Token = require('../commons/token.server.common');
+let Token = require('../commons/huanxin.token.server.common');
 let request = require('../request');
 
 let Initialized = false;
@@ -56,9 +56,9 @@ function accessCommonToken(username, password, callback) {
 }
 
 module.exports = {
-    client: client,
+    client,
     httpRequestWithToken: httpRequestWithToken,
     uploadFileWithToken: uploadFileWithToken,
-    accessCommonToken: accessCommonToken
+    accessCommonToken,
 
 }

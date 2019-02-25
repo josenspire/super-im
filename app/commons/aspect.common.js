@@ -130,6 +130,12 @@ class AspectControl {
         }
         return res.json(buildResponseBody(JSON.stringify(responseData), secret));
     };
+
+    static handleResponseTest(req, res) {
+        const responseData = req.output;
+        console.log('---[RESPONSE DATA]---', responseData);
+        return res.json(responseData);
+    };
 }
 
 const buildResponseBody = (requestResult, secret) => {

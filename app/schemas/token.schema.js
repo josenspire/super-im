@@ -1,19 +1,21 @@
 const mongoose = require('mongoose');
 const DateUtils = require('../utils/DateUtils');
 
-let Schema = mongoose.Schema;
-let ObjectId = Schema.Types.ObjectId;
+const expiresDays = 1000 * 60 * 60 * 24 * 30;
+
+const Schema = mongoose.Schema;
+const ObjectId = Schema.Types.ObjectId;
 
 let TokenSchema = new mongoose.Schema({
     token: {
         type: String,
         unique: true,
-        default: ''
+        default: ""
     },
 
     expires: {
         type: Date,
-        default: DateUtils.formatCommonUTCDate(Date.now() + (1000 * 60 * 60 * 24 * 30))
+        default: DateUtils.formatCommonUTCDate(Date.now() + expiresDays)
     },
 
     loginTime: {
@@ -47,7 +49,7 @@ let TokenSchema = new mongoose.Schema({
 TokenSchema.pre('save', function (next) {
     if (this.isNew) {
         this.loginTime = DateUtils.formatCommonUTCDate(Date.now());
-        this.expires = DateUtils.formatCommonUTCDate(Date.now() + (1000 * 60 * 60 * 24));
+        this.expires = DateUtils.formatCommonUTCDate(Date.now() + expiresDays);
         this.meta.createAt = this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());
     } else {
         this.meta.updateAt = DateUtils.formatCommonUTCDate(Date.now());

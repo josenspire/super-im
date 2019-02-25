@@ -48,6 +48,11 @@ class UserController {
                     result = validateResult;
                 }
             }
+            // refresh token information
+            result["token"] = await UserService.refreshUserToken({
+                userProfile: _.get(result, "userProfile"),
+                tokenID: _.get(result, "token"),
+            });
             req.output = success(result);
         } catch (err) {
             req.output = error(err);

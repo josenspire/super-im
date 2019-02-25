@@ -29,8 +29,18 @@ class UserService {
         }
     };
 
+    async refreshUserToken({userProfile, tokenID}) {
+        const {token} = await IMProxie.refreshUserToken({
+            userID: userProfile.userID,
+            name: userProfile.nickname,
+            portrait: userProfile.avatar,
+        });
+        await UserRepository.refreshUserToken({tokenID, token, userID: userProfile.userID});
+        return token;
+    };
+
     tokenVerify(token) {
-        return UserRepository.tokenVerify(token);
+        return UserRepository.tokenVtokenerify(token);
     };
 
     tokenExpire(token) {

@@ -35,18 +35,17 @@ class UserRepository {
 
     /**
      * Query user information by telephone and password
-     * @param telephone
-     * @param password
-     * @returns {Promise<{status: number, data: {}, message: string}>}
+     * @param {string} telephone
+     * @param {string} password
+     * @returns {Promise<{user: Object, deviceID: string}>}
      */
     async queryUserByTelephoneAndPassword(telephone, password) {
         let result = {};
         const {user, isMatch} = await queryUserByTelephoneAndPassword(telephone, password);
         if (isMatch) {
-            await updateToken(user.token._id);
-            const _user = convertUser(user);
-            result.token = user.token.token;
-            result.userProfile = _user;
+            // await updateToken(user.token._id);
+            result.token = user.token;  // tokenID
+            result.userProfile = convertUser(user);
         } else {
             throw new TError(FAIL, 'Sorry, Your telephone or password is invalid');
         }
@@ -162,10 +161,8 @@ class UserRepository {
         let result = {};
         const {user, isMatch} = await queryUserByTelephoneAndPassword(telephone, password);
         if (isMatch) {
-            const {token} = user.token;
-            let _user = await updateDeviceID(telephone, deviceID);
-            result.userProfile = convertUser(_user);
-            result.token = token;
+            result.token = user.token;
+            result.userProfile = convertUser(await updateDeviceID(telephone, deviceID));
         } else {
             throw new TError(FAIL, 'Telephone or password is incorrect');
         }
@@ -197,6 +194,28 @@ class UserRepository {
                 console.log(err);
                 throw new TError(SERVER_UNKNOW_ERROR, 'Sorry, server unknow error');
             });
+    };
+
+    /**
+     * Refresh user token information
+     * @param {string | any} tokenID
+     * @param {string | any} token
+     * @param {string | any} userID
+     * @returns {Promise<TokenProfile: Object>}
+     */
+    async refreshUserToken({tokenID, token, userID}) {
+        let tokenProfile = await TokenModel.findById(tokenID);
+        try {
+            if (_.isEmpty(tokenProfile)) {
+                await new TokenModel({_id: tokenID, token, user: userID}).save();
+            } else {
+                tokenProfile.token = token;
+                tokenProfile.markModified("token");
+                await tokenProfile.save();
+            }
+        } catch (err) {
+            throw new TError(SERVER_UNKNOW_ERROR, err.message);
+        }
     };
 
     /**
@@ -387,7 +406,7 @@ const queryByUserID = userID => {
 
 const queryUserByTelephoneAndPassword = async (telephone, password) => {
     let user = await UserModel.findOne({telephone})
-        .populate('token')
+        // .populate('token')
         .exec()
         .catch(err => {
             console.log(err);

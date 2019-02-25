@@ -1,22 +1,18 @@
 const _ = require('lodash');
 const {appKey, appSecret} = require('../../../configs/config').RongCloudConfig;
-const TError = require('../../commons/error.common');
 
 const rongCloud = require('rongcloud-sdk')({
     appkey: appKey,
     secret: appSecret,
 });
 
-let User = rongCloud.User;
-let Group = rongCloud.Group;
-let Message = rongCloud.Message;
-let Private = Message.Private;
-let GroupMessage = Message.Group;
+const User = rongCloud.User;
+const Group = rongCloud.Group;
+const Message = rongCloud.Message;
+const Private = Message.Private;
+const GroupMessage = Message.Group;
 
-var errorHandle = (err) => {
-    console.log('---[IM REQUEST ERROR]---', err);
-    return err.text;
-};
+const DEFAULT_AVATAR = 'https://dn-qiniu-avatar.qbox.me/avatar/f9f953f958ef1505a241a3270dfa408d?qiniu-avatar';
 
 /**
  * Rong cloud register new user
@@ -29,12 +25,30 @@ exports.createUser = async ({userID, nickname, avatar}) => {
     const user = {
         id: _.toString(userID),
         name: nickname,
-        portrait: avatar || 'https://dn-qiniu-avatar.qbox.me/avatar/f9f953f958ef1505a241a3270dfa408d?qiniu-avatar'
+        portrait: avatar || DEFAULT_AVATAR,
     };
     try {
         return await User.register(user);
     } catch (err) {
-        // throw new TError(500, error);
+        throw new Error(err);
+    }
+};
+
+/**
+ * Refresh user token
+ * @param userID
+ * @returns {Promise<Object>}
+ */
+exports.refreshUserToken = async ({userID, name, portrait}) => {
+    const user = {
+        id: _.toString(userID),
+        name,
+        portrait: portrait || DEFAULT_AVATAR,
+    };
+    try {
+        return await User.register(user);
+    } catch (err) {
+        console.log('ERROR: ', err);
         throw new Error(err);
     }
 };
@@ -155,7 +169,7 @@ exports.quitGroup = async (groupId, member) => {
         console.log('Error: quit group failed on IM server, error', result);
         throw new Error(`Error: quit group failed on IM server, code: ${result.code} `);
     }
-}
+};
 
 /**
  *
@@ -177,7 +191,7 @@ exports.dismissGroup = async (groupId, member) => {
         console.log('Error: dismiss group failed on IM server, error', result);
         throw new Error(`Error: dismiss group failed on IM server, code: ${result.code} `);
     }
-}
+};
 
 exports.renameGroup = async (groupId, name) => {
     const group = {
@@ -194,4 +208,4 @@ exports.renameGroup = async (groupId, name) => {
         console.log('Error: update group failed on IM server, error', result);
         throw new Error(`Error: update group failed on IM server, code: ${result.code} `);
     }
-}
+};
