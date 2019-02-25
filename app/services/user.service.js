@@ -40,7 +40,7 @@ class UserService {
     };
 
     tokenVerify(token) {
-        return UserRepository.tokenVtokenerify(token);
+        return UserRepository.tokenVerify(token);
     };
 
     tokenExpire(token) {
