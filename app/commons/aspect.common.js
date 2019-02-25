@@ -50,7 +50,7 @@ class AspectControl {
 
     static async handleRequestWithTokenVerify (req, res, next) {
         const {data, secretKey, signature} = req.body;
-        console.log('---[REQUEST DATA]---', data, secretKey, signature);
+        console.log(req.body);
         try {
             secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
             const decipherText = decipher({cipherText: data, secret});
@@ -72,6 +72,7 @@ class AspectControl {
                  * @params {Object} extension
                  */
                 const {token, deviceID, params, extension} = JSON.parse(decipherText);
+                console.log('---[REQUEST DATA]---', decipherText);
                 if (!token) {
                     req.output = fail(FAIL, "Parameters is incompleteness");
                     return AspectControl.handleResponse(req, res);
@@ -81,13 +82,13 @@ class AspectControl {
                     deviceID,
                     extension,
                 };
-                const user = await tokenVerify(token);
-                if (user.deviceID != deviceID) {
+                const userInfo = await tokenVerify(token);
+                if (userInfo.deviceID != deviceID) {
                     // taking token expires
                     await tokenExpire(token);
-                    req.output = fail(TOKEN_INVALID_OR_EXPIRED, `This token is invalid, please login again`);
+                    req.output = fail(TOKEN_INVALID_OR_EXPIRED, `This token is expires, please login again`);
                 } else{
-                    req.user = user;
+                    req.user = userInfo.userProfile;
                 }
                 next();
             }

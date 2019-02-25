@@ -250,8 +250,8 @@ class UserController {
         const {params} = req.input;
         let result = null;
         try {
-            await UserService.acceptAddContact(req.user, params.contactID, params.remarkName);
-            result = success(null, "Contact request accepted");
+            const userProfile = await UserService.acceptAddContact(req.user, params.contactID, params.remarkName);
+            result = success(userProfile, "Contact request accepted");
         } catch (err) {
             result = error(err);
         }
@@ -288,9 +288,10 @@ class UserController {
     async updateRemark(req, res, next) {
         const {params} = req.input;
         const {userID} = req.user;
+        const {contactID, contactRemark, description, telephones, tags} = params;
         let result = null;
         try {
-            await UserService.updateRemark(userID, params.contactID, params.remark);
+            await UserService.updateRemark({userID, contactID, contactRemark, description, telephones, tags});
             result = success(null, "Update contact remark success");
         } catch (err) {
             result = error(err);

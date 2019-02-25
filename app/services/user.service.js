@@ -112,7 +112,7 @@ class UserService {
 
     async acceptAddContact(currentUser, contactID, remarkName) {
         const userID = _.toString(currentUser.userID);
-        await UserRepository.acceptAddContact(userID, contactID, remarkName || '');
+        const userProfile = await UserRepository.acceptAddContact(userID, contactID, remarkName || '');
         try {
             const message = "You've added him to be a contact";
             await IMProxie.sendContactNotification({
@@ -127,6 +127,7 @@ class UserService {
         } catch (err) {
             throw new TError(SERVER_UNKNOW_ERROR, err.message);
         }
+        return userProfile;
     };
 
     async rejectAddContact(currentUser, contactID, rejectReason) {
@@ -167,8 +168,8 @@ class UserService {
         }
     };
 
-    updateRemark(userID, contactID, remark) {
-        return UserRepository.updateRemark(userID, contactID, remark);
+    updateRemark({userID, contactID, contactRemark = "", description = "", telephones = "", tags = ""}) {
+        return UserRepository.updateRemark({userID, contactID, contactRemark, description, telephones, tags});
     }
 
     getUserContacts(userID) {

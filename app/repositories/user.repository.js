@@ -172,7 +172,7 @@ class UserRepository {
     /**
      * Get user information by token
      * @param token
-     * @returns {Promise<token: string, userProfile: Object>}
+     * @returns {Promise<deviceID: string, userProfile: Object>}
      */
     async tokenVerify(token) {
         const user = await TokenModel.findOne({token})
@@ -246,7 +246,7 @@ class UserRepository {
      * @param {string} userID
      * @param {string} contactID
      * @param {string} remarkName
-     * @returns {Promise<{user: any | {}}>}
+     * @returns {Promise<{userProfile: Object}>}
      */
     async acceptAddContact(userID, contactID, remarkName) {
         const isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
@@ -262,9 +262,7 @@ class UserRepository {
                     throw new TError(FAIL, 'This user is already your contact');
                 } else {
                     await acceptAddContact(userID, contactID, remarkName);
-                    return {
-                        user: convertUserProfile(user),
-                    };
+                    return convertUserProfile(user);
                 }
             }
         }
@@ -302,7 +300,7 @@ class UserRepository {
      * @param remark
      * @returns {Promise<{status: number, data: {}, message: string}>}
      */
-    async updateRemark(userID, contactID, remark) {
+    async updateRemark({userID, contactID, contactRemark, description, telephones, tags}) {
         const isCurrentUser = checkContactIDIsCurrentUserID(userID, contactID);
         if (isCurrentUser) {
             throw new TError(FAIL, 'You can\'t set yourself a remark');
@@ -311,7 +309,7 @@ class UserRepository {
         if (!isExist) {
             throw new TError(FAIL, 'This user is not your contact');
         }
-        await updateRemark(userID, contactID, remark);
+        await updateRemark({userID, contactID, contactRemark, description, telephones, tags});
     };
 
     /**
@@ -443,6 +441,7 @@ const addContactToEachOther = async (userID, contact) => {
             throw new TError(SERVER_UNKNOW_ERROR, `Server error, ${err.message}`);
         });
     if (_.isEmpty(updateResult)) {
+        // should handle this issue to init contact list
         throw new TError(FAIL, 'Current user is not exist, add contact fail');
     }
     return updateResult;
@@ -494,8 +493,8 @@ const checkContactIDIsCurrentUserID = (userID, contactID) => {
     return false;
 };
 
-const updateRemark = async (userID, contactID, remark) => {
-    let contactList = await ContactModel.findOne({userID: userID})
+const updateRemark = async ({userID, contactID, contactRemark, description, telephones, tags}) => {
+    let contactList = await ContactModel.findOne({userID})
         .catch(err => {
             throw new TError(SERVER_UNKNOW_ERROR, `Server error, ${err.message}`);
         });
@@ -503,7 +502,10 @@ const updateRemark = async (userID, contactID, remark) => {
         let contacts = contactList.contacts;
         let targetContact = _.find(contacts, contact => _.toString(contact.userID) === contactID);
         targetContact.remark = {
-            remarkName: remark,
+            remarkName: contactRemark,
+            telephones,
+            description,
+            tags,
         };
         contactList.markModified('remark');
         try {
@@ -519,6 +521,7 @@ const updateRemark = async (userID, contactID, remark) => {
 const queryUserContactsByUserID = userID => {
     return ContactModel.findOne({userID: userID})
         .populate("contacts.userID")    // 查询数组中的某个字段的ref数据
+        .lean()
         .exec()
         .catch(err => {
             console.log(err);
@@ -580,10 +583,11 @@ const convertContactInfo = contact => {
     delete user.status;
     delete user.role;
 
-    let _user = {};
-    _user.userProfile = user;
-    _user.remark = _contact.remark;
-    return _user;
+    // let _user = {};
+    // _user.userProfile = user;
+    // _user.remark = _contact.remark;
+    // return _user;
+    return _.merge({}, {userProfile: user}, _contact.remark);
 };
 
 const convertContacts = contactsData => {
@@ -616,6 +620,7 @@ const convertTokenInfo = tokenInfo => {
     let _tokenInfo = JSON.parse(JSON.stringify(tokenInfo));
 
     let userProfile = _tokenInfo.user;
+    let deviceID = userProfile.deviceID;
     userProfile.userID = userProfile._id;
 
     delete userProfile._id;
@@ -624,7 +629,7 @@ const convertTokenInfo = tokenInfo => {
     delete userProfile.password;
     delete userProfile.token;
 
-    return userProfile;
+    return {userProfile, deviceID};
 };
 
 module.exports = new UserRepository();
