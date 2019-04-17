@@ -19,7 +19,7 @@ class AspectControl {
 
         try {
             const decipherText = decipher({cipherText: data, secret});
-            const isVerifySuccess = ecdhHelper.verifySignatureByKJUR({
+            const isVerifySuccess = ecdhHelper.verifySignatureByECDSA({
                 data: decipherText,
                 signature,
                 publicKey: secretKey,
@@ -54,7 +54,7 @@ class AspectControl {
         try {
             secret = Buffer.from(ecdhHelper.computeSecret(secretKey), 'base64');
             const decipherText = decipher({cipherText: data, secret});
-            const isVerifySuccess = ecdhHelper.verifySignatureByKJUR({
+            const isVerifySuccess = ecdhHelper.verifySignatureByECDSA({
                 data: decipherText,
                 signature,
                 publicKey: secretKey,
@@ -142,7 +142,7 @@ class AspectControl {
 const buildResponseBody = (requestResult, secret) => {
     return {
         data: cipher({plainData: requestResult, secret}),
-        signature: ecdhHelper.signatureByKJUR(requestResult),
+        signature: ecdhHelper.signatureByECDSA(requestResult),
     };
 };
 

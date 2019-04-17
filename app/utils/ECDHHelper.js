@@ -22,8 +22,8 @@ class ECDHHelper {
         const {pubKeyHex, prvKeyHex} = KEYUTIL.getKeyFromPlainPrivatePKCS8PEM(privateKey);
         this.privateKeyPEM = privateKey;
         this.publicKeyPEM = publicKey;
-        this.privateKeyPoint = hextob64(prvKeyHex);
-        this.publicKeyPoint = hextob64(pubKeyHex);
+        this.privateKeyPointHex = prvKeyHex;
+        this.publicKeyPointHex = pubKeyHex;
     };
 
     /**
@@ -80,7 +80,7 @@ class ECDHHelper {
     computeSecretByPEM(otherPublicKeyPEM) {
         const {pubKeyHex} = KEYUTIL.getKey(otherPublicKeyPEM);
         const ecdh = createECDH(PRIME256V1);
-        ecdh.setPrivateKey(this.privateKeyPoint, 'base64');
+        ecdh.setPrivateKey(hextob64(this.privateKeyPointHex), 'base64');
         const secret = ecdh.computeSecret(hextob64(pubKeyHex), 'base64', 'base64');
         console.log('[secret]：', secret);
         return secret;
@@ -117,9 +117,9 @@ class ECDHHelper {
     /**
      * Signature by private, from Jsrsasign.js
      * @param {string | object} data encrypt plain text
-     * @returns {base64}  signature
+     * @returns {base64}  signature text
      */
-    signatureByKJUR(data) {
+    signatureByECDSA(data) {
         try {
             const sig = new KJUR.crypto.Signature({
                 'alg': 'SHA1withECDSA'
@@ -128,8 +128,7 @@ class ECDHHelper {
             sig.init(this.privateKeyPEM);
             sig.updateString(data);
             return hextob64(sig.sign());
-        }
-        catch (err) {
+        } catch (err) {
             throw new Error(err);
         }
     };
@@ -141,7 +140,7 @@ class ECDHHelper {
      * @param {base64} publicKey
      * @returns {Boolean}   verify result
      */
-    verifySignatureByKJUR({data, signature, publicKey}) {
+    verifySignatureByECDSA({data, signature, publicKey}) {
         const sig = new KJUR.crypto.Signature({
             'alg': 'SHA1withECDSA'
         });
@@ -150,10 +149,48 @@ class ECDHHelper {
         return sig.verify(b64tohex(signature));
     };
 
+    /**
+     * https://blog.csdn.net/qq_26288303/article/details/86301336#commentBox
+     *
+     * 由于go的ecdsa验签过程中对签名进行asn1解析过程与jsrsasign库的asn1加密过程不一致
+     * 只能传输R、S两个大整数转换后的十六进制字符串
+     *
+     * This signature will return "r","s" bigInt, order to support integration with Golang,
+     * just can transform "r", "s" to Golang backend, Separate with a colon(":")
+     * @param {string | base64} data
+     * @returns {string} signature text
+     */
+    signatureByECDSAForGolang(data, privateKeyPointHex) {
+        const ec = new KJUR.crypto.ECDSA({
+            "curve": PRIME256V1,
+        });
+        const sign = ec.signHex(b64tohex(data), privateKeyPointHex);
+        const parseSigHexInHexRS = KJUR.crypto.ECDSA.parseSigHexInHexRS(sign);
+        const rsHex = parseSigHexInHexRS.r + ":" + parseSigHexInHexRS.s;
+        return rsHex;
+    };
+
+    /**
+     * Handle ecdsa signature verify for Golang
+     * @param {string | base64} data
+     * @param {string} signature {r: '', s: ''}
+     * @param {string | base64} publicKey
+     */
+    verifySignatureByECDSAForGolang({data, signature, publicKey}) {
+        const ec = new KJUR.crypto.ECDSA({
+            'curve': PRIME256V1
+        });
+        const {r, s} = handleSignature(signature);
+        const sign = KJUR.crypto.ECDSA.hexRSSigToASN1Sig(r, s);
+
+        const publicKeyHex = KEYUTIL.parsePublicPKCS8Hex(b64tohex(publicKey));
+        return ec.verifyHex(b64tohex(data), sign, publicKeyHex.key);
+    };
+
     getBasePublicKey() {
         return generatePEMToBaseKey(this.publicKeyPEM);
     };
-};
+}
 
 /**
  * Generate base key to PEM, add 'BEGIN/END'
@@ -172,6 +209,17 @@ const generateBaseKeyToPEM = baseKey => {
 const generatePEMToBaseKey = keyPEM => {
     const keys = keyPEM.split('\n');
     return keys[1] + keys[2];
+};
+
+const handleSignature = signature => {
+    const rs = signature.split(':');
+    if (rs.length <= 1) {
+        throw new Error(`Signature is invalid`)
+    }
+    return {
+        r: rs[0],
+        s: rs[1],
+    }
 };
 
 module.exports = ECDHHelper;
