@@ -1,5 +1,6 @@
 import test from 'ava';
 import ECDHHelper from '../../app/utils/ECDHHelper.js';
+import {b64tohex} from 'jsrsasign';
 
 let ecdhHelper = null;
 test.before(() => {
@@ -65,17 +66,40 @@ test('generate PEM to base key', t => {
 
 test(`[support golang] should signature the base64 data and return "r","s" connect hex string`, t => {
     const signatureText = `5b63546b6KW/5Lqa562+5ZCN5pWw5o2u`;
-    const signature = ecdhHelper.signatureByECDSAForGolang(signatureText, ecdhHelper.privateKeyPointHex);
-    const expectations = signature.split(":");
-    t.true(expectations.length === 2)
+    const signature = ecdhHelper.signatureByECDSAForGolang({
+        hexData: b64tohex(signatureText),
+        privateKeyPointHex: ecdhHelper.privateKeyPointHex,
+    });
+    t.true(signature.length > 170)
 });
 
 test(`[support golang] should verify signature and return the result for support Golang`, t => {
-    const signatureText = `5b63546b6KW/5Lqa562+5ZCN5pWw5o2u`;
-    const signature = ecdhHelper.signatureByECDSAForGolang(signatureText, ecdhHelper.privateKeyPointHex);
-    const otherPublicKey = `MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE60BkU5fcacDtqV6Co2rPgxzfXdmLcnVNau6JE84AVPRz3x/cZFlJK6aSrSgzqxUPAU8NBNj1J4Z2oHdsjzZpMg==`;
+    const signatureText = `5b63546b6KW/5Lqa5Lq65rC45LiN6KiA5byD77yB`;
+    const signature = ecdhHelper.signatureByECDSAForGolang({
+        hexData: b64tohex(signatureText),
+        privateKeyPointHex: ecdhHelper.privateKeyPointHex,
+    });
+    const otherPublicKey = `MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE0rK1g09teXQFAfZAG23Ax0SrFMOAmyCEOslHs+RZObcYGMRcQNpi2/aFlAsds4LgY0OvwodprHvwgEdlDP+agw==`;
+
+    console.log("[data]: ", signatureText);
+    console.log("[signature]: ", signature);
+    console.log("[secretKey]: ", otherPublicKey);
+
     const result = ecdhHelper.verifySignatureByECDSAForGolang({
-        data: signatureText,
+        hexData: b64tohex(signatureText),
+        signature,
+        publicKey: otherPublicKey
+    });
+    t.true(result);
+});
+
+test.only(`[support golang] should verify signature from golang and return the veirfy result`, t => {
+    const signatureText = `5b63546b6KW/5Lqa5Lq65rC45LiN6KiA5byD77yB`;
+    const signature = `Mjc2Njc3MjZhMTNmMTRiYTJiMDJmOTA1MDZjMjI5NzY4NTQzNmJkNTYzZGI5MjEwNDZiNTkxZmI1NjRhM2JkYjpiNGFmN2ExM2QyOGYzNjYxODkyMTJhMGQ4MTU2YjI5MzUyY2FlNTMzOGVlMzJkOGY2OGFiNDc0YTFmMjMyMDg2`;
+    const otherPublicKey = `MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAESXlawnDVweVXk8nyfWN/0ZPYYroTrmlLt/Ta2NQav5Kb/cN0kXD6Hx9+sYU1LwoJzc6hoUDnjAvfUmgn6TzkxQ==`;
+
+    const result = ecdhHelper.verifySignatureByECDSAForGolang({
+        hexData: b64tohex(signatureText),
         signature,
         publicKey: otherPublicKey
     });

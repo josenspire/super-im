@@ -1,12 +1,13 @@
 const {createECDH, generateKeyPairSync, createSign, createVerify} = require('crypto');
 const {writeFileSync, readFileSync} = require('fs');
-const {KEYUTIL, KJUR, hextob64, b64tohex} = require('jsrsasign');
+const {KEYUTIL, KJUR, hextob64, b64tohex, stob64, b64toutf8} = require('jsrsasign');
 
 const {join} = require('path');
 const dirPath = join(__dirname, '../../configs');
 
 const SECP256K1 = "secp256k1";
 const PRIME256V1 = "prime256v1";
+const P256 = "P-256";
 
 class ECDHHelper {
     static getInstance() {
@@ -17,8 +18,8 @@ class ECDHHelper {
     };
 
     constructor() {
-        const privateKey = readFileSync(`${dirPath}/ecdh_priv.pem`).toString();
-        const publicKey = readFileSync(`${dirPath}/ecdh_pub.pem`).toString();
+        const privateKey = readFileSync(`${dirPath}/ecdh_priv_p256.pem`).toString();
+        const publicKey = readFileSync(`${dirPath}/ecdh_pub_p256.pem`).toString();
         const {pubKeyHex, prvKeyHex} = KEYUTIL.getKeyFromPlainPrivatePKCS8PEM(privateKey);
         this.privateKeyPEM = privateKey;
         this.publicKeyPEM = publicKey;
@@ -79,7 +80,7 @@ class ECDHHelper {
      */
     computeSecretByPEM(otherPublicKeyPEM) {
         const {pubKeyHex} = KEYUTIL.getKey(otherPublicKeyPEM);
-        const ecdh = createECDH(PRIME256V1);
+        const ecdh = createECDH(P256);
         ecdh.setPrivateKey(hextob64(this.privateKeyPointHex), 'base64');
         const secret = ecdh.computeSecret(hextob64(pubKeyHex), 'base64', 'base64');
         console.log('[secret]：', secret);
@@ -157,34 +158,34 @@ class ECDHHelper {
      *
      * This signature will return "r","s" bigInt, order to support integration with Golang,
      * just can transform "r", "s" to Golang backend, Separate with a colon(":")
-     * @param {string | base64} data
-     * @returns {string} signature text
+     * @param {hex} hexData
+     * @returns {string} signature base64 text, decode is "r:s" string; r,s -> hex
      */
-    signatureByECDSAForGolang(data, privateKeyPointHex) {
+    signatureByECDSAForGolang({hexData, privateKeyPointHex}) {
         const ec = new KJUR.crypto.ECDSA({
-            "curve": PRIME256V1,
+            "curve": P256,
         });
-        const sign = ec.signHex(b64tohex(data), privateKeyPointHex);
+        const sign = ec.signHex(hexData, privateKeyPointHex);
         const parseSigHexInHexRS = KJUR.crypto.ECDSA.parseSigHexInHexRS(sign);
         const rsHex = parseSigHexInHexRS.r + ":" + parseSigHexInHexRS.s;
-        return rsHex;
+        return stob64(rsHex);
     };
 
     /**
      * Handle ecdsa signature verify for Golang
-     * @param {string | base64} data
+     * @param {hexData} data
      * @param {string} signature {r: '', s: ''}
      * @param {string | base64} publicKey
      */
-    verifySignatureByECDSAForGolang({data, signature, publicKey}) {
+    verifySignatureByECDSAForGolang({hexData, signature, publicKey}) {
         const ec = new KJUR.crypto.ECDSA({
-            'curve': PRIME256V1
+            "curve": P256
         });
         const {r, s} = handleSignature(signature);
+        console.log("======", hexData, r, s);
         const sign = KJUR.crypto.ECDSA.hexRSSigToASN1Sig(r, s);
-
         const publicKeyHex = KEYUTIL.parsePublicPKCS8Hex(b64tohex(publicKey));
-        return ec.verifyHex(b64tohex(data), sign, publicKeyHex.key);
+        return ec.verifyHex(hexData, sign, publicKeyHex.key);
     };
 
     getBasePublicKey() {
@@ -212,7 +213,8 @@ const generatePEMToBaseKey = keyPEM => {
 };
 
 const handleSignature = signature => {
-    const rs = signature.split(':');
+    const signatureStr = b64toutf8(signature);
+    const rs = signatureStr.split(':');
     if (rs.length <= 1) {
         throw new Error(`Signature is invalid`)
     }
