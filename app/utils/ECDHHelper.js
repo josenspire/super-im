@@ -158,7 +158,7 @@ class ECDHHelper {
      *
      * This signature will return "r","s" bigInt, order to support integration with Golang,
      * just can transform "r", "s" to Golang backend, Separate with a colon(":")
-     * @param {hex} hexData
+     * @param {string} hexData
      * @returns {string} signature base64 text, decode is "r:s" string; r,s -> hex
      */
     signatureByECDSAForGolang({hexData, privateKeyPointHex}) {
