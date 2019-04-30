@@ -1,6 +1,5 @@
 import test from 'ava';
 import ECDHHelper from '../../app/utils/ECDHHelper.js';
-import {b64tohex} from 'jsrsasign';
 
 let ecdhHelper = null;
 test.before(() => {
@@ -20,7 +19,7 @@ test(`jsrsasign signature`, t => {
     ecdhHelper.privateKey = '-----BEGIN PRIVATE KEY-----\n' + key + '\n-----END PRIVATE KEY-----\n'
 
     const data = '德玛西亚';
-    const signature = ecdhHelper.signatureByECDSA(data);
+    const signature = ecdhHelper.signatureByKJUR(data);
     console.log(signature);
     t.true(signature.length > 0);
 });
@@ -29,7 +28,7 @@ test(`jsrsasign signature verify`, t => {
     const signatureText = `MEUCIQDU+YD+uxDUUaRSnNYPAKA9MuuYAXAz30R8gXD3eu89SgIgbkgnzGNI1VoK3dYFNRLHvQunmKIka3maryfpRSnfibk=`;
     const publicKey = `MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEOs56iDUHeQ5tcdFlRKzHKvSdR8Y/pFJMbYlZWF90dqGXVFfCf0/3ZiKYrKAeOvR3HqXcxMvQudLn+Y99X0FMQw==`;
     const data = '德玛西亚';
-    const result = ecdhHelper.verifySignatureByECDSA({
+    const result = ecdhHelper.verifySignatureByKJUR({
         data,
         signature: signatureText,
         publicKey
@@ -44,8 +43,8 @@ test.skip(`signatrue and verify `, t => {
     ecdhHelper.privateKey = '-----BEGIN PRIVATE KEY-----\n' + privKey + '\n-----END PRIVATE KEY-----\n'
     const publicKey = `MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEOs56iDUHeQ5tcdFlRKzHKvSdR8Y/pFJMbYlZWF90dqGXVFfCf0/3ZiKYrKAeOvR3HqXcxMvQudLn+Y99X0FMQw==`;
     const data = 'NjX06gO7BKsm2iLIYyIfm6f';
-    const signature = ecdhHelper.signatureByECDSA(data);
-    const result = ecdhHelper.verifySignatureByECDSA({
+    const signature = ecdhHelper.signatureByKJUR(data);
+    const result = ecdhHelper.verifySignatureByKJUR({
         data,
         signature: signature,
         publicKey
@@ -54,54 +53,12 @@ test.skip(`signatrue and verify `, t => {
 });
 
 test(`should setup private and generate public then calculate the 'secret' then return`, t => {
-    const otherPublicKey = `MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErVv8/JB3r+HqQoicxr7DJUoe51LVjrEjSqZWt6vFzKrE+Ipwb3rAlNv5EcgH6UjQGfhYH0J4zwHmaqWbxSGPFQ==`;
+    const otherPublicKey = `MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEOs56iDUHeQ5tcdFlRKzHKvSdR8Y/pFJMbYlZWF90dqGXVFfCf0/3ZiKYrKAeOvR3HqXcxMvQudLn+Y99X0FMQw==`;
     const secret = ecdhHelper.computeSecret(otherPublicKey);
-    t.is('zusxK4+HackC8B8wL4/Ljyy/x+0Xkct3Gs1jypGcLCM=', secret);
+    t.is('P6t3mFN0dpG0wA7PP2/t8onOHiL6thG+FhJ6uRrvQqw=', secret);
 });
 
 test('generate PEM to base key', t => {
     const result = ecdhHelper.getBasePublicKey();
     t.true(result.length > 0);
-});
-
-test(`[support golang] should signature the base64 data and return "r","s" connect hex string`, t => {
-    const signatureText = `5b63546b6KW/5Lqa562+5ZCN5pWw5o2u`;
-    const signature = ecdhHelper.signatureByECDSAForGolang({
-        hexData: b64tohex(signatureText),
-        privateKeyPointHex: ecdhHelper.privateKeyPointHex,
-    });
-    t.true(signature.length > 170)
-});
-
-test(`[support golang] should verify signature and return the result for support Golang`, t => {
-    const signatureText = `5b63546b6KW/5Lqa5Lq65rC45LiN6KiA5byD77yB`;
-    const signature = ecdhHelper.signatureByECDSAForGolang({
-        hexData: b64tohex(signatureText),
-        privateKeyPointHex: ecdhHelper.privateKeyPointHex,
-    });
-    const otherPublicKey = `MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE0rK1g09teXQFAfZAG23Ax0SrFMOAmyCEOslHs+RZObcYGMRcQNpi2/aFlAsds4LgY0OvwodprHvwgEdlDP+agw==`;
-
-    console.log("[data]: ", signatureText);
-    console.log("[signature]: ", signature);
-    console.log("[secretKey]: ", otherPublicKey);
-
-    const result = ecdhHelper.verifySignatureByECDSAForGolang({
-        hexData: b64tohex(signatureText),
-        signature,
-        publicKey: otherPublicKey
-    });
-    t.true(result);
-});
-
-test.only(`[support golang] should verify signature from golang and return the veirfy result`, t => {
-    const signatureText = `5b63546b6KW/5Lqa5Lq65rC45LiN6KiA5byD77yB`;
-    const signature = `Mjc2Njc3MjZhMTNmMTRiYTJiMDJmOTA1MDZjMjI5NzY4NTQzNmJkNTYzZGI5MjEwNDZiNTkxZmI1NjRhM2JkYjpiNGFmN2ExM2QyOGYzNjYxODkyMTJhMGQ4MTU2YjI5MzUyY2FlNTMzOGVlMzJkOGY2OGFiNDc0YTFmMjMyMDg2`;
-    const otherPublicKey = `MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAESXlawnDVweVXk8nyfWN/0ZPYYroTrmlLt/Ta2NQav5Kb/cN0kXD6Hx9+sYU1LwoJzc6hoUDnjAvfUmgn6TzkxQ==`;
-
-    const result = ecdhHelper.verifySignatureByECDSAForGolang({
-        hexData: b64tohex(signatureText),
-        signature,
-        publicKey: otherPublicKey
-    });
-    t.true(result);
 });
